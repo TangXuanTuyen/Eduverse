@@ -1,0 +1,6 @@
+{
+  "name": "EDUVERSE - Thành Phố Học Tập & Nhân Vật 2D",
+  "description": "Thế giới học tập Khoa học Tự nhiên tương tác với nhân vật pixel-art tùy chỉnh, bản đồ thành phố 2D di chuyển thực sự, phòng thí nghiệm STEM và trạm sửa lỗi dành cho học sinh THCS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

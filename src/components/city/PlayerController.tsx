@@ -1,0 +1,171 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Compass, Sparkles, Eye, EyeOff } from 'lucide-react';
+
+interface PlayerControllerProps {
+  onMoveInput: (dx: number, dy: number) => void;
+  onInteract: () => void;
+  onOpenQuickTravel: () => void;
+  hasNearbyBuilding: boolean;
+}
+
+export const PlayerController: React.FC<PlayerControllerProps> = ({
+  onMoveInput,
+  onInteract,
+  onOpenQuickTravel,
+  hasNearbyBuilding,
+}) => {
+  const activeDirRef = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
+  const [pressedBtn, setPressedBtn] = useState<string | null>(null);
+  const [isDpadHidden, setIsDpadHidden] = useState(false);
+
+  const startMoving = (dir: 'up' | 'down' | 'left' | 'right') => {
+    setPressedBtn(dir);
+    let dx = 0;
+    let dy = 0;
+    if (dir === 'up') dy = -1;
+    if (dir === 'down') dy = 1;
+    if (dir === 'left') dx = -1;
+    if (dir === 'right') dx = 1;
+    activeDirRef.current = { dx, dy };
+    onMoveInput(dx, dy);
+  };
+
+  const stopMoving = () => {
+    setPressedBtn(null);
+    activeDirRef.current = { dx: 0, dy: 0 };
+    onMoveInput(0, 0);
+  };
+
+  useEffect(() => {
+    const handleMouseUp = () => {
+      if (activeDirRef.current.dx !== 0 || activeDirRef.current.dy !== 0) {
+        stopMoving();
+      }
+    };
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchend', handleMouseUp);
+    return () => {
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchend', handleMouseUp);
+    };
+  }, []);
+
+  return (
+    <>
+      {/* VIRTUAL TOUCH D-PAD (Bottom Left, 30% more compact, subtle & non-intrusive) */}
+      <div className="absolute bottom-4 left-4 z-20 select-none flex items-end gap-1.5">
+        {!isDpadHidden ? (
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 bg-slate-900/40 hover:bg-slate-900/70 backdrop-blur-sm rounded-full border border-slate-700/50 shadow-lg p-1.5 flex items-center justify-center opacity-65 hover:opacity-100 transition-all duration-200">
+            {/* UP */}
+            <button
+              type="button"
+              aria-label="Di chuyển lên"
+              onMouseDown={() => startMoving('up')}
+              onTouchStart={() => startMoving('up')}
+              className={`absolute top-1 w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition active:scale-95 cursor-pointer ${
+                pressedBtn === 'up'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'bg-slate-800/80 text-slate-200 hover:bg-slate-700/90'
+              }`}
+            >
+              <ArrowUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+
+            {/* DOWN */}
+            <button
+              type="button"
+              aria-label="Di chuyển xuống"
+              onMouseDown={() => startMoving('down')}
+              onTouchStart={() => startMoving('down')}
+              className={`absolute bottom-1 w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition active:scale-95 cursor-pointer ${
+                pressedBtn === 'down'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'bg-slate-800/80 text-slate-200 hover:bg-slate-700/90'
+              }`}
+            >
+              <ArrowDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+
+            {/* LEFT */}
+            <button
+              type="button"
+              aria-label="Di chuyển sang trái"
+              onMouseDown={() => startMoving('left')}
+              onTouchStart={() => startMoving('left')}
+              className={`absolute left-1 w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition active:scale-95 cursor-pointer ${
+                pressedBtn === 'left'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'bg-slate-800/80 text-slate-200 hover:bg-slate-700/90'
+              }`}
+            >
+              <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+
+            {/* RIGHT */}
+            <button
+              type="button"
+              aria-label="Di chuyển sang phải"
+              onMouseDown={() => startMoving('right')}
+              onTouchStart={() => startMoving('right')}
+              className={`absolute right-1 w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition active:scale-95 cursor-pointer ${
+                pressedBtn === 'right'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'bg-slate-800/80 text-slate-200 hover:bg-slate-700/90'
+              }`}
+            >
+              <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+
+            {/* Center Compass Rose */}
+            <div className="w-5 h-5 rounded-full bg-slate-950/60 flex items-center justify-center text-indigo-400">
+              <Compass className="w-3 h-3" />
+            </div>
+          </div>
+        ) : null}
+
+        {/* Toggle D-pad visibility button */}
+        <button
+          type="button"
+          aria-label={isDpadHidden ? 'Hiện cụm phím điều hướng' : 'Ẩn cụm phím điều hướng'}
+          onClick={() => setIsDpadHidden(!isDpadHidden)}
+          className="p-1 rounded-lg bg-slate-900/50 hover:bg-slate-900/80 border border-slate-700/50 text-slate-400 hover:text-white transition backdrop-blur-sm cursor-pointer"
+          title={isDpadHidden ? 'Hiện cụm phím ảo' : 'Ẩn cụm phím ảo'}
+        >
+          {isDpadHidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+        </button>
+      </div>
+
+      {/* QUICK FLOATING ACTIONS (Bottom Right) */}
+      <div className="absolute bottom-5 right-5 z-20 flex flex-col gap-2.5">
+        {/* INTERACT BUTTON */}
+        {hasNearbyBuilding && (
+          <button
+            type="button"
+            aria-label="Vào khu vực tương tác"
+            onClick={onInteract}
+            className="w-13 h-13 bg-gradient-to-tr from-amber-500 to-yellow-400 text-slate-950 font-black rounded-2xl shadow-xl shadow-amber-500/30 flex flex-col items-center justify-center border-2 border-yellow-200 transition transform hover:scale-105 active:scale-95 cursor-pointer animate-pulse"
+          >
+            <Sparkles className="w-5 h-5" />
+            <span className="text-[9px] uppercase font-bold tracking-tight">VÀO</span>
+          </button>
+        )}
+
+        {/* FAST TRAVEL BUTTON */}
+        <button
+          type="button"
+          aria-label="Mở danh sách khu vực và di chuyển nhanh"
+          onClick={onOpenQuickTravel}
+          className="w-11 h-11 bg-slate-900/80 hover:bg-slate-900 border border-slate-700/80 text-slate-200 rounded-xl shadow-lg backdrop-blur flex items-center justify-center transition hover:text-white cursor-pointer"
+          title="Lối truy cập nhanh & Bản đồ"
+        >
+          <Compass className="w-5 h-5 text-indigo-400" />
+        </button>
+      </div>
+    </>
+  );
+};
