@@ -1,8 +1,25 @@
 node_modules/
+.next/
+out/
 build/
-dist/
 coverage/
 .DS_Store
 *.log
+*.tsbuildinfo
+next-env.d.ts
+.vercel
 .env*
 !.env.example
+
+# Mã UI gốc từ Google AI Studio — chỉ để đối chiếu, không đưa lên GitHub
+_ui-goc/
+.aistudio/
+
+# Cấu hình Claude Code riêng từng máy
+.claude/settings.local.json
+
+# Mật khẩu tài khoản seed (dev)
+.seed-credentials.local.md
+# Supabase CLI
+supabase/.temp/
+supabase/.branches/
