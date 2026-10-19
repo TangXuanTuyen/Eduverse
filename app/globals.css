@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-be-vietnam), 'Noto Sans', system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: #020617;
+    color: #f1f5f9;
+    touch-action: manipulation;
+  }
+
+  /* Bản gốc chặn chọn chữ toàn trang; chỉ chặn trên vùng game, nội dung bài học vẫn chọn được */
+  canvas,
+  [data-game-control] {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  :focus-visible {
+    outline: 3px solid #fbbf24;
+    outline-offset: 2px;
+  }
+}
+
+.font-pixel {
+  font-family: var(--font-pixel), monospace;
+}
+
+.font-retro {
+  font-family: var(--font-retro), monospace;
+}
+
+.pixel-art {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Tôn trọng tùy chọn "giảm chuyển động" của hệ điều hành */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Thanh cuộn trong các hộp thoại học tập */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.8);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 1);
+}
