@@ -1,6 +1,10 @@
 import { redirect } from 'next/navigation';
+import { getCurrentProfile } from '@/lib/auth/session';
+import { homeForRole } from '@/lib/auth/roles';
 
-// Chưa có đăng nhập: tạm chuyển thẳng vào khu học sinh. Bước Auth sẽ điều hướng theo vai trò.
-export default function Home() {
-  redirect('/student');
+export default async function Home() {
+  const profile = await getCurrentProfile();
+  if (!profile) redirect('/login');
+  if (profile.mustChangePassword) redirect('/doi-mat-khau');
+  redirect(homeForRole(profile.role));
 }

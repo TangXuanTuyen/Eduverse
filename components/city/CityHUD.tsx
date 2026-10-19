@@ -21,6 +21,7 @@ import {
   Volume2,
   VolumeX,
   UserCog,
+  LogOut,
   Compass,
   Scroll,
   Lock,
@@ -184,6 +185,18 @@ export const CityHUD: React.FC<CityHUDProps> = ({
           >
             {isMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-slate-300" />}
           </button>
+
+          {/* Đăng xuất (POST, máy dùng chung trong lớp cần thoát nhanh) */}
+          <form action="/auth/dang-xuat" method="post">
+            <button
+              type="submit"
+              aria-label="Đăng xuất"
+              title="Đăng xuất"
+              className="min-h-11 min-w-11 flex items-center justify-center bg-slate-900/85 hover:bg-slate-800 border border-slate-700/70 text-slate-200 rounded-lg shadow-md backdrop-blur-md cursor-pointer transition hover:text-white"
+            >
+              <LogOut className="w-4 h-4 text-slate-300" />
+            </button>
+          </form>
         </div>
       </div>
 

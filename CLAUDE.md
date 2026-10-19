@@ -12,7 +12,12 @@ npm run dev        # http://localhost:3000 (preview trong app: cấu hình "eduv
 npm test           # Vitest, tests/unit
 npm run typecheck
 npm run build
+npm run db:push            # đẩy supabase/migrations lên project (cần SUPABASE_DB_URL trong .env.local)
+npm run seed               # dữ liệu giả; mật khẩu ghi vào .seed-credentials.local.md (gitignore)
+npm run test:integration   # kiểm thử với Supabase thật (tự tạo/xóa tài khoản thử)
 ```
+
+Kiểm thử RLS (`tests/db/`) chạy migration thật trên Postgres nhúng PGlite với shim vai trò Supabase (`tests/db/supabase-shim.sql`) — không cần Docker. Bảng/hàm mới tự động bị kiểm tra: bật RLS, anon không có quyền, authenticated chỉ SELECT, security definer có `search_path = ''`.
 
 ## Cấu trúc
 
@@ -20,6 +25,13 @@ npm run build
 - `components/student/` — `StudentGameProvider` (trạng thái game, **tạm** localStorage), `CityShell`, `BuildingRoute`.
 - `components/{city,character,learning}/` — component từ UI gốc, giữ nguyên style. `components/ui/` — `DialogFrame` (mọi hộp thoại phải dùng), `AnswerMark`.
 - `game/engine/` — va chạm, tìm đường, dữ liệu bản đồ, tiến độ. Engine bản đồ là Canvas 2D tự viết (đã quyết định không chuyển sang Phaser).
+
+## Đăng nhập & phân quyền (Bước 1)
+
+- Học sinh: mã HS → email nội bộ `<mã>@hs.eduverse.local` (`lib/auth/identifier.ts`). Tài khoản chỉ tạo bằng service role (`services/accounts-core.ts`); Supabase phải TẮT tự đăng ký.
+- Vai trò chỉ đọc từ `public.profiles` (`lib/auth/session.ts`). Mỗi khu vực có `layout.tsx` gọi `requireRole()`; `proxy.ts` chỉ làm mới phiên + chặn sớm người chưa đăng nhập.
+- Người dùng chỉ có quyền SELECT; ghi đi qua server. Giáo viên/phụ huynh đọc học sinh qua `get_class_roster()` / `get_my_children()`.
+- Khóa tạm: 5 lần sai/15 phút theo định danh, 50 theo IP (`services/login-core.ts`, bảng `login_attempts` chỉ service role).
 
 ## Quyết định đã duyệt (Bước 0, Q1–Q9)
 

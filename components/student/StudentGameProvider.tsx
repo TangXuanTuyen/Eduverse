@@ -22,15 +22,19 @@ import type { CityPlayerHandle } from '@/components/city/CityMapCanvas';
 import { BUILDING_ROUTES, STUDENT_HOME } from '@/lib/student-routes';
 import { sound } from '@/lib/audio';
 
-const STORAGE_KEY_CHAR = 'eduverse_character_v2';
-const STORAGE_KEY_PROGRESS = 'eduverse_progress_v2';
-const STORAGE_KEY_FIRST_TIME = 'eduverse_first_time_v2';
+// Khóa lưu tạm theo từng học sinh để máy dùng chung không lẫn dữ liệu giữa các em
+const storageKeys = (userId: string) => ({
+  char: `eduverse_character_v3:${userId}`,
+  progress: `eduverse_progress_v3:${userId}`,
+  firstTime: `eduverse_first_time_v3:${userId}`,
+});
 
-// Học sinh giả cho giao diện. Sẽ thay bằng hồ sơ từ DB.
+export type StudentIdentity = { userId: string; displayName: string; className: string };
+
 const DEFAULT_CHARACTER: CharacterConfig = {
-  id: 'student_1',
-  name: 'Nguyễn Minh Khang',
-  className: 'Lớp 7A1',
+  id: '',
+  name: '',
+  className: '',
   gender: 'boy',
   skinTone: '#FCD34D',
   hairStyle: 'short_classic',
@@ -96,10 +100,22 @@ export function useStudentGame() {
   return ctx;
 }
 
-export function StudentGameProvider({ children }: { children: React.ReactNode }) {
+export function StudentGameProvider({
+  identity,
+  children,
+}: {
+  identity: StudentIdentity;
+  children: React.ReactNode;
+}) {
   const router = useRouter();
+  const keys = useMemo(() => storageKeys(identity.userId), [identity.userId]);
   const [hydrated, setHydrated] = useState(false);
-  const [character, setCharacter] = useState<CharacterConfig>(DEFAULT_CHARACTER);
+  const [characterState, setCharacter] = useState<CharacterConfig>(DEFAULT_CHARACTER);
+  // Tên và lớp luôn lấy từ hồ sơ nhà trường, không lấy từ dữ liệu lưu ở trình duyệt
+  const character = useMemo<CharacterConfig>(
+    () => ({ ...characterState, id: identity.userId, name: identity.displayName, className: identity.className }),
+    [characterState, identity]
+  );
   const [progress, setProgress] = useState<PlayerProgress>(INITIAL_PROGRESS);
   const [isFirstTime, setIsFirstTime] = useState(false);
   const [isEditingCharacter, setEditingCharacter] = useState(false);
@@ -109,26 +125,26 @@ export function StudentGameProvider({ children }: { children: React.ReactNode })
 
   // Đọc localStorage sau khi mount (server không có localStorage → tránh lệch hydration)
   useEffect(() => {
-    const savedChar = readJson<CharacterConfig>(STORAGE_KEY_CHAR);
-    const savedProgress = readJson<PlayerProgress>(STORAGE_KEY_PROGRESS);
+    const savedChar = readJson<CharacterConfig>(keys.char);
+    const savedProgress = readJson<PlayerProgress>(keys.progress);
     if (savedChar) setCharacter(savedChar);
     if (savedProgress) setProgress(savedProgress);
     const autostart = new URLSearchParams(window.location.search).get('autostart') === '1';
     let firstTime = false;
     try {
-      firstTime = !autostart && localStorage.getItem(STORAGE_KEY_FIRST_TIME) === null;
+      firstTime = !autostart && localStorage.getItem(keys.firstTime) === null;
     } catch {}
     setIsFirstTime(firstTime);
     setHydrated(true);
-  }, []);
+  }, [keys]);
 
   useEffect(() => {
-    if (hydrated) writeJson(STORAGE_KEY_CHAR, character);
-  }, [character, hydrated]);
+    if (hydrated) writeJson(keys.char, characterState);
+  }, [characterState, hydrated, keys]);
 
   useEffect(() => {
-    if (hydrated) writeJson(STORAGE_KEY_PROGRESS, progress);
-  }, [progress, hydrated]);
+    if (hydrated) writeJson(keys.progress, progress);
+  }, [progress, hydrated, keys]);
 
   // Đồng bộ trang phục mở khóa theo tiến độ (bản gốc thiếu dependency, đọc character cũ)
   useEffect(() => {
@@ -152,12 +168,12 @@ export function StudentGameProvider({ children }: { children: React.ReactNode })
       setIsFirstTime(false);
       setEditingCharacter(false);
       try {
-        localStorage.setItem(STORAGE_KEY_FIRST_TIME, 'done');
+        localStorage.setItem(keys.firstTime, 'done');
       } catch {}
       sound.playSuccess();
       celebrate();
     },
-    [celebrate]
+    [celebrate, keys]
   );
 
   // Phải ổn định (useCallback) vì vòng lặp canvas phụ thuộc vào nó

@@ -329,31 +329,36 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
           {/* STUDENT INFO HEADER */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 pb-4 border-b border-slate-800">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1">
+              <label htmlFor="char-name" className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1">
                 <User className="w-3.5 h-3.5 text-indigo-400" /> Tên Học Sinh
               </label>
               <input
                 type="text"
+                id="char-name"
                 value={config.name}
-                onChange={(e) => setConfig({ ...config, name: e.target.value })}
-                placeholder="Nhập họ và tên..."
-                className="w-full px-3 py-1.5 text-sm bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-indigo-500"
+                readOnly
+                aria-describedby="char-identity-note"
+                className="w-full min-h-11 px-3 py-1.5 text-sm bg-slate-800/60 border border-slate-700 rounded-lg text-slate-300 cursor-not-allowed"
                 maxLength={25}
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1">
+              <label htmlFor="char-class" className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1">
                 <GraduationCap className="w-3.5 h-3.5 text-indigo-400" /> Chi Đội / Lớp Học
               </label>
               <input
                 type="text"
+                id="char-class"
                 value={config.className}
-                onChange={(e) => setConfig({ ...config, className: e.target.value })}
-                placeholder="Ví dụ: Lớp 7A1"
-                className="w-full px-3 py-1.5 text-sm bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-indigo-500"
+                readOnly
+                aria-describedby="char-identity-note"
+                className="w-full min-h-11 px-3 py-1.5 text-sm bg-slate-800/60 border border-slate-700 rounded-lg text-slate-300 cursor-not-allowed"
                 maxLength={15}
               />
             </div>
+            <p id="char-identity-note" className="sm:col-span-2 text-[11px] text-slate-400">
+              Tên và lớp do nhà trường cấp. Nếu sai, hãy báo thầy cô.
+            </p>
           </div>
 
           {/* CUSTOMIZATION TABS */}
