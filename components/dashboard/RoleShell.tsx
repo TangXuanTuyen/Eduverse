@@ -2,6 +2,11 @@ import Link from 'next/link';
 import { SignOutButton } from '@/components/auth/SignOutButton';
 import { ROLE_LABEL, type AppRole } from '@/lib/auth/roles';
 
+const PARENT_NAV = [
+  { href: '/parent', label: 'Tổng quan' },
+  { href: '/parent/reports', label: 'Báo cáo tuần' },
+];
+
 const ADMIN_NAV = [
   { href: '/admin/experiments', label: 'Thí nghiệm' },
   { href: '/admin/models', label: 'Mô hình 3D' },
@@ -17,7 +22,7 @@ const TEACHER_NAV = [
   { href: '/teacher/models', label: 'Mô hình 3D' },
   { href: '/teacher/lessons', label: 'Bài học' },
   { href: '/teacher/grading', label: 'Chấm bài' },
-  { href: '/teacher/dashboard', label: 'Báo cáo' },
+  { href: '/teacher/reports', label: 'Báo cáo' },
 ];
 
 /** Khung trang cho giáo viên / phụ huynh / quản trị (bản tối giản, sẽ thay bằng shadcn/ui ở bước sau). */
@@ -58,6 +63,19 @@ export function RoleShell({
         {role === 'teacher' && (
           <nav className="max-w-5xl mx-auto px-4 flex gap-1 pt-2">
             {TEACHER_NAV.map((n) => (
+              <Link
+                key={n.href}
+                href={n.href}
+                className="px-3 py-1.5 text-sm text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg min-h-[44px] flex items-center"
+              >
+                {n.label}
+              </Link>
+            ))}
+          </nav>
+        )}
+        {role === 'parent' && (
+          <nav className="max-w-5xl mx-auto px-4 flex gap-1 pt-2">
+            {PARENT_NAV.map((n) => (
               <Link
                 key={n.href}
                 href={n.href}

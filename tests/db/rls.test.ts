@@ -18,6 +18,7 @@ const TABLES = [
   'profiles', 'rooms', 'room_members', 'parent_links', 'notifications', 'login_attempts',
   'questions', 'question_answers', 'assignments', 'assignment_questions',
   'submissions', 'question_attempts',
+  'audit_logs', 'weekly_summaries',
 ];
 
 async function rows<T = Record<string, unknown>>(tx: Transaction, sql: string, params: unknown[] = []) {
@@ -423,5 +424,78 @@ describe('Quy tắc chung cho mọi bảng/hàm', () => {
     const bad = r.rows.filter((x) => !(x.proconfig ?? []).some((c) => c === 'search_path=""' || c === "search_path=''"));
     expect(bad.map((x) => x.proname)).toEqual([]);
     expect(r.rows.length).toBeGreaterThan(3);
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe('Bước 7: Báo cáo — audit_logs', () => {
+  test('giáo viên thấy audit log mình tạo', async () => {
+    const r = await as(db, user(ids.teacher1), (tx) =>
+      rows<{ id: string }>(tx, 'select id from public.audit_logs')
+    );
+    expect(r.map((x) => x.id)).toContain(ids.auditLog1);
+  });
+
+  test('giáo viên khác không thấy audit log', async () => {
+    const r = await as(db, user(ids.teacher2), (tx) =>
+      rows(tx, 'select * from public.audit_logs')
+    );
+    expect(r).toEqual([]);
+  });
+
+  test('học sinh không thấy audit log', async () => {
+    const r = await as(db, user(ids.studentA1), (tx) =>
+      rows(tx, 'select * from public.audit_logs')
+    );
+    expect(r).toEqual([]);
+  });
+
+  test('authenticated không INSERT audit_logs', async () => {
+    await expectDenied(() =>
+      as(db, user(ids.teacher1), (tx) =>
+        rows(tx, `insert into public.audit_logs (actor_id, action, target_type, target_id)
+          values ($1, 'hack', 'student', $2)`, [ids.teacher1, ids.studentA1])
+      )
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe('Bước 7: Báo cáo — weekly_summaries', () => {
+  test('phụ huynh đã duyệt thấy tóm tắt tuần của con', async () => {
+    const r = await as(db, user(ids.parentApproved), (tx) =>
+      rows<{ id: string }>(tx, 'select id from public.weekly_summaries')
+    );
+    expect(r.map((x) => x.id)).toContain(ids.weeklySummary1);
+  });
+
+  test('phụ huynh chưa duyệt không thấy tóm tắt', async () => {
+    const r = await as(db, user(ids.parentPending), (tx) =>
+      rows(tx, 'select * from public.weekly_summaries')
+    );
+    expect(r).toEqual([]);
+  });
+
+  test('học sinh khác không thấy tóm tắt', async () => {
+    const r = await as(db, user(ids.studentA2), (tx) =>
+      rows(tx, 'select * from public.weekly_summaries')
+    );
+    expect(r).toEqual([]);
+  });
+
+  test('giáo viên không thấy weekly_summaries (không phải phụ huynh)', async () => {
+    const r = await as(db, user(ids.teacher1), (tx) =>
+      rows(tx, 'select * from public.weekly_summaries')
+    );
+    expect(r).toEqual([]);
+  });
+
+  test('authenticated không INSERT weekly_summaries', async () => {
+    await expectDenied(() =>
+      as(db, user(ids.parentApproved), (tx) =>
+        rows(tx, `insert into public.weekly_summaries (student_id, week_start, summary_text)
+          values ($1, '2026-10-12', 'hack')`, [ids.studentA1])
+      )
+    );
   });
 });

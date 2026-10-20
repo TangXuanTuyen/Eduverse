@@ -25,6 +25,9 @@ export const ids = {
   aq2: '00000000-0000-4000-d000-000000000022', // assignment_question for q2
   submission1: '00000000-0000-4000-d000-000000000031', // studentA1 draft
   attempt1: '00000000-0000-4000-d000-000000000041', // question_attempt
+  // Bước 7: reports
+  auditLog1: '00000000-0000-4000-e000-000000000001',
+  weeklySummary1: '00000000-0000-4000-e000-000000000011',
 } as const;
 
 type ProfileSeed = {
@@ -167,5 +170,21 @@ export async function seedFixtures(db: PGlite) {
     `insert into public.question_attempts (id, submission_id, assignment_question_id, student_answer)
      values ($1, $2, $3, '"a"')`,
     [ids.attempt1, ids.submission1, ids.aq1]
+  );
+
+  // --- Bước 7: Reports ---
+
+  // Audit log từ teacher1
+  await db.query(
+    `insert into public.audit_logs (id, actor_id, action, target_type, target_id, metadata)
+     values ($1, $2, 'view_student_report', 'student', $3, '{}')`,
+    [ids.auditLog1, ids.teacher1, ids.studentA1]
+  );
+
+  // Weekly summary cho studentA1 (phụ huynh đã duyệt xem được)
+  await db.query(
+    `insert into public.weekly_summaries (id, student_id, week_start, summary_text, stats)
+     values ($1, $2, '2026-10-19', 'Tuần này em học tốt.', '{"xp_earned": 100}')`,
+    [ids.weeklySummary1, ids.studentA1]
   );
 }
