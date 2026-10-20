@@ -5,10 +5,13 @@ import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import type { BuildingInfo } from '@/types/game';
 import { CityHUD } from '@/components/city/CityHUD';
+import { CityListView } from '@/components/city/CityListView';
 import { PlayerController } from '@/components/city/PlayerController';
 import { CharacterSelection } from '@/components/character/CharacterSelection';
 import { useStudentGame } from '@/components/student/StudentGameProvider';
 import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
+import { useListMode } from '@/lib/hooks/useListMode';
+import { useBuildingNotifications } from '@/lib/hooks/useBuildingNotifications';
 import { STUDENT_HOME } from '@/lib/student-routes';
 import { BreakReminder } from '@/components/ui/BreakReminder';
 
@@ -34,6 +37,8 @@ export function CityShell({ children }: { children: React.ReactNode }) {
   const game = useStudentGame();
   const pathname = usePathname();
   const reducedMotion = useReducedMotion();
+  const { listMode, toggleListMode } = useListMode();
+  const notifications = useBuildingNotifications(game.character.id || undefined);
   const [nearbyBuilding, setNearbyBuilding] = useState<BuildingInfo | null>(null);
   const [fastTravelOpen, setFastTravelOpen] = useState(false);
 
@@ -48,17 +53,34 @@ export function CityShell({ children }: { children: React.ReactNode }) {
         <>
           {/* Ẩn bản đồ khỏi trình đọc màn hình khi có hộp thoại phía trên */}
           <div className="absolute inset-0" aria-hidden={placeOpen || undefined} inert={placeOpen || undefined}>
-            <CityMapCanvas
-              character={game.character}
-              progress={game.progress}
-              onEnterBuilding={game.enterBuilding}
-              onPositionChange={game.updatePosition}
-              onRequestEditCharacter={() => game.setEditingCharacter(true)}
-              onNearbyBuildingChange={setNearbyBuilding}
-              paused={paused}
-              reducedMotion={reducedMotion}
-              playerRefExternal={game.playerRef}
-            />
+            {listMode ? (
+              <CityListView
+                progress={game.progress}
+                notifications={notifications}
+                onEnter={game.enterBuilding}
+              />
+            ) : (
+              <>
+                <CityMapCanvas
+                  character={game.character}
+                  progress={game.progress}
+                  onEnterBuilding={game.enterBuilding}
+                  onPositionChange={game.updatePosition}
+                  onRequestEditCharacter={() => game.setEditingCharacter(true)}
+                  onNearbyBuildingChange={setNearbyBuilding}
+                  paused={paused}
+                  reducedMotion={reducedMotion}
+                  playerRefExternal={game.playerRef}
+                />
+
+                <PlayerController
+                  onMoveInput={(dx, dy) => game.playerRef.current?.moveByInput(dx, dy)}
+                  onInteract={() => game.playerRef.current?.interact()}
+                  onOpenQuickTravel={() => setFastTravelOpen(true)}
+                  hasNearbyBuilding={nearbyBuilding !== null}
+                />
+              </>
+            )}
 
             <CityHUD
               character={game.character}
@@ -69,13 +91,9 @@ export function CityShell({ children }: { children: React.ReactNode }) {
               onClaimQuestReward={game.claimQuest}
               fastTravelOpen={fastTravelOpen}
               onFastTravelOpenChange={setFastTravelOpen}
-            />
-
-            <PlayerController
-              onMoveInput={(dx, dy) => game.playerRef.current?.moveByInput(dx, dy)}
-              onInteract={() => game.playerRef.current?.interact()}
-              onOpenQuickTravel={() => setFastTravelOpen(true)}
-              hasNearbyBuilding={nearbyBuilding !== null}
+              listMode={listMode}
+              onToggleListMode={toggleListMode}
+              notifications={notifications}
             />
           </div>
 

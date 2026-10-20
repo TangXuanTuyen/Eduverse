@@ -28,6 +28,11 @@ export const ids = {
   // Bước 7: reports
   auditLog1: '00000000-0000-4000-e000-000000000001',
   weeklySummary1: '00000000-0000-4000-e000-000000000011',
+  // Bước 8: phòng chung
+  roomSession1: '00000000-0000-4000-f000-000000000001',
+  roomSessionParticipant1: '00000000-0000-4000-f000-000000000011',
+  socialSettings1: '00000000-0000-4000-f000-000000000021',
+  studentReport1: '00000000-0000-4000-f000-000000000031',
 } as const;
 
 type ProfileSeed = {
@@ -186,5 +191,35 @@ export async function seedFixtures(db: PGlite) {
     `insert into public.weekly_summaries (id, student_id, week_start, summary_text, stats)
      values ($1, $2, '2026-10-19', 'Tuần này em học tốt.', '{"xp_earned": 100}')`,
     [ids.weeklySummary1, ids.studentA1]
+  );
+
+  // --- Bước 8: Phòng chung ---
+
+  // Room session trong room1
+  await db.query(
+    `insert into public.room_sessions (id, room_id, created_by, type, title)
+     values ($1, $2, $3, 'coop_boss', 'Boss Cơ học')`,
+    [ids.roomSession1, ids.room1, ids.teacher1]
+  );
+
+  // Participant: studentA1
+  await db.query(
+    `insert into public.room_session_participants (id, session_id, user_id)
+     values ($1, $2, $3)`,
+    [ids.roomSessionParticipant1, ids.roomSession1, ids.studentA1]
+  );
+
+  // Social settings cho room1
+  await db.query(
+    `insert into public.social_settings (id, room_id, updated_by)
+     values ($1, $2, $3)`,
+    [ids.socialSettings1, ids.room1, ids.teacher1]
+  );
+
+  // Báo cáo từ studentA1 về studentA2
+  await db.query(
+    `insert into public.student_reports (id, room_id, reporter_id, reported_id, reason)
+     values ($1, $2, $3, $4, 'Spam biểu cảm')`,
+    [ids.studentReport1, ids.room1, ids.studentA1, ids.studentA2]
   );
 }

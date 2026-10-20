@@ -19,6 +19,7 @@ const TABLES = [
   'questions', 'question_answers', 'assignments', 'assignment_questions',
   'submissions', 'question_attempts',
   'audit_logs', 'weekly_summaries',
+  'room_sessions', 'room_session_participants', 'social_settings', 'student_reports',
 ];
 
 async function rows<T = Record<string, unknown>>(tx: Transaction, sql: string, params: unknown[] = []) {
@@ -495,6 +496,114 @@ describe('Bước 7: Báo cáo — weekly_summaries', () => {
       as(db, user(ids.parentApproved), (tx) =>
         rows(tx, `insert into public.weekly_summaries (student_id, week_start, summary_text)
           values ($1, '2026-10-12', 'hack')`, [ids.studentA1])
+      )
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe('Bước 8: Phòng chung — room_sessions', () => {
+  test('thành viên phòng 1 thấy room session', async () => {
+    const r = await as(db, user(ids.studentA1), (tx) =>
+      rows<{ id: string }>(tx, 'select id from public.room_sessions')
+    );
+    expect(r.map((x) => x.id)).toContain(ids.roomSession1);
+  });
+
+  test('học sinh phòng khác không thấy room session', async () => {
+    const r = await as(db, user(ids.studentB1), (tx) =>
+      rows(tx, 'select * from public.room_sessions')
+    );
+    expect(r).toEqual([]);
+  });
+
+  test('authenticated không INSERT room_sessions', async () => {
+    await expectDenied(() =>
+      as(db, user(ids.studentA1), (tx) =>
+        rows(tx, `insert into public.room_sessions (room_id, created_by, type, title)
+          values ($1, $2, 'coop_boss', 'hack')`, [ids.room1, ids.studentA1])
+      )
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe('Bước 8: Phòng chung — room_session_participants', () => {
+  test('thành viên phòng thấy participants', async () => {
+    const r = await as(db, user(ids.studentA2), (tx) =>
+      rows<{ user_id: string }>(tx, 'select user_id from public.room_session_participants')
+    );
+    expect(r.map((x) => x.user_id)).toContain(ids.studentA1);
+  });
+
+  test('phòng khác không thấy participants', async () => {
+    const r = await as(db, user(ids.studentB1), (tx) =>
+      rows(tx, 'select * from public.room_session_participants')
+    );
+    expect(r).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe('Bước 8: social_settings', () => {
+  test('thành viên phòng thấy social settings', async () => {
+    const r = await as(db, user(ids.studentA1), (tx) =>
+      rows<{ room_id: string }>(tx, 'select room_id from public.social_settings')
+    );
+    expect(r.map((x) => x.room_id)).toContain(ids.room1);
+  });
+
+  test('phòng khác không thấy social settings', async () => {
+    const r = await as(db, user(ids.studentB1), (tx) =>
+      rows(tx, 'select * from public.social_settings')
+    );
+    expect(r).toEqual([]);
+  });
+
+  test('tắt xã hội = ẩn (GV cập nhật qua server)', async () => {
+    await expectDenied(() =>
+      as(db, user(ids.studentA1), (tx) =>
+        rows(tx, `update public.social_settings set social_enabled = false where room_id = $1`, [ids.room1])
+      )
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe('Bước 8: student_reports', () => {
+  test('người báo cáo thấy báo cáo mình', async () => {
+    const r = await as(db, user(ids.studentA1), (tx) =>
+      rows<{ id: string }>(tx, 'select id from public.student_reports')
+    );
+    expect(r.map((x) => x.id)).toContain(ids.studentReport1);
+  });
+
+  test('giáo viên phòng thấy báo cáo', async () => {
+    const r = await as(db, user(ids.teacher1), (tx) =>
+      rows<{ id: string }>(tx, 'select id from public.student_reports')
+    );
+    expect(r.map((x) => x.id)).toContain(ids.studentReport1);
+  });
+
+  test('người bị báo cáo không thấy', async () => {
+    const r = await as(db, user(ids.studentA2), (tx) =>
+      rows(tx, 'select * from public.student_reports')
+    );
+    expect(r).toEqual([]);
+  });
+
+  test('phòng khác không thấy báo cáo', async () => {
+    const r = await as(db, user(ids.studentB1), (tx) =>
+      rows(tx, 'select * from public.student_reports')
+    );
+    expect(r).toEqual([]);
+  });
+
+  test('authenticated không INSERT student_reports', async () => {
+    await expectDenied(() =>
+      as(db, user(ids.studentA1), (tx) =>
+        rows(tx, `insert into public.student_reports (room_id, reporter_id, reported_id, reason)
+          values ($1, $2, $3, 'test')`, [ids.room1, ids.studentA1, ids.studentA2])
       )
     );
   });
