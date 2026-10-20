@@ -39,8 +39,6 @@ export function BuildingRoute({ id }: { id: BuildingId }) {
       return (
         <QuizArcadeModal
           onClose={game.closeBuilding}
-          onFinishQuiz={game.finishQuiz}
-          onRecordMistake={game.recordMistake}
         />
       );
     case 'review_station':
@@ -57,7 +55,6 @@ export function BuildingRoute({ id }: { id: BuildingId }) {
       return (
         <AchievementPlazaModal
           character={game.character}
-          progress={game.progress}
           onClose={game.closeBuilding}
           onOpenCustomizer={() => game.setEditingCharacter(true)}
         />

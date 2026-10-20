@@ -10,6 +10,7 @@ import { CharacterSelection } from '@/components/character/CharacterSelection';
 import { useStudentGame } from '@/components/student/StudentGameProvider';
 import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
 import { STUDENT_HOME } from '@/lib/student-routes';
+import { BreakReminder } from '@/components/ui/BreakReminder';
 
 // Engine bản đồ nặng (~2.700 dòng canvas) → tải lười, chỉ chạy trên trình duyệt
 const CityMapCanvas = dynamic(
@@ -88,6 +89,8 @@ export function CityShell({ children }: { children: React.ReactNode }) {
               onConfirm={game.confirmCharacter}
             />
           )}
+
+          <BreakReminder />
 
           {game.isEditingCharacter && (
             <CharacterSelection

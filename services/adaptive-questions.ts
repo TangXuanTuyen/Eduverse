@@ -184,57 +184,57 @@ export async function gradeAnswer(
   const explanation = question?.explanation ?? '';
   const correct = qa.correct_answer;
 
-  let isCorrect = false;
+  const isCorrect = compareAnswers(question?.type ?? '', studentAnswer, correct);
 
-  switch (question?.type) {
+  return { isCorrect, explanation };
+}
+
+export function compareAnswers(type: string, studentAnswer: unknown, correct: unknown): boolean {
+  switch (type) {
     case 'single_choice':
-      isCorrect = studentAnswer === correct;
-      break;
+      return studentAnswer === correct;
     case 'multiple_choice':
       if (Array.isArray(studentAnswer) && Array.isArray(correct)) {
         const sa = [...studentAnswer].sort();
         const ca = [...(correct as string[])].sort();
-        isCorrect = sa.length === ca.length && sa.every((v, i) => v === ca[i]);
+        return sa.length === ca.length && sa.every((v, i) => v === ca[i]);
       }
-      break;
+      return false;
     case 'short_answer':
       if (Array.isArray(correct)) {
         const ans = String(studentAnswer).trim().toLowerCase();
-        isCorrect = (correct as string[]).some(
-          (c) => c.trim().toLowerCase() === ans,
-        );
+        return (correct as string[]).some((c) => c.trim().toLowerCase() === ans);
       }
-      break;
+      return false;
     case 'ordering':
       if (Array.isArray(studentAnswer) && Array.isArray(correct)) {
-        isCorrect =
+        return (
           studentAnswer.length === (correct as string[]).length &&
-          (studentAnswer as string[]).every((v, i) => v === (correct as string[])[i]);
+          (studentAnswer as string[]).every((v, i) => v === (correct as string[])[i])
+        );
       }
-      break;
+      return false;
     case 'matching':
       if (typeof studentAnswer === 'object' && typeof correct === 'object' && studentAnswer && correct) {
         const sa = studentAnswer as Record<string, string>;
         const ca = correct as Record<string, string>;
         const keys = Object.keys(ca);
-        isCorrect = keys.length === Object.keys(sa).length && keys.every((k) => sa[k] === ca[k]);
+        return keys.length === Object.keys(sa).length && keys.every((k) => sa[k] === ca[k]);
       }
-      break;
+      return false;
     case 'classification':
       if (typeof studentAnswer === 'object' && typeof correct === 'object' && studentAnswer && correct) {
         const sa = studentAnswer as Record<string, string[]>;
         const ca = correct as Record<string, string[]>;
         const keys = Object.keys(ca);
-        isCorrect = keys.length === Object.keys(sa).length && keys.every((k) => {
+        return keys.length === Object.keys(sa).length && keys.every((k) => {
           const sSet = new Set(sa[k] ?? []);
           const cSet = new Set(ca[k] ?? []);
           return sSet.size === cSet.size && [...cSet].every((v) => sSet.has(v));
         });
       }
-      break;
+      return false;
     default:
-      isCorrect = JSON.stringify(studentAnswer) === JSON.stringify(correct);
+      return JSON.stringify(studentAnswer) === JSON.stringify(correct);
   }
-
-  return { isCorrect, explanation };
 }

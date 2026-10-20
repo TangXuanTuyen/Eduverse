@@ -12,5 +12,17 @@ export async function GET() {
     getStudentBadges(profile.id),
   ]);
 
-  return NextResponse.json({ ...summary, badges });
+  return NextResponse.json({
+    xp: {
+      totalXp: summary.totalXp,
+      level: summary.level,
+      xpToday: summary.xpToday,
+      dailyCap: summary.dailyCap,
+      xpThisWeek: summary.xpThisWeek,
+      xpLastWeek: summary.xpLastWeek,
+      currentStreak: summary.dailyStreak,
+      longestStreak: summary.dailyStreak,
+    },
+    badges,
+  });
 }
