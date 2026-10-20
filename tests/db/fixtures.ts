@@ -15,6 +15,16 @@ export const ids = {
   parentApproved: '00000000-0000-4000-8000-000000000041',
   parentPending: '00000000-0000-4000-8000-000000000042',
   noRole: '00000000-0000-4000-8000-000000000051',
+  // Bước 3: câu hỏi, bài giao
+  question1: '00000000-0000-4000-d000-000000000001', // single_choice
+  question2: '00000000-0000-4000-d000-000000000002', // essay
+  question3: '00000000-0000-4000-d000-000000000003', // teacher2's question
+  assignment1: '00000000-0000-4000-d000-000000000011', // room1
+  assignment2: '00000000-0000-4000-d000-000000000012', // room2
+  aq1: '00000000-0000-4000-d000-000000000021', // assignment_question for q1
+  aq2: '00000000-0000-4000-d000-000000000022', // assignment_question for q2
+  submission1: '00000000-0000-4000-d000-000000000031', // studentA1 draft
+  attempt1: '00000000-0000-4000-d000-000000000041', // question_attempt
 } as const;
 
 type ProfileSeed = {
@@ -78,5 +88,84 @@ export async function seedFixtures(db: PGlite) {
   await db.query(
     `insert into public.parent_links (parent_id, student_id, status) values ($1, $2, 'approved'), ($3, $4, 'pending')`,
     [ids.parentApproved, ids.studentA1, ids.parentPending, ids.studentA2]
+  );
+
+  // --- Bước 3: Câu hỏi, bài giao ---
+
+  // Câu hỏi teacher1: trắc nghiệm + tự luận
+  await db.query(
+    `insert into public.questions (id, owner_id, type, content, options, skill_tags, difficulty)
+     values ($1, $2, 'single_choice', 'Đơn vị đo lực là gì?',
+       '[{"id":"a","text":"Newton"},{"id":"b","text":"Joule"},{"id":"c","text":"Watt"}]',
+       '{luc,co-hoc}', 1)`,
+    [ids.question1, ids.teacher1]
+  );
+  await db.query(
+    `insert into public.question_answers (question_id, correct_answer) values ($1, '"a"')`,
+    [ids.question1]
+  );
+
+  await db.query(
+    `insert into public.questions (id, owner_id, type, content, difficulty)
+     values ($1, $2, 'essay', 'Giải thích tại sao lá cây có màu xanh.', 2)`,
+    [ids.question2, ids.teacher1]
+  );
+  await db.query(
+    `insert into public.question_answers (question_id, correct_answer) values ($1, null)`,
+    [ids.question2]
+  );
+
+  // Câu hỏi teacher2
+  await db.query(
+    `insert into public.questions (id, owner_id, type, content, options, difficulty)
+     values ($1, $2, 'single_choice', 'H2O là công thức của gì?',
+       '[{"id":"a","text":"Nước"},{"id":"b","text":"Muối"}]', 1)`,
+    [ids.question3, ids.teacher2]
+  );
+  await db.query(
+    `insert into public.question_answers (question_id, correct_answer) values ($1, '"a"')`,
+    [ids.question3]
+  );
+
+  // Assignment trong room1 (teacher1)
+  await db.query(
+    `insert into public.assignments (id, room_id, title, created_by, due_at)
+     values ($1, $2, 'Kiểm tra Cơ học', $3, now() + interval '7 days')`,
+    [ids.assignment1, ids.room1, ids.teacher1]
+  );
+
+  // Assignment trong room2 (teacher2)
+  await db.query(
+    `insert into public.assignments (id, room_id, title, created_by)
+     values ($1, $2, 'Kiểm tra Hóa học', $3)`,
+    [ids.assignment2, ids.room2, ids.teacher2]
+  );
+
+  // Snapshot câu hỏi vào bài giao 1
+  await db.query(
+    `insert into public.assignment_questions (id, assignment_id, source_question_id, sort_order, type, content, options, correct_answer, explanation, points)
+     values ($1, $2, $3, 0, 'single_choice', 'Đơn vị đo lực là gì?',
+       '[{"id":"a","text":"Newton"},{"id":"b","text":"Joule"},{"id":"c","text":"Watt"}]',
+       '"a"', '', 2)`,
+    [ids.aq1, ids.assignment1, ids.question1]
+  );
+  await db.query(
+    `insert into public.assignment_questions (id, assignment_id, source_question_id, sort_order, type, content, correct_answer, explanation, points)
+     values ($1, $2, $3, 1, 'essay', 'Giải thích tại sao lá cây có màu xanh.', null, '', 3)`,
+    [ids.aq2, ids.assignment1, ids.question2]
+  );
+
+  // Submission nháp của studentA1
+  await db.query(
+    `insert into public.submissions (id, assignment_id, student_id, status)
+     values ($1, $2, $3, 'draft')`,
+    [ids.submission1, ids.assignment1, ids.studentA1]
+  );
+
+  // Một câu trả lời nháp
+  await db.query(
+    `insert into public.question_attempts (id, submission_id, assignment_question_id, student_answer)
+     values ($1, $2, $3, '"a"')`,
+    [ids.attempt1, ids.submission1, ids.aq1]
   );
 }

@@ -14,7 +14,11 @@ beforeAll(async () => {
   await seedFixtures(db);
 }, 120_000);
 
-const TABLES = ['profiles', 'rooms', 'room_members', 'parent_links', 'notifications', 'login_attempts'];
+const TABLES = [
+  'profiles', 'rooms', 'room_members', 'parent_links', 'notifications', 'login_attempts',
+  'questions', 'question_answers', 'assignments', 'assignment_questions',
+  'submissions', 'question_attempts',
+];
 
 async function rows<T = Record<string, unknown>>(tx: Transaction, sql: string, params: unknown[] = []) {
   return (await tx.query<T>(sql, params)).rows;
@@ -245,6 +249,128 @@ describe('Tài khoản chưa có vai trò', () => {
   test('không thấy phòng nào', async () => {
     const r = await as(db, user(ids.noRole), (tx) => rows(tx, 'select * from public.rooms'));
     expect(r).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe('Đáp án: học sinh không đọc được', () => {
+  test('question_answers: permission denied', async () => {
+    await expectDenied(() =>
+      as(db, user(ids.studentA1), (tx) => rows(tx, 'select * from public.question_answers'))
+    );
+  });
+
+  test('assignment_questions: permission denied (phải dùng function)', async () => {
+    await expectDenied(() =>
+      as(db, user(ids.studentA1), (tx) => rows(tx, 'select * from public.assignment_questions'))
+    );
+  });
+
+  test('get_assignment_questions_student trả về không có correct_answer', async () => {
+    const r = await as(db, user(ids.studentA1), (tx) =>
+      rows(tx, 'select * from public.get_assignment_questions_student($1)', [ids.assignment1])
+    );
+    expect(r.length).toBe(2);
+    for (const q of r) {
+      expect(q).not.toHaveProperty('correct_answer');
+    }
+  });
+
+  test('get_assignment_questions_student: HS không thấy bài phòng khác', async () => {
+    const r = await as(db, user(ids.studentA1), (tx) =>
+      rows(tx, 'select * from public.get_assignment_questions_student($1)', [ids.assignment2])
+    );
+    expect(r).toEqual([]);
+  });
+
+  test('get_assignment_questions_teacher: GV thấy correct_answer', async () => {
+    const r = await as(db, user(ids.teacher1), (tx) =>
+      rows(tx, 'select * from public.get_assignment_questions_teacher($1)', [ids.assignment1])
+    );
+    expect(r.length).toBe(2);
+    expect(r[0]).toHaveProperty('correct_answer');
+  });
+
+  test('get_assignment_questions_teacher: GV không thấy bài phòng khác', async () => {
+    const r = await as(db, user(ids.teacher1), (tx) =>
+      rows(tx, 'select * from public.get_assignment_questions_teacher($1)', [ids.assignment2])
+    );
+    expect(r).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe('Câu hỏi và bài giao: phân quyền', () => {
+  test('GV chỉ thấy câu hỏi mình tạo', async () => {
+    const r = await as(db, user(ids.teacher1), (tx) =>
+      rows<{ id: string }>(tx, 'select id from public.questions')
+    );
+    const qIds = r.map((x) => x.id);
+    expect(qIds).toContain(ids.question1);
+    expect(qIds).toContain(ids.question2);
+    expect(qIds).not.toContain(ids.question3);
+  });
+
+  test('HS không thấy câu hỏi nào trong ngân hàng', async () => {
+    const r = await as(db, user(ids.studentA1), (tx) =>
+      rows(tx, 'select * from public.questions')
+    );
+    expect(r).toEqual([]);
+  });
+
+  test('HS thấy bài giao phòng mình, không thấy phòng khác', async () => {
+    const r = await as(db, user(ids.studentA1), (tx) =>
+      rows<{ id: string }>(tx, 'select id from public.assignments')
+    );
+    expect(r.map((x) => x.id)).toEqual([ids.assignment1]);
+  });
+
+  test('HS thấy submission mình, không thấy của bạn', async () => {
+    const r = await as(db, user(ids.studentA1), (tx) =>
+      rows<{ id: string }>(tx, 'select id from public.submissions')
+    );
+    expect(r.map((x) => x.id)).toEqual([ids.submission1]);
+
+    const r2 = await as(db, user(ids.studentA2), (tx) =>
+      rows(tx, 'select * from public.submissions')
+    );
+    expect(r2).toEqual([]);
+  });
+
+  test('GV thấy submissions phòng mình', async () => {
+    const r = await as(db, user(ids.teacher1), (tx) =>
+      rows<{ id: string }>(tx, 'select id from public.submissions')
+    );
+    expect(r.map((x) => x.id)).toContain(ids.submission1);
+  });
+
+  test('GV không thấy submissions phòng khác', async () => {
+    const r = await as(db, user(ids.teacher2), (tx) =>
+      rows<{ student_id: string }>(tx, `select student_id from public.submissions
+        where assignment_id = $1`, [ids.assignment1])
+    );
+    expect(r).toEqual([]);
+  });
+
+  test('HS thấy question_attempts mình', async () => {
+    const r = await as(db, user(ids.studentA1), (tx) =>
+      rows<{ id: string }>(tx, 'select id from public.question_attempts')
+    );
+    expect(r.map((x) => x.id)).toEqual([ids.attempt1]);
+  });
+
+  test('HS không INSERT/UPDATE bảng bài giao', async () => {
+    await expectDenied(() =>
+      as(db, user(ids.studentA1), (tx) =>
+        rows(tx, `insert into public.submissions (assignment_id, student_id) values ($1, $2)`,
+          [ids.assignment1, ids.studentA1])
+      )
+    );
+    await expectDenied(() =>
+      as(db, user(ids.studentA1), (tx) =>
+        rows(tx, `update public.submissions set total_score = 100 where id = $1`, [ids.submission1])
+      )
+    );
   });
 });
 
