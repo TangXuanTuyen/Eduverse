@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { publicEnv } from '@/lib/env';
 
-const PROTECTED_PREFIXES = ['/student', '/teacher', '/parent', '/school-admin', '/admin', '/doi-mat-khau'];
+const PROTECTED_PREFIXES = ['/student', '/teacher', '/parent', '/onboarding'];
 
 /**
  * Làm mới phiên Supabase ở mỗi request và chặn sớm người chưa đăng nhập.

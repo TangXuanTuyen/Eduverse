@@ -17,7 +17,7 @@ export default async function ParentHome() {
     <div className="space-y-6">
       <h1 className="text-xl font-bold">Con của tôi</h1>
       {pending > 0 && (
-        <EmptyNote>Có {pending} yêu cầu liên kết đang chờ nhà trường duyệt.</EmptyNote>
+        <EmptyNote>Có {pending} yêu cầu liên kết đang chờ giáo viên duyệt.</EmptyNote>
       )}
       {kids.length === 0 ? (
         <EmptyNote>Chưa có liên kết nào được duyệt.</EmptyNote>
