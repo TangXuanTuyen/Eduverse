@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getCurrentProfile } from '@/lib/auth/session';
 import { createGame, deleteGame } from '@/services/games';
 import { startSession, advanceQuestion, endSession, submitAnswer, joinSession } from '@/services/game-sessions';
+import { assignGame } from '@/services/game-assignments';
 
 export type GameActionState = { error?: string; success?: string; gameId?: string };
 
@@ -102,6 +103,19 @@ export async function joinSessionAction(joinCode: string) {
     return result;
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Lỗi tham gia' };
+  }
+}
+
+export async function assignGameAction(gameId: string, roomId: string) {
+  const profile = await getCurrentProfile();
+  if (!profile || profile.role !== 'teacher') return { error: 'Không có quyền' };
+
+  try {
+    await assignGame(profile.id, gameId, roomId);
+    revalidatePath('/teacher/games');
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Lỗi giao bài' };
   }
 }
 

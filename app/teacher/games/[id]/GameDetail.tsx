@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { startSessionAction, deleteGameAction } from '../actions';
+import { startSessionAction, deleteGameAction, assignGameAction } from '../actions';
 import type { GameRow, GameQuestionRow } from '@/services/games';
 
 const MODE_LABELS: Record<string, string> = { tu_luyen: 'Tự luyện', thi_dau: 'Thi đấu' };
@@ -12,10 +12,26 @@ type Props = {
   questions: Omit<GameQuestionRow, 'correct_answer'>[];
 };
 
+type Room = { id: string; name: string };
+
 export function GameDetail({ game, questions }: Props) {
   const router = useRouter();
   const [starting, setStarting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showAssign, setShowAssign] = useState(false);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [selectedRoom, setSelectedRoom] = useState('');
+  const [assigning, setAssigning] = useState(false);
+  const [assignMsg, setAssignMsg] = useState('');
+
+  useEffect(() => {
+    if (showAssign && rooms.length === 0) {
+      fetch('/api/teacher/rooms')
+        .then((r) => r.json())
+        .then((d) => setRooms(Array.isArray(d) ? d : []))
+        .catch(() => {});
+    }
+  }, [showAssign, rooms.length]);
 
   async function handleStart() {
     setStarting(true);
@@ -55,6 +71,12 @@ export function GameDetail({ game, questions }: Props) {
             {starting ? 'Đang tạo phiên...' : 'Bắt đầu chơi'}
           </button>
           <button
+            onClick={() => setShowAssign(!showAssign)}
+            className="rounded-lg bg-purple-600 hover:bg-purple-500 px-4 py-2 text-sm font-medium text-white min-h-[44px]"
+          >
+            Giao bài tập
+          </button>
+          <button
             onClick={handleDelete}
             disabled={deleting}
             className="rounded-lg bg-red-700 hover:bg-red-600 px-4 py-2 text-sm text-white disabled:opacity-50 min-h-[44px]"
@@ -71,6 +93,54 @@ export function GameDetail({ game, questions }: Props) {
         {game.shuffle_questions && <span className="text-cyan-400">Trộn đề</span>}
         {game.level_progression && <span className="text-yellow-400">Vượt ải</span>}
       </div>
+
+      {showAssign && (
+        <div className="bg-slate-900 border border-purple-500/30 rounded-xl p-4 space-y-3">
+          <h3 className="text-sm font-bold text-purple-300">Giao cho lớp tự luyện</h3>
+          <select
+            value={selectedRoom}
+            onChange={(e) => setSelectedRoom(e.target.value)}
+            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white min-h-[44px]"
+          >
+            <option value="">Chọn lớp...</option>
+            {rooms.map((r) => (
+              <option key={r.id} value={r.id}>{r.name}</option>
+            ))}
+          </select>
+          <div className="flex gap-2">
+            <button
+              onClick={async () => {
+                if (!selectedRoom) return;
+                setAssigning(true);
+                setAssignMsg('');
+                const result = await assignGameAction(game.id, selectedRoom);
+                setAssigning(false);
+                if ('error' in result && result.error) {
+                  setAssignMsg(result.error);
+                } else {
+                  setAssignMsg('Đã giao!');
+                  setSelectedRoom('');
+                }
+              }}
+              disabled={!selectedRoom || assigning}
+              className="rounded-lg bg-purple-600 hover:bg-purple-500 px-4 py-2 text-sm text-white disabled:opacity-50 min-h-[44px]"
+            >
+              {assigning ? '...' : 'Giao'}
+            </button>
+            <button
+              onClick={() => { setShowAssign(false); setAssignMsg(''); }}
+              className="rounded-lg bg-slate-800 px-4 py-2 text-sm text-slate-400 min-h-[44px]"
+            >
+              Hủy
+            </button>
+          </div>
+          {assignMsg && (
+            <p className={`text-xs ${assignMsg.startsWith('Đ') ? 'text-green-400' : 'text-red-400'}`}>
+              {assignMsg}
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="space-y-2">
         <h2 className="text-sm font-medium text-slate-300">{questions.length} câu hỏi</h2>

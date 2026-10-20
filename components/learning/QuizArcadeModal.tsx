@@ -10,6 +10,7 @@ import { QuizQuestion } from '@/types/game';
 import { sound } from '@/lib/audio';
 import { Zap, Clock, Trophy, Flame, RotateCcw, X, ArrowRight, ArrowLeft } from 'lucide-react';
 import { GameJoinSection } from './GameJoinSection';
+import { GameAssignmentList } from './GameAssignmentList';
 import { RoomInteriorScene } from './RoomInteriorScene';
 import { DialogFrame } from '@/components/ui/DialogFrame';
 import { AnswerMark } from '@/components/ui/AnswerMark';
@@ -207,9 +208,10 @@ export const QuizArcadeModal: React.FC<QuizArcadeModalProps> = ({
         {/* 2D PIXEL-ART ARCADE HALL INTERIOR SCENE */}
         <RoomInteriorScene roomId="quiz_arcade" />
 
-        {/* JOIN LIVE GAME */}
-        <div className="px-6 py-3">
+        {/* JOIN LIVE GAME + ASSIGNED GAMES */}
+        <div className="px-6 py-3 space-y-3">
           <GameJoinSection />
+          <GameAssignmentList />
         </div>
 
         {/* STATUS HUD (SCORE, TIMER, COMBO) */}
