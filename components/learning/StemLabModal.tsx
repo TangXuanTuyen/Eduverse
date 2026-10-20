@@ -5,11 +5,25 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { sound } from '@/lib/audio';
-import { FlaskConical, Zap, Eye, CheckCircle2, X, Sparkles, Award, ArrowLeft } from 'lucide-react';
+import { FlaskConical, Zap, Eye, CheckCircle2, X, Sparkles, Award, ArrowLeft, Clock } from 'lucide-react';
 import { RoomInteriorScene } from './RoomInteriorScene';
 import { DialogFrame } from '@/components/ui/DialogFrame';
+import { ExperimentViewer } from './ExperimentViewer';
+
+type DynamicExperiment = {
+  id: string;
+  title: string;
+  description: string;
+  subject: string;
+  grade_level: number;
+  thumbnail_url: string | null;
+  embed_url: string | null;
+  component_key: string | null;
+  duration_minutes: number;
+  difficulty: number;
+};
 
 interface StemLabModalProps {
   onClose: () => void;
@@ -21,6 +35,19 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
   onCompleteExperiment,
 }) => {
   const [activeTab, setActiveTab] = useState<'litmus' | 'circuit' | 'microscope'>('litmus');
+  const [dynamicExperiments, setDynamicExperiments] = useState<DynamicExperiment[]>([]);
+  const [viewingExperimentId, setViewingExperimentId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/experiments')
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setDynamicExperiments(data.filter((e: DynamicExperiment) => !e.component_key));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // LITMUS SIMULATION STATE
   const [selectedSolution, setSelectedSolution] = useState<string | null>(null);
@@ -163,6 +190,37 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
           ]}
           npcDialogue="STEM-E: 'Chào bạn! Nhấp trực tiếp vào Bàn Hóa Học, Bàn Mạch Điện hoặc Kính Hiển Vi để bắt đầu nghiên cứu nhé!'"
         />
+
+        {/* DYNAMIC EXPERIMENTS FROM DATABASE */}
+        {dynamicExperiments.length > 0 && (
+          <div className="px-6 py-3 bg-slate-950/40 border-b border-slate-800">
+            <h3 className="text-xs font-bold text-cyan-400 mb-2 flex items-center gap-1.5">
+              <FlaskConical size={14} /> Thí nghiệm ảo
+            </h3>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {dynamicExperiments.map((exp) => (
+                <button
+                  key={exp.id}
+                  onClick={() => { sound.playClick(); setViewingExperimentId(exp.id); }}
+                  className="shrink-0 w-36 bg-slate-800/80 border border-slate-700 rounded-lg p-2 text-left hover:border-cyan-500/30 transition min-h-[44px]"
+                >
+                  <p className="text-[11px] font-medium text-white truncate">{exp.title}</p>
+                  <div className="flex items-center gap-1 mt-1 text-[9px] text-slate-400">
+                    <Clock size={9} /> {exp.duration_minutes}p
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Experiment Viewer overlay */}
+        {viewingExperimentId && (
+          <ExperimentViewer
+            experimentId={viewingExperimentId}
+            onClose={() => setViewingExperimentId(null)}
+          />
+        )}
 
         {/* RESEARCH MISSIONS & REWARD PROGRESS BOARD */}
         <div className="bg-slate-950/60 border-b border-slate-800 px-6 py-3 flex flex-wrap items-center justify-between gap-3">

@@ -2,11 +2,16 @@ import Link from 'next/link';
 import { SignOutButton } from '@/components/auth/SignOutButton';
 import { ROLE_LABEL, type AppRole } from '@/lib/auth/roles';
 
+const ADMIN_NAV = [
+  { href: '/admin/experiments', label: 'Thí nghiệm' },
+];
+
 const TEACHER_NAV = [
   { href: '/teacher/rooms', label: 'Phòng học' },
   { href: '/teacher/questions', label: 'Ngân hàng câu hỏi' },
   { href: '/teacher/assignments', label: 'Bài giao' },
   { href: '/teacher/games', label: 'Xưởng trò chơi' },
+  { href: '/teacher/labs', label: 'Thí nghiệm' },
   { href: '/teacher/grading', label: 'Chấm bài' },
   { href: '/teacher/dashboard', label: 'Báo cáo' },
 ];
@@ -33,6 +38,19 @@ export function RoleShell({
           </div>
           <SignOutButton />
         </div>
+        {role === 'admin' && (
+          <nav className="max-w-5xl mx-auto px-4 flex gap-1 pt-2">
+            {ADMIN_NAV.map((n) => (
+              <Link
+                key={n.href}
+                href={n.href}
+                className="px-3 py-2 text-xs text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg min-h-[44px] flex items-center"
+              >
+                {n.label}
+              </Link>
+            ))}
+          </nav>
+        )}
         {role === 'teacher' && (
           <nav className="max-w-5xl mx-auto px-4 flex gap-1 pt-2">
             {TEACHER_NAV.map((n) => (
