@@ -46,9 +46,7 @@ export function BuildingRoute({ id }: { id: BuildingId }) {
     case 'review_station':
       return (
         <ReviewStationModal
-          mistakes={game.progress.mistakes}
           onClose={game.closeBuilding}
-          onResolveMistake={game.resolveMistake}
         />
       );
     case 'stem_lab':

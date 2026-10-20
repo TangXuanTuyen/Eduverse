@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createAdminClient } from '@/lib/supabase/admin';
+import { addToReviewQueue } from '@/services/review-queue';
 
 export type GameSessionRow = {
   id: string;
@@ -258,7 +259,7 @@ export async function submitAnswer(
   // Get question with correct_answer
   const { data: question } = await admin
     .from('game_questions')
-    .select('id, type, correct_answer, points')
+    .select('id, type, correct_answer, points, source_question_id')
     .eq('id', questionId)
     .single();
   if (!question) throw new Error('Câu hỏi không tồn tại');
@@ -315,6 +316,11 @@ export async function submitAnswer(
     time_ms: timeMs,
     score,
   });
+
+  // Add wrong answers to review queue for spaced repetition
+  if (!isCorrect && question.source_question_id) {
+    addToReviewQueue(userId, question.source_question_id, sessionId).catch(() => {});
+  }
 
   // Update player score + streak
   const newStreak = isCorrect ? player.current_streak + 1 : 0;
