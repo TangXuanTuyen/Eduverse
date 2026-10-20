@@ -21,20 +21,22 @@ export async function generateQuestionsAction(
   const subject = formData.get('subject') as string;
   const grade = Number(formData.get('grade')) || 6;
   const topic = (formData.get('topic') as string)?.trim();
-  const type = (formData.get('type') as string) || 'single_choice';
-  const difficulty = Number(formData.get('difficulty')) || 1;
+  const types = formData.getAll('types') as string[];
+  const difficulties = formData.getAll('difficulties').map(Number).filter((d) => d >= 1 && d <= 3);
   const count = Math.min(Math.max(Number(formData.get('count')) || 5, 1), 20);
 
   if (!topic) return { error: 'Nhập chủ đề bài học' };
   if (!subject) return { error: 'Chọn môn học' };
+  if (types.length === 0) return { error: 'Chọn ít nhất một loại câu hỏi' };
+  if (difficulties.length === 0) return { error: 'Chọn ít nhất một độ khó' };
 
   try {
     const questions = await generateQuestions({
       subject,
       grade,
       topic,
-      type: type as GenerateParams['type'],
-      difficulty,
+      types: types as GenerateParams['types'],
+      difficulties,
       count,
     });
     return { questions };
