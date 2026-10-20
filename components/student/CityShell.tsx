@@ -15,6 +15,11 @@ import { useBuildingNotifications } from '@/lib/hooks/useBuildingNotifications';
 import { STUDENT_HOME } from '@/lib/student-routes';
 import { BreakReminder } from '@/components/ui/BreakReminder';
 
+const AoDaiCompanion = dynamic(
+  () => import('@/components/companion/AoDaiCompanion').then((m) => m.AoDaiCompanion),
+  { ssr: false }
+);
+
 // Engine bản đồ nặng (~2.700 dòng canvas) → tải lười, chỉ chạy trên trình duyệt
 const CityMapCanvas = dynamic(
   () => import('@/components/city/CityMapCanvas').then((m) => m.CityMapCanvas),
@@ -109,6 +114,7 @@ export function CityShell({ children }: { children: React.ReactNode }) {
           )}
 
           <BreakReminder />
+          <AoDaiCompanion />
 
           {game.isEditingCharacter && (
             <CharacterSelection

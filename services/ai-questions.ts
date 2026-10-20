@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { GoogleGenAI } from '@google/genai';
+import { getAIProvider } from '@/lib/ai/provider';
 import type { CreateQuestionData, QuestionType } from '@/services/questions';
 
 const SUBJECTS: Record<string, string> = {
@@ -43,10 +43,7 @@ export type GenerateParams = {
 };
 
 export async function generateQuestions(params: GenerateParams): Promise<CreateQuestionData[]> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error('Chưa cấu hình GEMINI_API_KEY trong .env.local');
-
-  const ai = new GoogleGenAI({ apiKey });
+  const provider = getAIProvider();
 
   const subjectName = SUBJECTS[params.subject] ?? params.subject;
   const gradeName = GRADE_LABELS[params.grade] ?? `lớp ${params.grade}`;
@@ -86,12 +83,13 @@ Trả về JSON array, mỗi phần tử có dạng:
 
 CHỈ trả về JSON array, không có text khác.`;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3.8-flash',
-    contents: prompt,
+  const response = await provider.generateText(prompt, {
+    systemPrompt: 'Bạn là chuyên gia soạn câu hỏi KHTN cho học sinh Việt Nam. CHỈ trả về JSON array.',
+    maxTokens: 4096,
+    temperature: 0.8,
   });
 
-  const text = response.text ?? '';
+  const text = response.text;
 
   const jsonMatch = text.match(/\[[\s\S]*\]/);
   if (!jsonMatch) throw new Error('AI không trả về định dạng hợp lệ');
