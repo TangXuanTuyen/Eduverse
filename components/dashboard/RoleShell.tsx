@@ -4,6 +4,7 @@ import { ROLE_LABEL, type AppRole } from '@/lib/auth/roles';
 
 const ADMIN_NAV = [
   { href: '/admin/experiments', label: 'Thí nghiệm' },
+  { href: '/admin/models', label: 'Mô hình 3D' },
 ];
 
 const TEACHER_NAV = [
@@ -12,6 +13,7 @@ const TEACHER_NAV = [
   { href: '/teacher/assignments', label: 'Bài giao' },
   { href: '/teacher/games', label: 'Xưởng trò chơi' },
   { href: '/teacher/labs', label: 'Thí nghiệm' },
+  { href: '/teacher/models', label: 'Mô hình 3D' },
   { href: '/teacher/grading', label: 'Chấm bài' },
   { href: '/teacher/dashboard', label: 'Báo cáo' },
 ];

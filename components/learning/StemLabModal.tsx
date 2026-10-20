@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { sound } from '@/lib/audio';
-import { FlaskConical, Zap, Eye, CheckCircle2, X, Sparkles, Award, ArrowLeft, Clock } from 'lucide-react';
+import { FlaskConical, Zap, Eye, CheckCircle2, X, Sparkles, Award, ArrowLeft, Clock, Box } from 'lucide-react';
 import { RoomInteriorScene } from './RoomInteriorScene';
 import { DialogFrame } from '@/components/ui/DialogFrame';
 import { ExperimentViewer } from './ExperimentViewer';
@@ -37,6 +37,8 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
   const [activeTab, setActiveTab] = useState<'litmus' | 'circuit' | 'microscope'>('litmus');
   const [dynamicExperiments, setDynamicExperiments] = useState<DynamicExperiment[]>([]);
   const [viewingExperimentId, setViewingExperimentId] = useState<string | null>(null);
+  const [models3d, setModels3d] = useState<{ id: string; title: string; embed_url: string; thumbnail_url: string | null }[]>([]);
+  const [viewing3dModelId, setViewing3dModelId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/experiments')
@@ -46,6 +48,10 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
           setDynamicExperiments(data.filter((e: DynamicExperiment) => !e.component_key));
         }
       })
+      .catch(() => {});
+    fetch('/api/models')
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setModels3d(data); })
       .catch(() => {});
   }, []);
 
@@ -214,6 +220,31 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
           </div>
         )}
 
+        {/* 3D MODELS FROM DATABASE */}
+        {models3d.length > 0 && (
+          <div className="px-6 py-3 bg-slate-950/40 border-b border-slate-800">
+            <h3 className="text-xs font-bold text-purple-400 mb-2 flex items-center gap-1.5">
+              <Box size={14} /> Mô hình 3D
+            </h3>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {models3d.map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => {
+                    sound.playClick();
+                    setViewing3dModelId(m.id);
+                    fetch(`/api/models/${m.id}/view`, { method: 'POST' }).catch(() => {});
+                  }}
+                  className="shrink-0 w-36 bg-slate-800/80 border border-slate-700 rounded-lg p-2 text-left hover:border-purple-500/30 transition min-h-[44px]"
+                >
+                  <p className="text-[11px] font-medium text-white truncate">{m.title}</p>
+                  <p className="text-[9px] text-purple-400 mt-0.5">Xoay & khám phá</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Experiment Viewer overlay */}
         {viewingExperimentId && (
           <ExperimentViewer
@@ -221,6 +252,33 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
             onClose={() => setViewingExperimentId(null)}
           />
         )}
+
+        {/* 3D Model Viewer overlay */}
+        {viewing3dModelId && (() => {
+          const model = models3d.find((m) => m.id === viewing3dModelId);
+          if (!model) return null;
+          return (
+            <div className="fixed inset-0 z-50 flex flex-col bg-slate-950">
+              <div className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 shrink-0">
+                <h2 className="text-white font-bold text-sm">{model.title}</h2>
+                <button
+                  onClick={() => setViewing3dModelId(null)}
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex-1">
+                <iframe
+                  src={model.embed_url}
+                  className="w-full h-full border-0"
+                  sandbox="allow-scripts allow-same-origin allow-popups"
+                  title={model.title}
+                />
+              </div>
+            </div>
+          );
+        })()}
 
         {/* RESEARCH MISSIONS & REWARD PROGRESS BOARD */}
         <div className="bg-slate-950/60 border-b border-slate-800 px-6 py-3 flex flex-wrap items-center justify-between gap-3">
