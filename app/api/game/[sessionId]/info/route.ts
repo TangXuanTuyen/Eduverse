@@ -14,7 +14,7 @@ export async function GET(_req: Request, { params }: Params) {
 
   const { data: session } = await admin
     .from('game_sessions')
-    .select('join_code, game_id')
+    .select('join_code, game_id, current_question_index, status')
     .eq('id', sessionId)
     .single();
   if (!session) return NextResponse.json({}, { status: 404 });
@@ -28,6 +28,8 @@ export async function GET(_req: Request, { params }: Params) {
 
   return NextResponse.json({
     joinCode: session.join_code,
+    currentQuestionIndex: session.current_question_index,
+    status: session.status,
     players: players.map((p) => ({ display_name: p.display_name, total_score: p.total_score })),
     totalQuestions: count ?? 0,
   });

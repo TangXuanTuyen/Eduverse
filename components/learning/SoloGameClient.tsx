@@ -198,7 +198,7 @@ export function SoloGameClient({ sessionId, initialQuestion, totalQuestions, tim
         </div>
       )}
 
-      {timeLeft === 0 && !selectedAnswer && phase === 'question' && (
+      {timeLeft === 0 && !selectedAnswer && (
         <div className="text-center space-y-3">
           <p className="text-red-400 font-medium">Hết giờ!</p>
           <button
