@@ -6,6 +6,7 @@ const TEACHER_NAV = [
   { href: '/teacher/rooms', label: 'Phòng học' },
   { href: '/teacher/questions', label: 'Ngân hàng câu hỏi' },
   { href: '/teacher/assignments', label: 'Bài giao' },
+  { href: '/teacher/games', label: 'Xưởng trò chơi' },
   { href: '/teacher/grading', label: 'Chấm bài' },
   { href: '/teacher/dashboard', label: 'Báo cáo' },
 ];
