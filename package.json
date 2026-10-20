@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@google/genai": "^2.30.0",
+    "@google/model-viewer": "^4.4.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
     "exceljs": "^4.4.0",

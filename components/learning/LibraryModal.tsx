@@ -5,12 +5,23 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { sound } from '@/lib/audio';
-import { BookOpen, CheckCircle, Lightbulb, Atom, Dna, X, ArrowRight, ArrowLeft } from 'lucide-react';
+import { BookOpen, CheckCircle, Lightbulb, Atom, Dna, X, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
 import { RoomInteriorScene } from './RoomInteriorScene';
+import { LessonViewer } from './LessonViewer';
 import { DialogFrame } from '@/components/ui/DialogFrame';
 import { AnswerMark } from '@/components/ui/AnswerMark';
+
+type DynamicLesson = {
+  id: string;
+  title: string;
+  description: string;
+  subject: string;
+  grade_level: number;
+  chapter: string;
+  thumbnail_url: string | null;
+};
 
 interface LibraryModalProps {
   onClose: () => void;
@@ -101,6 +112,27 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
+  const [dynamicLessons, setDynamicLessons] = useState<DynamicLesson[]>([]);
+  const [viewingLesson, setViewingLesson] = useState<string | null>(null);
+  const [lessonData, setLessonData] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    fetch('/api/lessons')
+      .then((r) => r.json())
+      .then((d) => setDynamicLessons(Array.isArray(d) ? d : []))
+      .catch(() => {});
+  }, []);
+
+  async function openDynamicLesson(id: string) {
+    setViewingLesson(id);
+    try {
+      const res = await fetch(`/api/lessons/${id}`);
+      const data = await res.json();
+      setLessonData(data);
+    } catch {
+      setViewingLesson(null);
+    }
+  }
 
   const activeLesson = LESSONS.find((l) => l.id === selectedLessonId) || LESSONS[0];
 
@@ -131,6 +163,30 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
 
   return (
     <DialogFrame onClose={onClose} labelledBy="dialog-title-library" className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md">
+      {/* Dynamic lesson viewer overlay */}
+      {viewingLesson && lessonData && (lessonData as { lesson?: unknown }).lesson ? (
+        <div className="fixed inset-0 z-[60] bg-slate-950 overflow-auto">
+          <div className="sticky top-0 z-10 bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-white">Bài học trực quan</h2>
+            <button
+              onClick={() => { setViewingLesson(null); setLessonData(null); }}
+              className="min-h-[44px] px-4 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm text-white"
+            >
+              Đóng
+            </button>
+          </div>
+          <LessonViewer
+            lessonId={((lessonData as { lesson: { id: string } }).lesson).id}
+            title={((lessonData as { lesson: { title: string } }).lesson).title}
+            content={((lessonData as { lesson: { content: unknown } }).lesson).content as never}
+            initialStep={(lessonData as { progress?: { currentStep?: number } }).progress?.currentStep}
+            completedSteps={(lessonData as { progress?: { completedSteps?: number[] } }).progress?.completedSteps}
+            notes={(lessonData as { notes?: Record<number, { prediction: string; observation: string; explanation: string }> }).notes}
+            recommendation={(lessonData as { recommendation?: string }).recommendation}
+          />
+        </div>
+      ) : null}
+
       <div className="w-full max-w-4xl bg-slate-900 border-2 border-sky-500/50 rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden text-slate-100">
         {/* HEADER */}
         <div className="px-6 py-4 bg-gradient-to-r from-sky-950/80 via-slate-900 to-slate-900 border-b border-slate-800 flex items-center justify-between">
@@ -198,6 +254,26 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
           {/* LEFT: LESSON SELECTOR */}
           <div className="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-slate-800 p-4 overflow-y-auto space-y-2 bg-slate-950/60">
+            {dynamicLessons.length > 0 && (
+              <>
+                <div className="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>BÀI HỌC TRỰC QUAN:</span>
+                </div>
+                {dynamicLessons.map((dl) => (
+                  <button
+                    key={dl.id}
+                    onClick={() => openDynamicLesson(dl.id)}
+                    className="w-full text-left p-3 rounded-xl border bg-cyan-950/20 border-cyan-500/30 text-slate-200 hover:bg-cyan-900/30 transition cursor-pointer flex flex-col gap-1"
+                  >
+                    <span className="text-[10px] text-cyan-400 font-bold">{dl.chapter || dl.subject} · Lớp {dl.grade_level}</span>
+                    <span className="font-bold text-xs text-white">{dl.title}</span>
+                    {dl.description && <p className="text-[11px] text-slate-400 line-clamp-1">{dl.description}</p>}
+                  </button>
+                ))}
+                <div className="border-t border-slate-800 my-2" />
+              </>
+            )}
             <div className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center justify-between">
               <span>KỆ SÁCH CHUYÊN ĐỀ KHTN:</span>
               <span className="text-[10px] text-slate-400 font-normal">Nhấp chọn</span>
