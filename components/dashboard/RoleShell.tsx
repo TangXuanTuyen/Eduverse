@@ -6,6 +6,8 @@ const TEACHER_NAV = [
   { href: '/teacher/rooms', label: 'Phòng học' },
   { href: '/teacher/questions', label: 'Ngân hàng câu hỏi' },
   { href: '/teacher/assignments', label: 'Bài giao' },
+  { href: '/teacher/grading', label: 'Chấm bài' },
+  { href: '/teacher/dashboard', label: 'Báo cáo' },
 ];
 
 /** Khung trang cho giáo viên / phụ huynh / quản trị (bản tối giản, sẽ thay bằng shadcn/ui ở bước sau). */
