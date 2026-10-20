@@ -12,14 +12,14 @@ describe('Trang chủ theo vai trò', () => {
 });
 
 describe('isAppRole', () => {
-  test('chấp nhận 3 vai trò hợp lệ', () => {
+  test('chấp nhận các vai trò hợp lệ', () => {
+    expect(isAppRole('admin')).toBe(true);
     expect(isAppRole('teacher')).toBe(true);
     expect(isAppRole('student')).toBe(true);
     expect(isAppRole('parent')).toBe(true);
   });
 
-  test('từ chối vai trò cũ và giá trị sai', () => {
-    expect(isAppRole('admin')).toBe(false);
+  test('từ chối giá trị sai', () => {
     expect(isAppRole('school_admin')).toBe(false);
     expect(isAppRole('')).toBe(false);
     expect(isAppRole(null)).toBe(false);
