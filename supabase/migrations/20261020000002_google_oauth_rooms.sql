@@ -64,6 +64,9 @@ drop type if exists public.class_member_role;
 -- Thêm cột mới
 alter table public.profiles add column avatar_url text;
 
+-- Xóa vai trò cũ không còn dùng
+update public.profiles set role = null where role not in ('teacher', 'student', 'parent');
+
 -- Chặn role cũ (admin, school_admin) — PG không cho xóa giá trị enum,
 -- nên dùng CHECK constraint thay thế
 alter table public.profiles add constraint profiles_role_allowed
