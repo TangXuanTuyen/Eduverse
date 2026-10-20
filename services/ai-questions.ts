@@ -1,6 +1,6 @@
 import 'server-only';
 
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenAI } from '@google/genai';
 import type { CreateQuestionData, QuestionType } from '@/services/questions';
 
 const SUBJECTS: Record<string, string> = {
@@ -34,10 +34,10 @@ export type GenerateParams = {
 };
 
 export async function generateQuestions(params: GenerateParams): Promise<CreateQuestionData[]> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error('Chưa cấu hình ANTHROPIC_API_KEY');
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('Chưa cấu hình GEMINI_API_KEY trong .env.local');
 
-  const client = new Anthropic({ apiKey });
+  const ai = new GoogleGenAI({ apiKey });
 
   const subjectName = SUBJECTS[params.subject] ?? params.subject;
   const gradeName = GRADE_LABELS[params.grade] ?? `lớp ${params.grade}`;
@@ -67,16 +67,12 @@ Trả về JSON array, mỗi phần tử có dạng:
 
 CHỈ trả về JSON array, không có text khác.`;
 
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 4096,
-    messages: [{ role: 'user', content: prompt }],
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.0-flash',
+    contents: prompt,
   });
 
-  const text = response.content
-    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-    .map((b) => b.text)
-    .join('');
+  const text = response.text ?? '';
 
   // Extract JSON array from response
   const jsonMatch = text.match(/\[[\s\S]*\]/);
