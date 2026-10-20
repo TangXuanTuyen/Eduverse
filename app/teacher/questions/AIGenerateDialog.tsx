@@ -37,10 +37,11 @@ type Props = { onClose: () => void };
 export function AIGenerateDialog({ onClose }: Props) {
   const [state, formAction, pending] = useActionState<AIGenerateState, FormData>(generateQuestionsAction, {});
   const [saving, setSaving] = useState(false);
-  const [saveResult, setSaveResult] = useState<{ saved?: number; error?: string } | null>(null);
+  const [saveResult, setSaveResult] = useState<{ saved?: number; error?: string; setName?: string } | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editedQuestions, setEditedQuestions] = useState<CreateQuestionData[]>([]);
+  const [setName, setSetName] = useState('');
 
   const questions = editedQuestions.length > 0 ? editedQuestions : (state.questions ?? []);
 
@@ -64,7 +65,7 @@ export function AIGenerateDialog({ onClose }: Props) {
     const toSave = questions.filter((_, i) => selected.has(i));
     if (toSave.length === 0) return;
     setSaving(true);
-    const result = await saveAIQuestionsAction(JSON.stringify(toSave));
+    const result = await saveAIQuestionsAction(JSON.stringify(toSave), setName);
     setSaving(false);
     setSaveResult(result);
   }
@@ -72,7 +73,8 @@ export function AIGenerateDialog({ onClose }: Props) {
   if (saveResult?.saved) {
     return (
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
-        <p className="text-green-400 text-sm">Đã lưu {saveResult.saved} câu hỏi vào ngân hàng!</p>
+        <p className="text-green-400 text-sm">Đã lưu {saveResult.saved} câu hỏi vào bộ đề &quot;{saveResult.setName || 'Bộ đề AI'}&quot;!</p>
+        <p className="text-xs text-slate-400">Vào Bài giao → chọn bộ đề này để giao cho học sinh.</p>
         <button onClick={onClose} className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-white min-h-[44px]">
           Đóng
         </button>
@@ -204,6 +206,16 @@ export function AIGenerateDialog({ onClose }: Props) {
             ))}
           </div>
 
+          <label className="block">
+            <span className="text-xs text-slate-400">Tên bộ đề</span>
+            <input
+              value={setName}
+              onChange={(e) => setSetName(e.target.value)}
+              placeholder="VD: Vi khuẩn - Lớp 6 - Dễ"
+              className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white"
+            />
+          </label>
+
           <div className="flex gap-2">
             <button
               type="button"
@@ -211,7 +223,7 @@ export function AIGenerateDialog({ onClose }: Props) {
               disabled={saving || selected.size === 0}
               className="rounded-lg bg-green-600 hover:bg-green-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 min-h-[44px]"
             >
-              {saving ? 'Đang lưu...' : `Lưu ${selected.size} câu hỏi`}
+              {saving ? 'Đang lưu...' : `Lưu ${selected.size} câu vào bộ đề`}
             </button>
             <button
               type="button"

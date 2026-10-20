@@ -10,6 +10,6 @@ export async function GET() {
 
   const { questions } = await getTeacherQuestions(profile.id, { limit: 200 });
   return NextResponse.json({
-    questions: questions.map((q) => ({ id: q.id, type: q.type, content: q.content })),
+    questions: questions.map((q) => ({ id: q.id, type: q.type, content: q.content, difficulty: q.difficulty })),
   });
 }

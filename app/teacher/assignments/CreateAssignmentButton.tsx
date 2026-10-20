@@ -4,26 +4,35 @@ import { useActionState, useState, useEffect } from 'react';
 import { createAssignmentAction, type AssignmentActionState } from './actions';
 
 type Room = { id: string; name: string };
-type Question = { id: string; type: string; content: string };
+type QuestionSet = {
+  id: string;
+  name: string;
+  subject: string;
+  grade: number | null;
+  question_count: number;
+  created_at: string;
+};
 
 export function CreateAssignmentButton({ teacherId }: { teacherId: string }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState<AssignmentActionState, FormData>(createAssignmentAction, {});
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [selectedQs, setSelectedQs] = useState<string[]>([]);
+  const [sets, setSets] = useState<QuestionSet[]>([]);
+  const [selectedSetId, setSelectedSetId] = useState('');
 
   useEffect(() => {
     if (!open) return;
     fetch('/api/teacher/rooms').then((r) => r.json()).then((d) => setRooms(d.rooms ?? [])).catch(() => {});
-    fetch('/api/teacher/questions').then((r) => r.json()).then((d) => setQuestions(d.questions ?? [])).catch(() => {});
+    fetch('/api/teacher/sets').then((r) => r.json()).then((d) => setSets(d.sets ?? [])).catch(() => {});
   }, [open]);
 
   if (state.success) {
     if (open) {
-      setTimeout(() => { setOpen(false); setSelectedQs([]); }, 0);
+      setTimeout(() => { setOpen(false); setSelectedSetId(''); }, 0);
     }
   }
+
+  const selectedSet = sets.find((s) => s.id === selectedSetId);
 
   if (!open) {
     return (
@@ -52,9 +61,54 @@ export function CreateAssignmentButton({ teacherId }: { teacherId: string }) {
           </select>
         </label>
 
+        <div>
+          <span className="text-xs text-slate-400">Chọn bộ đề</span>
+          <div className="mt-1 space-y-2 max-h-48 overflow-y-auto">
+            {sets.length === 0 && (
+              <p className="text-xs text-slate-500 p-3 bg-slate-800 rounded-lg border border-slate-700">
+                Chưa có bộ đề. Vào Ngân hàng câu hỏi → Tạo bằng AI hoặc tạo bộ đề thủ công.
+              </p>
+            )}
+            {sets.map((s) => (
+              <label
+                key={s.id}
+                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition ${
+                  selectedSetId === s.id
+                    ? 'bg-green-900/20 border-green-500/50'
+                    : 'bg-slate-800 border-slate-700 hover:border-slate-600'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="set_id"
+                  value={s.id}
+                  checked={selectedSetId === s.id}
+                  onChange={() => setSelectedSetId(s.id)}
+                  className="accent-green-500"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-white font-medium truncate">{s.name}</p>
+                  <p className="text-xs text-slate-400">
+                    {s.question_count} câu hỏi
+                    {s.subject && ` · ${s.subject}`}
+                    {s.grade && ` · Lớp ${s.grade}`}
+                  </p>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
         <label className="block">
-          <span className="text-xs text-slate-400">Tiêu đề</span>
-          <input name="title" type="text" required className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white" />
+          <span className="text-xs text-slate-400">Tiêu đề bài giao</span>
+          <input
+            name="title"
+            type="text"
+            required
+            defaultValue={selectedSet?.name ?? ''}
+            key={selectedSetId}
+            className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white"
+          />
         </label>
 
         <label className="block">
@@ -90,34 +144,9 @@ export function CreateAssignmentButton({ teacherId }: { teacherId: string }) {
           </label>
         </div>
 
-        {/* Question picker */}
-        <div>
-          <span className="text-xs text-slate-400">Chọn câu hỏi ({selectedQs.length} đã chọn)</span>
-          <div className="mt-1 bg-slate-800 rounded-lg border border-slate-700 max-h-48 overflow-y-auto p-2 space-y-1">
-            {questions.length === 0 && <p className="text-xs text-slate-500 p-2">Chưa có câu hỏi. Tạo trong Ngân hàng câu hỏi.</p>}
-            {questions.map((q) => (
-              <label key={q.id} className="flex items-start gap-2 p-1.5 hover:bg-slate-700 rounded text-sm text-white cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={selectedQs.includes(q.id)}
-                  onChange={(e) => {
-                    setSelectedQs((prev) =>
-                      e.target.checked ? [...prev, q.id] : prev.filter((id) => id !== q.id)
-                    );
-                  }}
-                  className="mt-0.5"
-                />
-                <span className="line-clamp-1">[{q.type}] {q.content}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <input type="hidden" name="question_ids" value={selectedQs.join(',')} />
-
         <div className="flex gap-2">
-          <button type="submit" disabled={pending || selectedQs.length === 0} className="rounded-lg bg-green-600 hover:bg-green-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 min-h-[44px]">
-            {pending ? 'Đang tạo...' : 'Tạo bài giao'}
+          <button type="submit" disabled={pending || !selectedSetId} className="rounded-lg bg-green-600 hover:bg-green-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 min-h-[44px]">
+            {pending ? 'Đang tạo...' : 'Giao bài'}
           </button>
           <button type="button" onClick={() => setOpen(false)} className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-white min-h-[44px]">
             Hủy

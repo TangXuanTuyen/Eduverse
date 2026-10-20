@@ -3,12 +3,14 @@
 import { getCurrentProfile } from '@/lib/auth/session';
 import { generateQuestions, type GenerateParams } from '@/services/ai-questions';
 import { createQuestion, type CreateQuestionData } from '@/services/questions';
+import { createQuestionSet } from '@/services/question-sets';
 import { revalidatePath } from 'next/cache';
 
 export type AIGenerateState = {
   error?: string;
   questions?: CreateQuestionData[];
   saved?: number;
+  setName?: string;
 };
 
 export async function generateQuestionsAction(
@@ -46,8 +48,9 @@ export async function generateQuestionsAction(
 }
 
 export async function saveAIQuestionsAction(
-  questionsJson: string
-): Promise<{ error?: string; saved?: number }> {
+  questionsJson: string,
+  setName: string
+): Promise<{ error?: string; saved?: number; setName?: string }> {
   const profile = await getCurrentProfile();
   if (!profile || profile.role !== 'teacher') return { error: 'Không có quyền' };
 
@@ -55,13 +58,20 @@ export async function saveAIQuestionsAction(
     const questions: CreateQuestionData[] = JSON.parse(questionsJson);
     if (!Array.isArray(questions) || questions.length === 0) return { error: 'Không có câu hỏi' };
 
-    let saved = 0;
+    const questionIds: string[] = [];
     for (const q of questions) {
-      await createQuestion(profile.id, q);
-      saved++;
+      const id = await createQuestion(profile.id, q);
+      questionIds.push(id);
     }
+
+    await createQuestionSet(profile.id, {
+      name: setName.trim() || `Bộ đề AI - ${new Date().toLocaleDateString('vi-VN')}`,
+      question_ids: questionIds,
+    });
+
     revalidatePath('/teacher/questions');
-    return { saved };
+    revalidatePath('/teacher/assignments');
+    return { saved: questionIds.length, setName };
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Lỗi lưu câu hỏi' };
   }

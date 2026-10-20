@@ -4,13 +4,15 @@ import { useState } from 'react';
 import { QuestionForm } from './QuestionForm';
 import { ImportDialog } from './ImportDialog';
 import { AIGenerateDialog } from './AIGenerateDialog';
+import { CreateSetDialog } from './CreateSetDialog';
 
 export function QuestionToolbar() {
   const [showCreate, setShowCreate] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showAI, setShowAI] = useState(false);
+  const [showSet, setShowSet] = useState(false);
 
-  const closeAll = () => { setShowCreate(false); setShowImport(false); setShowAI(false); };
+  const closeAll = () => { setShowCreate(false); setShowImport(false); setShowAI(false); setShowSet(false); };
 
   return (
     <div className="space-y-3">
@@ -52,7 +54,7 @@ export function QuestionToolbar() {
       </form>
 
       {/* Action buttons */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => { closeAll(); setShowCreate(!showCreate); }}
@@ -69,6 +71,13 @@ export function QuestionToolbar() {
         </button>
         <button
           type="button"
+          onClick={() => { closeAll(); setShowSet(!showSet); }}
+          className="rounded-lg bg-cyan-600 hover:bg-cyan-500 px-4 py-2 text-sm font-medium text-white min-h-[44px]"
+        >
+          {showSet ? 'Ẩn' : 'Tạo bộ đề'}
+        </button>
+        <button
+          type="button"
           onClick={() => { closeAll(); setShowImport(!showImport); }}
           className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-white min-h-[44px]"
         >
@@ -78,6 +87,7 @@ export function QuestionToolbar() {
 
       {showCreate && <QuestionForm onDone={() => setShowCreate(false)} />}
       {showAI && <AIGenerateDialog onClose={() => setShowAI(false)} />}
+      {showSet && <CreateSetDialog onClose={() => setShowSet(false)} />}
       {showImport && <ImportDialog onClose={() => setShowImport(false)} />}
     </div>
   );
