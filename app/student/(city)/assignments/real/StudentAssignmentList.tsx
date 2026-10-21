@@ -10,6 +10,7 @@ type Assignment = {
   title: string;
   description: string;
   due_at: string | null;
+  assignment_type?: string;
   rooms: { name: string };
 };
 
@@ -40,13 +41,18 @@ export function StudentAssignmentList({ assignments }: { assignments: Assignment
           ) : (
             assignments.map((a) => {
               const overdue = a.due_at && new Date(a.due_at) < new Date();
+              const isTask = a.assignment_type === 'lesson' || a.assignment_type === 'experiment' || a.assignment_type === 'model3d';
+              const taskRoute = a.assignment_type === 'lesson' ? '/student/library'
+                : a.assignment_type === 'model3d' ? '/student/world-3d'
+                : '/student/virtual-lab';
+              const typeIcon = a.assignment_type === 'lesson' ? '📖' : a.assignment_type === 'experiment' ? '🔬' : a.assignment_type === 'model3d' ? '🌐' : '📝';
               return (
                 <Link
                   key={a.id}
-                  href={`/student/assignments/real/${a.id}`}
+                  href={isTask ? taskRoute : `/student/assignments/real/${a.id}`}
                   className="block bg-slate-800 hover:bg-slate-700 rounded-xl p-3 transition"
                 >
-                  <div className="font-medium text-sm text-white">{a.title}</div>
+                  <div className="font-medium text-sm text-white">{typeIcon} {a.title}</div>
                   <div className="text-xs text-slate-400 mt-1">{a.rooms.name}</div>
                   {a.due_at && (
                     <div className={`text-xs mt-1 ${overdue ? 'text-red-400' : 'text-slate-500'}`}>

@@ -20,6 +20,11 @@ export default async function TakeAssignmentPage({ params }: Props) {
     redirect('/student/assignments/real');
   }
 
+  // Task assignments → redirect to the relevant building
+  if (assignment.assignment_type === 'lesson') redirect('/student/library');
+  if (assignment.assignment_type === 'experiment') redirect('/student/virtual-lab');
+  if (assignment.assignment_type === 'model3d') redirect('/student/world-3d');
+
   // Get questions via the student function (no correct_answer)
   const admin = createAdminClient();
   const { data: questions } = await admin.rpc('get_assignment_questions_student', {
