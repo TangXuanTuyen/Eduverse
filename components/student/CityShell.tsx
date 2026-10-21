@@ -12,7 +12,8 @@ import { useStudentGame } from '@/components/student/StudentGameProvider';
 import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
 import { useListMode } from '@/lib/hooks/useListMode';
 import { useBuildingNotifications } from '@/lib/hooks/useBuildingNotifications';
-import { STUDENT_HOME } from '@/lib/student-routes';
+import { STUDENT_HOME, GUEST_HOME } from '@/lib/student-routes';
+import Link from 'next/link';
 import { BreakReminder } from '@/components/ui/BreakReminder';
 
 const AoDaiCompanion = dynamic(
@@ -47,7 +48,8 @@ export function CityShell({ children }: { children: React.ReactNode }) {
   const [nearbyBuilding, setNearbyBuilding] = useState<BuildingInfo | null>(null);
   const [fastTravelOpen, setFastTravelOpen] = useState(false);
 
-  const placeOpen = pathname !== STUDENT_HOME;
+  const homeUrl = game.isGuest ? GUEST_HOME : STUDENT_HOME;
+  const placeOpen = pathname !== homeUrl;
   const paused = placeOpen || game.isFirstTime || game.isEditingCharacter;
 
   return (
@@ -114,7 +116,24 @@ export function CityShell({ children }: { children: React.ReactNode }) {
           )}
 
           <BreakReminder />
-          <AoDaiCompanion />
+          {!game.isGuest && <AoDaiCompanion />}
+
+          {/* Guest banner */}
+          {game.isGuest && (
+            <div className="absolute bottom-3 left-3 right-3 z-40 pointer-events-none flex justify-center">
+              <div className="pointer-events-auto bg-amber-900/90 border border-amber-600/50 backdrop-blur-md rounded-xl px-4 py-2.5 shadow-lg flex items-center gap-3 max-w-lg">
+                <span className="text-sm text-amber-100">
+                  🎮 Chế độ tự do — dữ liệu không được lưu
+                </span>
+                <Link
+                  href="/login"
+                  className="shrink-0 px-3 py-1.5 bg-white/90 hover:bg-white text-slate-900 rounded-lg text-xs font-bold transition min-h-[36px] flex items-center"
+                >
+                  Đăng nhập
+                </Link>
+              </div>
+            </div>
+          )}
 
           {game.isEditingCharacter && (
             <CharacterSelection

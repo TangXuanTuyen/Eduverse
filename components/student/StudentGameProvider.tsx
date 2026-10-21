@@ -19,7 +19,7 @@ import type {
 } from '@/types/game';
 import { INITIAL_PROGRESS, ProgressionSystem, QUEST_IDS } from '@/game/engine/progression';
 import type { CityPlayerHandle } from '@/components/city/CityMapCanvas';
-import { BUILDING_ROUTES, STUDENT_HOME } from '@/lib/student-routes';
+import { BUILDING_ROUTES, GUEST_BUILDING_ROUTES, STUDENT_HOME, GUEST_HOME } from '@/lib/student-routes';
 import { sound } from '@/lib/audio';
 
 // Khóa lưu tạm theo từng học sinh để máy dùng chung không lẫn dữ liệu giữa các em
@@ -72,6 +72,7 @@ interface StudentGameContextValue {
   progress: PlayerProgress;
   isFirstTime: boolean;
   isEditingCharacter: boolean;
+  isGuest: boolean;
   playerRef: React.MutableRefObject<CityPlayerHandle | null>;
 
   setEditingCharacter: (editing: boolean) => void;
@@ -103,9 +104,11 @@ export function useStudentGame() {
 export function StudentGameProvider({
   identity,
   children,
+  guest = false,
 }: {
   identity: StudentIdentity;
   children: React.ReactNode;
+  guest?: boolean;
 }) {
   const router = useRouter();
   const keys = useMemo(() => storageKeys(identity.userId), [identity.userId]);
@@ -190,9 +193,10 @@ export function StudentGameProvider({
       }
       sound.playInteract();
       openedFromCityRef.current = true;
-      router.push(BUILDING_ROUTES[building.id], { scroll: false });
+      const routes = guest ? GUEST_BUILDING_ROUTES : BUILDING_ROUTES;
+      router.push(routes[building.id], { scroll: false });
     },
-    [progress, router]
+    [progress, router, guest]
   );
 
   const fastTravel = useCallback((building: BuildingInfo) => {
@@ -212,9 +216,9 @@ export function StudentGameProvider({
       openedFromCityRef.current = false;
       router.back();
     } else {
-      router.replace(STUDENT_HOME, { scroll: false });
+      router.replace(guest ? GUEST_HOME : STUDENT_HOME, { scroll: false });
     }
-  }, [router]);
+  }, [router, guest]);
 
   const completeQuestVisit = useCallback(
     (questId: (typeof QUEST_IDS)[keyof typeof QUEST_IDS]) => {
@@ -338,6 +342,7 @@ export function StudentGameProvider({
       progress,
       isFirstTime,
       isEditingCharacter,
+      isGuest: guest,
       playerRef,
       setEditingCharacter,
       confirmCharacter,
@@ -360,6 +365,7 @@ export function StudentGameProvider({
       progress,
       isFirstTime,
       isEditingCharacter,
+      guest,
       confirmCharacter,
       updatePosition,
       enterBuilding,

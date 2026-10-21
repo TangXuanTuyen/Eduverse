@@ -51,8 +51,21 @@ export function LoginForm() {
         </p>
       )}
 
+      <div className="relative flex items-center gap-3 my-2">
+        <div className="flex-1 border-t border-slate-700" />
+        <span className="text-xs text-slate-500">hoặc</span>
+        <div className="flex-1 border-t border-slate-700" />
+      </div>
+
+      <a
+        href="/guest"
+        className="w-full min-h-12 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-semibold flex items-center justify-center gap-2 transition-colors text-sm"
+      >
+        🎮 Học tự do (không cần tài khoản)
+      </a>
+
       <p className="text-xs text-slate-400 text-center">
-        Dùng tài khoản Google để đăng nhập. Lần đầu sẽ chọn vai trò (Giáo viên / Học sinh / Phụ huynh).
+        Đăng nhập để lưu tiến trình, nhận bài giao từ giáo viên. Chế độ tự do chỉ để khám phá.
       </p>
     </div>
   );
