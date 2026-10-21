@@ -111,7 +111,9 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
-          setExperiments(data);
+          const dbIds = new Set(data.map((e: Experiment) => e.component_key));
+          const remaining = DEMO_EXPERIMENTS.filter((d) => !dbIds.has(d.component_key));
+          setExperiments([...data, ...remaining]);
         }
       })
       .catch(() => {})
