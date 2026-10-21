@@ -12,6 +12,9 @@ export type AssignmentRow = {
   max_retries: number;
   show_explanation_after_submit: boolean;
   results_published: boolean;
+  assignment_type: 'quiz' | 'lesson' | 'experiment';
+  resource_id: string | null;
+  resource_title: string | null;
   created_by: string;
   created_at: string;
 };
@@ -112,8 +115,13 @@ export async function createAssignment(teacherId: string, data: CreateAssignment
     .single();
   if (aErr) throw new Error(aErr.message);
 
+  if (data.question_ids.length === 0) {
+    await admin.from('assignments').delete().eq('id', assignment.id);
+    throw new Error('Bộ đề trống — cần ít nhất 1 câu hỏi');
+  }
+
   // Snapshot questions + answers
-  if (data.question_ids.length > 0) {
+  {
     const { data: questions, error: qErr } = await admin
       .from('questions')
       .select('id, type, content, options, explanation')
@@ -148,10 +156,13 @@ export async function createAssignment(teacherId: string, data: CreateAssignment
       })
       .filter((s): s is NonNullable<typeof s> => s != null);
 
-    if (snapshots.length > 0) {
-      const { error: snapErr } = await admin.from('assignment_questions').insert(snapshots);
-      if (snapErr) throw new Error(snapErr.message);
+    if (snapshots.length === 0) {
+      await admin.from('assignments').delete().eq('id', assignment.id);
+      throw new Error('Không tìm thấy câu hỏi hợp lệ trong bộ đề');
     }
+
+    const { error: snapErr } = await admin.from('assignment_questions').insert(snapshots);
+    if (snapErr) throw new Error(snapErr.message);
   }
 
   // Auto-notify all students in the room
@@ -174,6 +185,69 @@ export async function createAssignment(teacherId: string, data: CreateAssignment
       body: data.due_at
         ? `Hạn nộp: ${new Date(data.due_at).toLocaleDateString('vi-VN')}`
         : 'Chưa có hạn nộp',
+    }));
+    await admin.from('notifications').insert(notifications);
+  }
+
+  return assignment.id as string;
+}
+
+export type CreateTaskAssignmentData = {
+  room_id: string;
+  title: string;
+  description?: string;
+  assignment_type: 'lesson' | 'experiment';
+  resource_id: string;
+  resource_title: string;
+  due_at?: string | null;
+};
+
+export async function createTaskAssignment(teacherId: string, data: CreateTaskAssignmentData) {
+  const admin = createAdminClient();
+
+  const { data: room, error: roomErr } = await admin
+    .from('rooms')
+    .select('id')
+    .eq('id', data.room_id)
+    .eq('owner_id', teacherId)
+    .single();
+  if (roomErr || !room) throw new Error('Không có quyền tạo nhiệm vụ cho phòng này');
+
+  const { data: assignment, error: aErr } = await admin
+    .from('assignments')
+    .insert({
+      room_id: data.room_id,
+      title: data.title,
+      description: data.description ?? '',
+      due_at: data.due_at ?? null,
+      assignment_type: data.assignment_type,
+      resource_id: data.resource_id,
+      resource_title: data.resource_title,
+      created_by: teacherId,
+    })
+    .select('id')
+    .single();
+  if (aErr) throw new Error(aErr.message);
+
+  // Notify students
+  const { data: roomMembers } = await admin
+    .from('room_members')
+    .select('user_id, profiles!inner(role)')
+    .eq('room_id', data.room_id)
+    .eq('is_active', true);
+
+  const studentIds = (roomMembers ?? [])
+    .filter((m) => (m.profiles as unknown as { role: string }).role === 'student')
+    .map((m) => m.user_id);
+
+  if (studentIds.length > 0) {
+    const typeLabel = data.assignment_type === 'lesson' ? 'Đọc lý thuyết' : 'Xem thí nghiệm';
+    const notifications = studentIds.map((uid) => ({
+      user_id: uid,
+      room_id: data.room_id,
+      type: 'new_assignment',
+      title: `Nhiệm vụ mới: ${data.title}`,
+      body: `${typeLabel}: ${data.resource_title}`,
     }));
     await admin.from('notifications').insert(notifications);
   }

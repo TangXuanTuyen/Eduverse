@@ -127,12 +127,30 @@ export function AssignmentTaker({ assignment, questions, submission, savedAnswer
         <div className="p-4 overflow-y-auto space-y-4 flex-1">
           {submitResult?.success && (
             <div className="bg-green-900/50 border border-green-500/50 rounded-xl p-4 text-center">
-              <p className="text-green-300 font-medium">{submitResult.success}</p>
-              {submitResult.result && (
-                <p className="text-sm text-slate-300 mt-1">
-                  Điểm: {String((submitResult.result as Record<string, unknown>).totalScore)}/{String((submitResult.result as Record<string, unknown>).maxScore)}
-                </p>
-              )}
+              <p className="text-green-300 font-medium text-lg">{submitResult.success}</p>
+              {submitResult.result && (() => {
+                const r = submitResult.result as Record<string, unknown>;
+                const total = Number(r.totalScore);
+                const max = Number(r.maxScore);
+                const xp = Number(r.xpAwarded ?? 0);
+                const isPerfect = total === max && max > 0;
+                return (
+                  <>
+                    <p className="text-2xl font-bold text-white mt-2">{total}/{max} điểm</p>
+                    {xp > 0 && (
+                      <p className="text-amber-400 font-bold text-lg mt-1 animate-bounce">
+                        +{xp} XP{isPerfect ? ' (hoàn hảo!)' : ''}
+                      </p>
+                    )}
+                    {isPerfect && <p className="text-yellow-300 text-sm mt-1">Xuất sắc! Đạt điểm tuyệt đối!</p>}
+                    {!isPerfect && total < max && (
+                      <p className="text-slate-400 text-sm mt-2">
+                        Ôn lại lý thuyết tại Thư viện hoặc xem thí nghiệm tại Phòng TN Ảo để cải thiện.
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
               <button
                 type="button"
                 onClick={close}

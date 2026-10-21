@@ -26,6 +26,21 @@ export default async function TakeAssignmentPage({ params }: Props) {
     p_assignment_id: id,
   });
 
+  if (!questions || questions.length === 0) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-4">
+        <div className="rounded-2xl bg-slate-900 border border-slate-700 p-8 text-center max-w-md">
+          <p className="text-2xl mb-3">📝</p>
+          <h2 className="text-lg font-bold text-white mb-2">{assignment.title}</h2>
+          <p className="text-slate-400 mb-4">Bài tập này chưa có câu hỏi hoặc bạn không thuộc lớp được giao.</p>
+          <a href="/student/assignments/real" className="inline-block px-4 py-2 rounded-lg bg-blue-600 text-white min-h-[44px] leading-[44px]">
+            Quay lại danh sách
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   const draft = await getOrCreateDraft(id, profile.id);
   const attempts = await getStudentAttempts(draft.id);
 
@@ -37,7 +52,7 @@ export default async function TakeAssignmentPage({ params }: Props) {
   return (
     <AssignmentTaker
       assignment={assignment}
-      questions={questions ?? []}
+      questions={questions}
       submission={draft}
       savedAnswers={savedAnswers}
     />

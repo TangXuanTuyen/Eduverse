@@ -13,6 +13,9 @@ export const XP_REWARDS = {
   daily_login: 10,
   process_complete: 30,
   streak_bonus: 20,
+  assignment_complete: 50,
+  assignment_perfect: 30,
+  task_complete: 30,
 } as const;
 
 export type XpReason = keyof typeof XP_REWARDS;
@@ -143,6 +146,9 @@ export async function awardXp(
   }
   if (reason === 'game_complete' || reason === 'boss_clear') {
     updateData.games_completed = stats.games_completed + 1;
+  }
+  if (reason === 'assignment_complete') {
+    updateData.assignments_completed = (stats.assignments_completed ?? 0) + 1;
   }
 
   await admin

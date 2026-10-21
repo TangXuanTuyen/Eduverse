@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createAdminClient } from '@/lib/supabase/admin';
+import { awardXp } from './xp';
 
 export type SubmissionRow = {
   id: string;
@@ -211,5 +212,27 @@ export async function submitAssignment(submissionId: string, studentId: string) 
     .eq('id', submissionId);
   if (updErr) throw new Error(updErr.message);
 
-  return { status: newStatus, totalScore, maxScore, isLate };
+  // Award XP (idempotent — nộp lại không cộng thêm)
+  let xpAwarded = 0;
+  try {
+    const result = await awardXp(
+      studentId,
+      'assignment_complete',
+      `${sub.assignment_id}:${studentId}`,
+    );
+    xpAwarded = result.awarded;
+
+    if (allAutoGraded && totalScore === maxScore && maxScore > 0) {
+      const bonus = await awardXp(
+        studentId,
+        'assignment_perfect',
+        `${sub.assignment_id}:${studentId}:perfect`,
+      );
+      xpAwarded += bonus.awarded;
+    }
+  } catch {
+    // XP failure should not block submission
+  }
+
+  return { status: newStatus, totalScore, maxScore, isLate, xpAwarded };
 }

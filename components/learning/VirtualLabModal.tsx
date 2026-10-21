@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { DialogFrame } from '@/components/ui/DialogFrame';
-import { Atom, Play, Clock, ArrowLeft, Loader2, ExternalLink } from 'lucide-react';
+import { Atom, Play, Clock, ArrowLeft, Loader2, ExternalLink, CheckCircle2 } from 'lucide-react';
 
 type Experiment = {
   id: string;
@@ -87,6 +87,13 @@ const DEMO_EXPERIMENTS: Experiment[] = [
   },
 ];
 
+type TaskAssignment = {
+  id: string;
+  resource_id: string;
+  title: string;
+  completed?: boolean;
+};
+
 interface VirtualLabModalProps {
   onClose: () => void;
 }
@@ -96,6 +103,8 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
   const [activeExp, setActiveExp] = useState<Experiment | null>(null);
   const [filter, setFilter] = useState<number | 'all'>('all');
   const [loading, setLoading] = useState(true);
+  const [tasks, setTasks] = useState<TaskAssignment[]>([]);
+  const [completingTask, setCompletingTask] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/experiments')
@@ -107,6 +116,31 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    fetch('/api/student-assignments')
+      .then((r) => r.json())
+      .then((data) => {
+        const expTasks = (data.assignments ?? [])
+          .filter((a: Record<string, unknown>) => a.assignment_type === 'experiment')
+          .map((a: Record<string, unknown>) => ({ id: a.id, resource_id: a.resource_id, title: a.title }));
+        setTasks(expTasks);
+      })
+      .catch(() => {});
+  }, []);
+
+  const completeTask = useCallback(async (assignmentId: string) => {
+    setCompletingTask(assignmentId);
+    try {
+      const res = await fetch('/api/task-complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignment_id: assignmentId }),
+      });
+      if (res.ok) {
+        setTasks((prev) => prev.map((t) => t.id === assignmentId ? { ...t, completed: true } : t));
+      }
+    } catch { /* ignore */ }
+    setCompletingTask(null);
   }, []);
 
   const filtered = filter === 'all' ? experiments : experiments.filter((e) => e.grade_level === filter);
@@ -131,6 +165,30 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
           </div>
           <div className="flex-1 overflow-auto p-4">
             <p className="text-orange-200 mb-4">{activeExp.description}</p>
+            {(() => {
+              const task = tasks.find((t) => t.resource_id === activeExp.id);
+              return task && (
+                <div className="mb-4 p-3 rounded-lg bg-blue-900/30 border border-blue-500/40">
+                  <p className="text-sm text-blue-300 font-medium">
+                    📋 Nhiệm vụ từ GV: {task.title}
+                  </p>
+                  {task.completed ? (
+                    <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Đã hoàn thành
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => completeTask(task.id)}
+                      disabled={completingTask === task.id}
+                      className="mt-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-xs font-bold min-h-[36px] disabled:opacity-50"
+                    >
+                      {completingTask === task.id ? 'Đang xác nhận...' : 'Hoàn thành nhiệm vụ (+30 XP)'}
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
             {activeExp.embed_url ? (
               <a
                 href={activeExp.embed_url}
@@ -203,29 +261,41 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
           ) : filtered.length === 0 ? (
             <p className="text-center text-orange-400 py-8">Chưa có thí nghiệm nào cho môn này.</p>
           ) : (
-            filtered.map((exp) => (
-              <button
-                key={exp.id}
-                onClick={() => setActiveExp(exp)}
-                className="w-full text-left p-4 rounded-xl bg-orange-900/30 border border-orange-800/30 hover:bg-orange-900/50 hover:border-orange-600/50 transition group min-h-[44px]"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-orange-900/60 flex items-center justify-center shrink-0 mt-0.5 text-sm font-bold text-orange-300">
-                    {exp.grade_level}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-white group-hover:text-orange-200 transition">{exp.title}</h3>
-                    <p className="text-sm text-orange-300/80 mt-0.5 line-clamp-2">{exp.description}</p>
-                    <div className="flex items-center gap-3 mt-2 text-xs text-orange-400">
-                      <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {exp.duration_minutes} phút</span>
-                      <span>Khối {exp.grade_level} · {exp.subject}</span>
-                      <span>{'⭐'.repeat(exp.difficulty)}</span>
+            filtered.map((exp) => {
+              const task = tasks.find((t) => t.resource_id === exp.id);
+              return (
+                <button
+                  key={exp.id}
+                  onClick={() => setActiveExp(exp)}
+                  className={`w-full text-left p-4 rounded-xl border hover:bg-orange-900/50 hover:border-orange-600/50 transition group min-h-[44px] ${
+                    task ? 'bg-blue-900/20 border-blue-500/30' : 'bg-orange-900/30 border-orange-800/30'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-orange-900/60 flex items-center justify-center shrink-0 mt-0.5 text-sm font-bold text-orange-300">
+                      {exp.grade_level}
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-white group-hover:text-orange-200 transition">{exp.title}</h3>
+                        {task && (
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${task.completed ? 'bg-green-900 text-green-300' : 'bg-blue-900 text-blue-300'}`}>
+                            {task.completed ? '✓ Xong' : 'Nhiệm vụ GV'}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-orange-300/80 mt-0.5 line-clamp-2">{exp.description}</p>
+                      <div className="flex items-center gap-3 mt-2 text-xs text-orange-400">
+                        <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {exp.duration_minutes} phút</span>
+                        <span>Khối {exp.grade_level} · {exp.subject}</span>
+                        <span>{'⭐'.repeat(exp.difficulty)}</span>
+                      </div>
+                    </div>
+                    <Play className="w-5 h-5 text-orange-500 group-hover:text-orange-300 transition shrink-0 mt-2" />
                   </div>
-                  <Play className="w-5 h-5 text-orange-500 group-hover:text-orange-300 transition shrink-0 mt-2" />
-                </div>
-              </button>
-            ))
+                </button>
+              );
+            })
           )}
         </div>
       </div>

@@ -5,9 +5,9 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { sound } from '@/lib/audio';
-import { BookOpen, CheckCircle, Lightbulb, Atom, Dna, X, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
+import { BookOpen, CheckCircle, CheckCircle2, Lightbulb, Atom, Dna, X, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
 import { RoomInteriorScene } from './RoomInteriorScene';
 import { LessonViewer } from './LessonViewer';
 import { DialogFrame } from '@/components/ui/DialogFrame';
@@ -115,12 +115,39 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
   const [dynamicLessons, setDynamicLessons] = useState<DynamicLesson[]>([]);
   const [viewingLesson, setViewingLesson] = useState<string | null>(null);
   const [lessonData, setLessonData] = useState<Record<string, unknown> | null>(null);
+  const [tasks, setTasks] = useState<Array<{ id: string; resource_id: string; title: string; completed?: boolean }>>([]);
+  const [completingTask, setCompletingTask] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/lessons')
       .then((r) => r.json())
       .then((d) => setDynamicLessons(Array.isArray(d) ? d : []))
       .catch(() => {});
+
+    fetch('/api/student-assignments')
+      .then((r) => r.json())
+      .then((data) => {
+        const lessonTasks = (data.assignments ?? [])
+          .filter((a: Record<string, unknown>) => a.assignment_type === 'lesson')
+          .map((a: Record<string, unknown>) => ({ id: a.id, resource_id: a.resource_id, title: a.title }));
+        setTasks(lessonTasks);
+      })
+      .catch(() => {});
+  }, []);
+
+  const completeTask = useCallback(async (assignmentId: string) => {
+    setCompletingTask(assignmentId);
+    try {
+      const res = await fetch('/api/task-complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignment_id: assignmentId }),
+      });
+      if (res.ok) {
+        setTasks((prev) => prev.map((t) => t.id === assignmentId ? { ...t, completed: true } : t));
+      }
+    } catch { /* ignore */ }
+    setCompletingTask(null);
   }, []);
 
   async function openDynamicLesson(id: string) {
@@ -301,14 +328,21 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
                     <span className="text-[10px] font-bold uppercase text-amber-400">
                       Kệ #{idx + 1} · {l.subject}
                     </span>
-                    {isDone ? (
-                      <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold">
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        <span>Đã đọc</span>
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-slate-500">Chưa đọc</span>
-                    )}
+                    <span className="flex items-center gap-1">
+                      {tasks.find((t) => t.resource_id === l.id) && (
+                        <span className={`text-[10px] px-1 py-0.5 rounded font-bold ${tasks.find((t) => t.resource_id === l.id)?.completed ? 'bg-green-900 text-green-300' : 'bg-blue-900 text-blue-300'}`}>
+                          {tasks.find((t) => t.resource_id === l.id)?.completed ? '✓' : 'GV'}
+                        </span>
+                      )}
+                      {isDone ? (
+                        <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold">
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span>Đã đọc</span>
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-500">Chưa đọc</span>
+                      )}
+                    </span>
                   </div>
                   <div className="font-bold text-xs text-white">{l.title}</div>
                   <p className="text-[11px] text-slate-400 line-clamp-1">

@@ -7,12 +7,16 @@ import { School, CheckCircle2, Clock, Gift, X, BookOpen, ArrowLeft, FileText, Al
 import { RoomInteriorScene } from './RoomInteriorScene';
 import { DialogFrame } from '@/components/ui/DialogFrame';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 type RealAssignment = {
   id: string;
   title: string;
   description: string;
   due_at: string | null;
+  assignment_type?: 'quiz' | 'lesson' | 'experiment';
+  resource_id?: string | null;
+  resource_title?: string | null;
   rooms: { name: string };
 };
 
@@ -27,6 +31,7 @@ export const SchoolModal: React.FC<SchoolModalProps> = ({
   onClose,
   onClaimQuest,
 }) => {
+  const router = useRouter();
   const [assignments, setAssignments] = useState<RealAssignment[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -120,8 +125,48 @@ export const SchoolModal: React.FC<SchoolModalProps> = ({
               </div>
             ) : (
               <div className="space-y-2">
-                {assignments.slice(0, 5).map((a) => {
+                {assignments.slice(0, 8).map((a) => {
                   const overdue = a.due_at && new Date(a.due_at) < now;
+                  const isTask = a.assignment_type === 'lesson' || a.assignment_type === 'experiment';
+                  const typeIcon = a.assignment_type === 'lesson' ? '📖' : a.assignment_type === 'experiment' ? '🔬' : '📝';
+                  const buildingLabel = a.assignment_type === 'lesson' ? 'Đi đến Thư viện' : 'Đi đến Phòng TN Ảo';
+                  const buildingRoute = a.assignment_type === 'lesson' ? '/student/library' : '/student/virtual_lab';
+
+                  if (isTask) {
+                    return (
+                      <div
+                        key={a.id}
+                        className="p-4 rounded-xl border bg-slate-800/60 border-slate-700"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-sm text-white">{typeIcon} {a.title}</span>
+                          {overdue ? (
+                            <span className="text-[10px] text-red-400 bg-red-950/60 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" /> Quá hạn
+                            </span>
+                          ) : a.due_at ? (
+                            <span className="text-[10px] text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> {new Date(a.due_at).toLocaleDateString('vi-VN')}
+                            </span>
+                          ) : null}
+                        </div>
+                        {a.description && (
+                          <p className="text-xs text-slate-400 mt-1 line-clamp-2">{a.description}</p>
+                        )}
+                        <div className="flex items-center justify-between mt-2">
+                          <p className="text-xs text-slate-500">{a.rooms.name}</p>
+                          <button
+                            type="button"
+                            onClick={() => { onClose(); router.push(buildingRoute); }}
+                            className="text-xs px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium min-h-[36px] transition"
+                          >
+                            {buildingLabel} →
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return (
                     <Link
                       key={a.id}
@@ -129,7 +174,7 @@ export const SchoolModal: React.FC<SchoolModalProps> = ({
                       className="block p-4 rounded-xl border bg-slate-800/60 border-slate-700 hover:border-blue-500/50 transition"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-sm text-white">{a.title}</span>
+                        <span className="font-bold text-sm text-white">{typeIcon} {a.title}</span>
                         {overdue ? (
                           <span className="text-[10px] text-red-400 bg-red-950/60 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
                             <AlertCircle className="w-3 h-3" /> Quá hạn

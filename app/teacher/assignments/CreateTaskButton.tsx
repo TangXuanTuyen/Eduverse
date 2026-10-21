@@ -1,0 +1,139 @@
+'use client';
+
+import { useActionState, useState, useEffect } from 'react';
+import { createTaskAction, type AssignmentActionState } from './actions';
+import { LESSON_CATALOG, EXPERIMENT_CATALOG } from '@/lib/resources-catalog';
+
+type Room = { id: string; name: string };
+
+export function CreateTaskButton({ teacherId }: { teacherId: string }) {
+  const [open, setOpen] = useState(false);
+  const [state, formAction, pending] = useActionState<AssignmentActionState, FormData>(createTaskAction, {});
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [taskType, setTaskType] = useState<'lesson' | 'experiment'>('lesson');
+  const [selectedResource, setSelectedResource] = useState('');
+
+  useEffect(() => {
+    if (!open) return;
+    fetch('/api/teacher/rooms').then((r) => r.json()).then((d) => setRooms(d.rooms ?? [])).catch(() => {});
+  }, [open]);
+
+  if (state.success && open) {
+    setTimeout(() => { setOpen(false); setSelectedResource(''); }, 0);
+  }
+
+  const catalog = taskType === 'lesson' ? LESSON_CATALOG : EXPERIMENT_CATALOG;
+  const selected = catalog.find((r) => r.id === selectedResource);
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="rounded-lg bg-blue-600 hover:bg-blue-500 px-4 py-2 text-sm font-medium text-white min-h-[44px]"
+      >
+        Giao nhiệm vụ
+      </button>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
+      <form action={formAction} className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto">
+        <h3 className="text-lg font-bold text-white">Giao nhiệm vụ</h3>
+        <p className="text-xs text-slate-400">Giao cho học sinh xem lý thuyết hoặc làm thí nghiệm ảo.</p>
+
+        {state.error && <p className="text-red-400 text-sm">{state.error}</p>}
+
+        <label className="block">
+          <span className="text-xs text-slate-400">Phòng học</span>
+          <select name="room_id" required className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white">
+            <option value="">Chọn phòng...</option>
+            {rooms.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+          </select>
+        </label>
+
+        <div>
+          <span className="text-xs text-slate-400">Loại nhiệm vụ</span>
+          <div className="flex gap-2 mt-1">
+            <button
+              type="button"
+              onClick={() => { setTaskType('lesson'); setSelectedResource(''); }}
+              className={`px-3 py-2 rounded-lg text-sm min-h-[44px] ${taskType === 'lesson' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+            >
+              📖 Đọc lý thuyết
+            </button>
+            <button
+              type="button"
+              onClick={() => { setTaskType('experiment'); setSelectedResource(''); }}
+              className={`px-3 py-2 rounded-lg text-sm min-h-[44px] ${taskType === 'experiment' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+            >
+              🔬 Xem thí nghiệm
+            </button>
+          </div>
+          <input type="hidden" name="assignment_type" value={taskType} />
+        </div>
+
+        <div>
+          <span className="text-xs text-slate-400">Chọn {taskType === 'lesson' ? 'bài học' : 'thí nghiệm'}</span>
+          <div className="mt-1 space-y-2 max-h-48 overflow-y-auto">
+            {catalog.map((r) => (
+              <label
+                key={r.id}
+                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition ${
+                  selectedResource === r.id ? 'bg-blue-900/20 border-blue-500/50' : 'bg-slate-800 border-slate-700 hover:border-slate-600'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="resource_id"
+                  value={r.id}
+                  checked={selectedResource === r.id}
+                  onChange={() => setSelectedResource(r.id)}
+                  className="accent-blue-500"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-white font-medium">{r.title}</p>
+                  <p className="text-xs text-slate-400">Khối {r.grade} · {r.subject}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <input type="hidden" name="resource_title" value={selected?.title ?? ''} />
+
+        <label className="block">
+          <span className="text-xs text-slate-400">Tiêu đề nhiệm vụ</span>
+          <input
+            name="title"
+            type="text"
+            required
+            defaultValue={selected ? `${taskType === 'lesson' ? 'Đọc' : 'Xem'}: ${selected.title}` : ''}
+            key={selectedResource}
+            className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-xs text-slate-400">Mô tả (tuỳ chọn)</span>
+          <textarea name="description" rows={2} className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white resize-y" />
+        </label>
+
+        <label className="block">
+          <span className="text-xs text-slate-400">Hạn nộp (tuỳ chọn)</span>
+          <input name="due_at" type="datetime-local" className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white" />
+        </label>
+
+        <div className="flex gap-2">
+          <button type="submit" disabled={pending || !selectedResource} className="rounded-lg bg-blue-600 hover:bg-blue-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 min-h-[44px]">
+            {pending ? 'Đang giao...' : 'Giao nhiệm vụ'}
+          </button>
+          <button type="button" onClick={() => setOpen(false)} className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-white min-h-[44px]">
+            Hủy
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
