@@ -631,7 +631,7 @@ function SkillsView({ data }: { data: SkillRow[] }) {
       {sorted.map((s, i) => (
         <div key={s.skill} className="bg-slate-900/80 border border-slate-800 rounded-xl p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-white">{s.skill}</span>
+            <span className="text-sm font-semibold text-white">{skillLabel(s.skill)}</span>
             <div className="flex items-center gap-2">
               <span className="text-xs text-slate-400">{s.total_attempts} lượt</span>
               <ScoreBadge value={s.accuracy} size="sm" />
@@ -681,6 +681,67 @@ function QuestionsView({ data }: { data: QuestionRow[] }) {
   );
 }
 
+// ── Helpers: skill tag → tiếng Việt có dấu ──
+
+const SKILL_LABELS: Record<string, string> = {
+  'luc': 'Lực',
+  'don-vi': 'Đơn vị đo',
+  'trong-luc': 'Trọng lực',
+  'ma-sat': 'Ma sát',
+  'chuyen-dong': 'Chuyển động',
+  'deu': 'Chuyển động đều',
+  'khong-deu': 'Chuyển động không đều',
+  'dan-hoi': 'Đàn hồi',
+  'toc-do': 'Tốc độ',
+  'phan-luc': 'Phản lực',
+  'can-bang': 'Cân bằng lực',
+  'phuong-chieu': 'Phương và chiều',
+  'tinh-toan': 'Tính toán',
+  'cong-thuc': 'Công thức',
+  'so-sanh': 'So sánh',
+  'doi-don-vi': 'Đổi đơn vị',
+  'phan-loai': 'Phân loại',
+  'ung-dung': 'Ứng dụng',
+  'dung-cu': 'Dụng cụ',
+  'khai-niem': 'Khái niệm',
+  'roi-tu-do': 'Rơi tự do',
+  'giam-ma-sat': 'Giảm ma sát',
+  'yeu-to': 'Yếu tố ảnh hưởng',
+  'ti-le': 'Tỉ lệ',
+  'vat-lieu-dan-dien': 'Vật liệu dẫn điện',
+  'vat-lieu-cach-dien': 'Vật liệu cách điện',
+  'thong-hieu': 'Thông hiểu',
+  'nhan-biet': 'Nhận biết',
+  'van-dung': 'Vận dụng',
+  'mach-dien': 'Mạch điện',
+  'mach-dien-kin': 'Mạch điện kín',
+  'mach-dien-noi-tiep': 'Mạch điện nối tiếp',
+  'mach-dien-song-song': 'Mạch điện song song',
+  'nguon-dien': 'Nguồn điện',
+  'thi-nghiem-vat-ly': 'Thí nghiệm vật lý',
+  'dong-dien': 'Dòng điện',
+  'hieu-dien-the': 'Hiệu điện thế',
+  'dien-tro': 'Điện trở',
+  'cong-suat': 'Công suất',
+  'nang-luong': 'Năng lượng',
+  'nhiet-do': 'Nhiệt độ',
+  'nhiet-luong': 'Nhiệt lượng',
+  'bay-hoi': 'Bay hơi',
+  'ngung-tu': 'Ngưng tụ',
+  'nong-chay': 'Nóng chảy',
+  'dong-dac': 'Đông đặc',
+  'soi': 'Sôi',
+  'anh-sang': 'Ánh sáng',
+  'phan-xa': 'Phản xạ',
+  'khuc-xa': 'Khúc xạ',
+  'thau-kinh': 'Thấu kính',
+  'am-thanh': 'Âm thanh',
+};
+
+function skillLabel(slug: string): string {
+  return SKILL_LABELS[slug] ?? slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 // ── Helpers: auto-generate comments ──
 
 function generateComments(report: DetailReport) {
@@ -692,10 +753,10 @@ function generateComments(report: DetailReport) {
   const weakSkills = report.skill_breakdown.filter((s) => s.accuracy < 50);
 
   if (goodSkills.length > 0) {
-    strengths.push(`Nắm vững ${goodSkills.map((s) => s.skill.replace(/-/g, ' ')).join(', ')}`);
+    strengths.push(`Nắm vững: ${goodSkills.map((s) => skillLabel(s.skill)).join(', ')}`);
   }
   if (weakSkills.length > 0) {
-    improvements.push(`Cần ôn lại ${weakSkills.map((s) => s.skill.replace(/-/g, ' ')).join(', ')}`);
+    improvements.push(`Cần ôn lại: ${weakSkills.map((s) => skillLabel(s.skill)).join(', ')}`);
   }
 
   // Score analysis
@@ -1002,7 +1063,7 @@ function StudentDetailModal({ studentId, onClose }: { studentId: string; onClose
                 <div className="space-y-2">
                   {report.skill_breakdown.map((s, i) => (
                     <div key={s.skill} className="flex items-center gap-3">
-                      <span className="text-xs w-28 truncate text-slate-300">{s.skill}</span>
+                      <span className="text-xs w-28 truncate text-slate-300">{skillLabel(s.skill)}</span>
                       <AnimatedBar
                         value={s.accuracy}
                         color={s.accuracy >= 70 ? 'bg-emerald-500' : s.accuracy >= 50 ? 'bg-amber-500' : 'bg-red-500'}
