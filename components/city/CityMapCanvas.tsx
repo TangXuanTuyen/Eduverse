@@ -914,6 +914,12 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
 
     // 6. Achievement Plaza (Quảng Trường Vinh Danh)
     drawAchievementPlaza(ctx, BUILDINGS.achievement_plaza, time);
+
+    // 7. Virtual Lab (Phòng Thí Nghiệm Ảo)
+    if (BUILDINGS.virtual_lab) drawVirtualLab(ctx, BUILDINGS.virtual_lab, time);
+
+    // 8. 3D World (Thế Giới 3D)
+    if (BUILDINGS.world_3d) drawWorld3D(ctx, BUILDINGS.world_3d, time);
   };
 
   // ==========================================
@@ -2036,6 +2042,318 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
     ctx.font = `bold 11px ${uiFontFamily}`;
     ctx.textAlign = 'center';
     ctx.fillText('🏆 QUẢNG TRƯỜNG VINH DANH', bx + bw / 2, signY + 16);
+  };
+
+  const drawVirtualLab = (ctx: CanvasRenderingContext2D, b: BuildingInfo, time: number) => {
+    const bx = b.x * TILE_SIZE;
+    const by = b.y * TILE_SIZE;
+    const bw = b.width * TILE_SIZE;
+    const bh = b.height * TILE_SIZE;
+    const isNearby = nearbyBuilding?.id === b.id;
+
+    // Drop Shadow
+    ctx.fillStyle = '#0000003D';
+    ctx.beginPath();
+    ctx.ellipse(bx + bw / 2, by + bh + 4, bw / 2 + 10, 16, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Dark brown foundation
+    ctx.fillStyle = '#7C2D12';
+    ctx.fillRect(bx, by + 32, bw, bh - 32);
+
+    // Orange accent base strip
+    ctx.fillStyle = '#F97316';
+    ctx.fillRect(bx, by + bh - 4, bw, 4);
+
+    // Inner wall — warm brown lab interior
+    ctx.fillStyle = '#9A3412';
+    ctx.fillRect(bx + 4, by + 36, bw - 8, bh - 42);
+
+    // Hazard stripe accents on pillars
+    ctx.fillStyle = '#F97316';
+    ctx.fillRect(bx + 4, by + 36, 8, bh - 42);
+    ctx.fillRect(bx + bw - 12, by + 36, 8, bh - 42);
+    ctx.fillStyle = '#7C2D12';
+    for (let s = 0; s < 6; s++) {
+      ctx.fillRect(bx + 4, by + 40 + s * 14, 8, 4);
+      ctx.fillRect(bx + bw - 12, by + 40 + s * 14, 8, 4);
+    }
+
+    // Sloped lab roof
+    ctx.fillStyle = '#EA580C';
+    ctx.beginPath();
+    ctx.moveTo(bx - 10, by + 32);
+    ctx.lineTo(bx + 16, by + 6);
+    ctx.lineTo(bx + bw - 16, by + 6);
+    ctx.lineTo(bx + bw + 10, by + 32);
+    ctx.closePath();
+    ctx.fill();
+
+    // Roof eave
+    ctx.fillStyle = '#C2410C';
+    ctx.fillRect(bx - 10, by + 30, bw + 20, 4);
+
+    // Skylight on roof
+    ctx.fillStyle = '#FED7AA';
+    ctx.fillRect(bx + bw / 2 - 20, by + 14, 40, 12);
+    ctx.strokeStyle = '#7C2D12';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(bx + bw / 2 - 20, by + 14, 40, 12);
+    ctx.fillStyle = '#7C2D12';
+    ctx.fillRect(bx + bw / 2, by + 14, 1.5, 12);
+
+    // Lab windows with green bubbling liquid glow
+    const drawLabWindow = (wx: number, wy: number) => {
+      ctx.fillStyle = '#451A03';
+      ctx.fillRect(wx - 2, wy - 2, 40, 42);
+      ctx.fillStyle = '#064E3B';
+      ctx.fillRect(wx, wy, 36, 38);
+      // Bubbling liquid
+      const bubblePhase = (time * 0.004 + wx) % 20;
+      ctx.fillStyle = '#34D399';
+      ctx.beginPath();
+      ctx.arc(wx + 12, wy + 30 - bubblePhase, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(wx + 24, wy + 34 - (bubblePhase * 0.7), 2, 0, Math.PI * 2);
+      ctx.fill();
+      // Flask silhouette
+      ctx.fillStyle = '#10B981';
+      ctx.fillRect(wx + 14, wy + 18, 8, 16);
+      ctx.fillRect(wx + 12, wy + 28, 12, 6);
+      ctx.fillRect(wx + 16, wy + 14, 4, 4);
+      // Window frame cross
+      ctx.fillStyle = '#451A03';
+      ctx.fillRect(wx + 17, wy, 2, 38);
+      ctx.fillRect(wx, wy + 18, 36, 2);
+    };
+
+    drawLabWindow(bx + 20, by + 48);
+    drawLabWindow(bx + bw - 58, by + 48);
+
+    // Entrance door (north facing)
+    const doorX = bx + bw / 2 - 24;
+    const doorY = by + 36;
+
+    if (isNearby) {
+      const doorGlow = (Math.sin(time * 0.008) + 1) * 0.5;
+      ctx.fillStyle = `rgba(249, 115, 22, ${0.2 + doorGlow * 0.25})`;
+      ctx.fillRect(doorX - 10, doorY - 10, 68, 66);
+    }
+
+    ctx.fillStyle = '#292524';
+    ctx.fillRect(doorX - 3, doorY - 3, 54, 50);
+    ctx.fillStyle = '#7C2D12';
+    ctx.fillRect(doorX, doorY, 48, 44);
+    // Door glass panels
+    ctx.fillStyle = '#FED7AA';
+    ctx.fillRect(doorX + 4, doorY + 4, 18, 36);
+    ctx.fillRect(doorX + 26, doorY + 4, 18, 36);
+    // Door handles
+    ctx.fillStyle = '#F59E0B';
+    ctx.fillRect(doorX + 20, doorY + 22, 3, 5);
+    ctx.fillRect(doorX + 25, doorY + 22, 3, 5);
+
+    // Microscope icon above door
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '18px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🔬', bx + bw / 2, by + 26);
+
+    // Lock badge
+    const lockCheck = ProgressionSystem.isBuildingUnlocked(b.id, progress);
+    if (!lockCheck.unlocked) {
+      drawLockBadge(ctx, doorX + 24, doorY + 22);
+    }
+
+    // Signboard
+    const signW = 200;
+    const signH = 24;
+    const signX = bx + bw / 2 - signW / 2;
+    const signY = by + 2;
+
+    ctx.fillStyle = '#7C2D12F2';
+    ctx.fillRect(signX, signY, signW, signH);
+    ctx.strokeStyle = '#F97316';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(signX, signY, signW, signH);
+
+    ctx.fillStyle = '#FED7AA';
+    ctx.font = `bold 11px ${uiFontFamily}`;
+    ctx.textAlign = 'center';
+    ctx.fillText('🔬 PHÒNG THÍ NGHIỆM ẢO', bx + bw / 2, signY + 16);
+  };
+
+  const drawWorld3D = (ctx: CanvasRenderingContext2D, b: BuildingInfo, time: number) => {
+    const bx = b.x * TILE_SIZE;
+    const by = b.y * TILE_SIZE;
+    const bw = b.width * TILE_SIZE;
+    const bh = b.height * TILE_SIZE;
+    const isNearby = nearbyBuilding?.id === b.id;
+
+    // Drop Shadow
+    ctx.fillStyle = '#0000003D';
+    ctx.beginPath();
+    ctx.ellipse(bx + bw / 2, by + bh + 4, bw / 2 + 10, 16, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Deep navy foundation
+    ctx.fillStyle = '#1E3A5F';
+    ctx.fillRect(bx, by + 32, bw, bh - 32);
+
+    // Cyan neon base strip
+    ctx.fillStyle = '#06B6D4';
+    ctx.fillRect(bx, by + bh - 4, bw, 4);
+
+    // Inner wall — dark tech panel
+    ctx.fillStyle = '#0F172A';
+    ctx.fillRect(bx + 4, by + 36, bw - 8, bh - 42);
+
+    // Vertical cyan accent lines (tech look)
+    const cyanPulse = (Math.sin(time * 0.005) + 1) * 0.5;
+    ctx.fillStyle = `rgba(6, 182, 212, ${0.3 + cyanPulse * 0.4})`;
+    ctx.fillRect(bx + 16, by + 40, 3, bh - 50);
+    ctx.fillRect(bx + bw - 19, by + 40, 3, bh - 50);
+
+    // Futuristic dome roof
+    ctx.fillStyle = '#164E63';
+    ctx.beginPath();
+    ctx.moveTo(bx - 8, by + 32);
+    ctx.quadraticCurveTo(bx + bw / 2, by - 10, bx + bw + 8, by + 32);
+    ctx.closePath();
+    ctx.fill();
+
+    // Dome highlight
+    ctx.strokeStyle = '#06B6D4';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(bx + 10, by + 28);
+    ctx.quadraticCurveTo(bx + bw / 2, by - 4, bx + bw - 10, by + 28);
+    ctx.stroke();
+
+    // Rotating holographic globe on dome
+    const globeX = bx + bw / 2;
+    const globeY = by + 10;
+    const globeR = 14;
+    ctx.fillStyle = `rgba(6, 182, 212, ${0.5 + cyanPulse * 0.3})`;
+    ctx.beginPath();
+    ctx.arc(globeX, globeY, globeR, 0, Math.PI * 2);
+    ctx.fill();
+    // Grid lines on globe
+    ctx.strokeStyle = '#22D3EE';
+    ctx.lineWidth = 1;
+    const rot = time * 0.002;
+    for (let i = -1; i <= 1; i++) {
+      const offset = Math.sin(rot + i) * 8;
+      ctx.beginPath();
+      ctx.ellipse(globeX + offset, globeY, 4, globeR - 2, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.ellipse(globeX, globeY, globeR - 2, 5, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    // Globe glow
+    ctx.fillStyle = 'rgba(6, 182, 212, 0.15)';
+    ctx.beginPath();
+    ctx.arc(globeX, globeY, globeR + 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Holographic display windows
+    const drawHoloWindow = (wx: number, wy: number, shape: '3d' | 'wave') => {
+      ctx.fillStyle = '#0C4A6E';
+      ctx.fillRect(wx - 2, wy - 2, 44, 46);
+      ctx.fillStyle = '#083344';
+      ctx.fillRect(wx, wy, 40, 42);
+
+      // Holographic content
+      const flicker = 0.7 + Math.sin(time * 0.01 + wx) * 0.3;
+      ctx.fillStyle = `rgba(34, 211, 238, ${flicker})`;
+      if (shape === '3d') {
+        // 3D cube wireframe
+        ctx.strokeStyle = `rgba(34, 211, 238, ${flicker})`;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(wx + 10, wy + 10, 16, 16);
+        ctx.strokeRect(wx + 16, wy + 6, 16, 16);
+        ctx.beginPath();
+        ctx.moveTo(wx + 10, wy + 10); ctx.lineTo(wx + 16, wy + 6);
+        ctx.moveTo(wx + 26, wy + 10); ctx.lineTo(wx + 32, wy + 6);
+        ctx.moveTo(wx + 10, wy + 26); ctx.lineTo(wx + 16, wy + 22);
+        ctx.moveTo(wx + 26, wy + 26); ctx.lineTo(wx + 32, wy + 22);
+        ctx.stroke();
+      } else {
+        // Sine wave / data visualization
+        ctx.strokeStyle = `rgba(34, 211, 238, ${flicker})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        for (let i = 0; i < 36; i++) {
+          const sx = wx + 2 + i;
+          const sy = wy + 21 + Math.sin((i + time * 0.02) * 0.3) * 8;
+          i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+        }
+        ctx.stroke();
+      }
+
+      // Window border glow
+      ctx.strokeStyle = `rgba(6, 182, 212, ${0.4 + cyanPulse * 0.3})`;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(wx, wy, 40, 42);
+    };
+
+    drawHoloWindow(bx + 20, by + 48, '3d');
+    drawHoloWindow(bx + bw - 62, by + 48, 'wave');
+
+    // Entrance door (north facing)
+    const doorX = bx + bw / 2 - 24;
+    const doorY = by + 36;
+
+    if (isNearby) {
+      const doorGlow = (Math.sin(time * 0.008) + 1) * 0.5;
+      ctx.fillStyle = `rgba(6, 182, 212, ${0.2 + doorGlow * 0.25})`;
+      ctx.fillRect(doorX - 10, doorY - 10, 68, 66);
+    }
+
+    ctx.fillStyle = '#0C4A6E';
+    ctx.fillRect(doorX - 3, doorY - 3, 54, 50);
+    ctx.fillStyle = '#164E63';
+    ctx.fillRect(doorX, doorY, 48, 44);
+    // Door glass panels with cyan tint
+    ctx.fillStyle = '#155E75';
+    ctx.fillRect(doorX + 3, doorY + 3, 20, 38);
+    ctx.fillRect(doorX + 25, doorY + 3, 20, 38);
+    ctx.strokeStyle = '#06B6D4';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(doorX + 3, doorY + 3, 42, 38);
+
+    // Threshold with tech grid
+    ctx.fillStyle = '#0F172A';
+    ctx.fillRect(doorX - 6, doorY - 6, 60, 6);
+    for (let c = 0; c < 8; c++) {
+      ctx.fillStyle = c % 2 === 0 ? '#06B6D4' : '#0891B2';
+      ctx.fillRect(doorX - 4 + c * 8, doorY - 5, 8, 4);
+    }
+
+    // Lock badge
+    const lockCheck = ProgressionSystem.isBuildingUnlocked(b.id, progress);
+    if (!lockCheck.unlocked) {
+      drawLockBadge(ctx, doorX + 24, doorY + 22);
+    }
+
+    // Signboard
+    const signW = 200;
+    const signH = 24;
+    const signX = bx + bw / 2 - signW / 2;
+    const signY = by + 32;
+
+    ctx.fillStyle = '#0F172AF2';
+    ctx.fillRect(signX, signY, signW, signH);
+    ctx.strokeStyle = '#06B6D4';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(signX, signY, signW, signH);
+
+    ctx.fillStyle = '#ECFEFF';
+    ctx.font = `bold 11px ${uiFontFamily}`;
+    ctx.textAlign = 'center';
+    ctx.fillText('🌐 THẾ GIỚI 3D', bx + bw / 2, signY + 16);
   };
 
   const drawSignboard = (ctx: CanvasRenderingContext2D, b: BuildingInfo, cx: number, cy: number) => {
