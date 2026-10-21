@@ -659,7 +659,7 @@ function QuestionsView({ data }: { data: QuestionRow[] }) {
   return (
     <div className="space-y-2 animate-in fade-in duration-300">
       {sorted.map((q, i) => (
-        <div key={q.question_id} className={`bg-slate-900/80 border rounded-xl p-4 ${q.accuracy < 50 ? 'border-red-900/40' : 'border-slate-800'}`}>
+        <div key={`${q.question_id}-${i}`} className={`bg-slate-900/80 border rounded-xl p-4 ${q.accuracy < 50 ? 'border-red-900/40' : 'border-slate-800'}`}>
           <div className="flex items-start justify-between gap-3 mb-2">
             <p className="text-sm text-white flex-1">{q.content}</p>
             <ScoreBadge value={q.accuracy} size="sm" />
