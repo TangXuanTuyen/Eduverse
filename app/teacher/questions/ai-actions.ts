@@ -32,6 +32,10 @@ export async function generateQuestionsAction(
   if (types.length === 0) return { error: 'Chọn ít nhất một loại câu hỏi' };
   if (difficulties.length === 0) return { error: 'Chọn ít nhất một độ khó' };
 
+  if (!process.env.GEMINI_API_KEY) {
+    return { error: 'Chưa cấu hình GEMINI_API_KEY trên server' };
+  }
+
   try {
     const questions = await generateQuestions({
       subject,
@@ -43,7 +47,9 @@ export async function generateQuestionsAction(
     });
     return { questions };
   } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Lỗi tạo câu hỏi AI' };
+    const msg = e instanceof Error ? e.message : 'Lỗi tạo câu hỏi AI';
+    console.error('[AI Generate]', msg);
+    return { error: msg };
   }
 }
 
