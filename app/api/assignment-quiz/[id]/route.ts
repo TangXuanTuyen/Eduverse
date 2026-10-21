@@ -26,7 +26,7 @@ export async function GET(
 
   const { data: member } = await admin
     .from('room_members')
-    .select('id')
+    .select('room_id')
     .eq('room_id', assignment.room_id)
     .eq('user_id', profile.id)
     .eq('is_active', true)
