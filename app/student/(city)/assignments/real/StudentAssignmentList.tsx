@@ -50,7 +50,7 @@ export function StudentAssignmentList({ assignments }: { assignments: Assignment
               return (
                 <Link
                   key={a.id}
-                  href={isTask ? taskRoute : `/student/assignments/real/${a.id}`}
+                  href={isTask ? taskRoute : `/student/arcade?assignment=${a.id}`}
                   className="block bg-slate-800 hover:bg-slate-700 rounded-xl p-3 transition"
                 >
                   <div className="font-medium text-sm text-white">{typeIcon} {a.title}</div>

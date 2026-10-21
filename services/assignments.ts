@@ -272,3 +272,67 @@ export async function getSubmissionStats(assignmentId: string) {
     profiles: { display_name: string };
   }>;
 }
+
+export type QuestionAnalytics = {
+  id: string;
+  sort_order: number;
+  content: string;
+  type: string;
+  points: number;
+  totalAttempts: number;
+  correctCount: number;
+  incorrectCount: number;
+  unansweredCount: number;
+  correctRate: number;
+};
+
+export async function getQuestionAnalytics(assignmentId: string): Promise<QuestionAnalytics[]> {
+  const admin = createAdminClient();
+
+  const { data: questions } = await admin
+    .from('assignment_questions')
+    .select('id, sort_order, content, type, points')
+    .eq('assignment_id', assignmentId)
+    .order('sort_order');
+
+  if (!questions || questions.length === 0) return [];
+
+  const qIds = questions.map((q: { id: string }) => q.id);
+
+  const { data: attempts } = await admin
+    .from('question_attempts')
+    .select('assignment_question_id, is_correct, submission_id, submissions!inner(status)')
+    .in('assignment_question_id', qIds);
+
+  const submitted = (attempts ?? []).filter(
+    (a) => (a.submissions as unknown as { status: string }).status !== 'draft'
+  );
+
+  const { count: submissionCount } = await admin
+    .from('submissions')
+    .select('id', { count: 'exact', head: true })
+    .eq('assignment_id', assignmentId)
+    .neq('status', 'draft');
+
+  const totalStudents = submissionCount ?? 0;
+
+  return questions.map((q: { id: string; sort_order: number; content: string; type: string; points: number }) => {
+    const qAttempts = submitted.filter((a) => a.assignment_question_id === q.id);
+    const correct = qAttempts.filter((a) => a.is_correct === true).length;
+    const incorrect = qAttempts.filter((a) => a.is_correct === false).length;
+    const unanswered = totalStudents - qAttempts.length;
+    const total = qAttempts.length;
+    return {
+      id: q.id,
+      sort_order: q.sort_order,
+      content: q.content,
+      type: q.type,
+      points: q.points,
+      totalAttempts: total,
+      correctCount: correct,
+      incorrectCount: incorrect,
+      unansweredCount: Math.max(0, unanswered),
+      correctRate: total > 0 ? Math.round((correct / total) * 100) : 0,
+    };
+  });
+}

@@ -191,10 +191,10 @@ export const SchoolModal: React.FC<SchoolModalProps> = ({
                         <p className="text-xs text-slate-500">{a.rooms.name}</p>
                         <button
                           type="button"
-                          onClick={() => { onClose(); router.push('/student/arcade'); }}
+                          onClick={() => { onClose(); router.push(`/student/arcade?assignment=${a.id}`); }}
                           className="text-xs px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-medium min-h-[36px] transition"
                         >
-                          ⚡ Đi đến Đấu Trường →
+                          ⚡ Làm bài tại Đấu Trường →
                         </button>
                       </div>
                     </div>

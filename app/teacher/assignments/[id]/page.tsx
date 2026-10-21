@@ -1,5 +1,5 @@
 import { getCurrentProfile } from '@/lib/auth/session';
-import { getAssignment, getSubmissionStats } from '@/services/assignments';
+import { getAssignment, getSubmissionStats, getQuestionAnalytics } from '@/services/assignments';
 import { redirect } from 'next/navigation';
 
 type Props = { params: Promise<{ id: string }> };
@@ -17,9 +17,21 @@ export default async function AssignmentDetailPage({ params }: Props) {
     redirect('/teacher/assignments');
   }
 
-  const stats = await getSubmissionStats(id);
+  const [stats, questionAnalytics] = await Promise.all([
+    getSubmissionStats(id),
+    getQuestionAnalytics(id),
+  ]);
   const submitted = stats.filter((s) => s.status !== 'draft');
   const graded = stats.filter((s) => s.status === 'graded' || s.status === 'published');
+
+  const scores = graded.map((s) => s.total_score ?? 0);
+  const maxScore = graded[0]?.max_score ?? 0;
+  const scoreDistribution = maxScore > 0 ? {
+    excellent: scores.filter((s) => s / maxScore >= 0.9).length,
+    good: scores.filter((s) => s / maxScore >= 0.7 && s / maxScore < 0.9).length,
+    average: scores.filter((s) => s / maxScore >= 0.5 && s / maxScore < 0.7).length,
+    weak: scores.filter((s) => s / maxScore < 0.5).length,
+  } : null;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
@@ -77,6 +89,77 @@ export default async function AssignmentDetailPage({ params }: Props) {
           </div>
         )}
       </div>
+
+      {/* Score distribution */}
+      {scoreDistribution && graded.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-sm font-bold text-white">Phân bố điểm</h2>
+          <div className="grid grid-cols-4 gap-2">
+            <div className="bg-green-900/30 border border-green-800/50 rounded-xl p-3 text-center">
+              <div className="text-lg font-bold text-green-300">{scoreDistribution.excellent}</div>
+              <div className="text-[10px] text-green-400">Giỏi (≥90%)</div>
+            </div>
+            <div className="bg-blue-900/30 border border-blue-800/50 rounded-xl p-3 text-center">
+              <div className="text-lg font-bold text-blue-300">{scoreDistribution.good}</div>
+              <div className="text-[10px] text-blue-400">Khá (70-89%)</div>
+            </div>
+            <div className="bg-amber-900/30 border border-amber-800/50 rounded-xl p-3 text-center">
+              <div className="text-lg font-bold text-amber-300">{scoreDistribution.average}</div>
+              <div className="text-[10px] text-amber-400">TB (50-69%)</div>
+            </div>
+            <div className="bg-red-900/30 border border-red-800/50 rounded-xl p-3 text-center">
+              <div className="text-lg font-bold text-red-300">{scoreDistribution.weak}</div>
+              <div className="text-[10px] text-red-400">Yếu (&lt;50%)</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Question-level analytics */}
+      {questionAnalytics.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-sm font-bold text-white">Phân tích từng câu hỏi</h2>
+          <div className="space-y-2">
+            {questionAnalytics.map((q) => (
+              <div key={q.id} className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-slate-500 mb-1">Câu {q.sort_order + 1} · {q.points} điểm</p>
+                    <p className="text-sm text-white">{q.content}</p>
+                  </div>
+                  <div className={`shrink-0 text-right ${q.correctRate >= 70 ? 'text-green-400' : q.correctRate >= 50 ? 'text-amber-400' : 'text-red-400'}`}>
+                    <div className="text-lg font-bold">{q.correctRate}%</div>
+                    <div className="text-[10px]">đúng</div>
+                  </div>
+                </div>
+                {q.totalAttempts > 0 && (
+                  <div className="mt-2 flex gap-1 h-2 rounded-full overflow-hidden">
+                    {q.correctCount > 0 && (
+                      <div
+                        className="bg-green-500 rounded-l-full"
+                        style={{ width: `${(q.correctCount / q.totalAttempts) * 100}%` }}
+                        title={`${q.correctCount} đúng`}
+                      />
+                    )}
+                    {q.incorrectCount > 0 && (
+                      <div
+                        className="bg-red-500"
+                        style={{ width: `${(q.incorrectCount / q.totalAttempts) * 100}%` }}
+                        title={`${q.incorrectCount} sai`}
+                      />
+                    )}
+                  </div>
+                )}
+                <div className="mt-1 flex gap-3 text-[10px] text-slate-500">
+                  <span>✓ {q.correctCount} đúng</span>
+                  <span>✗ {q.incorrectCount} sai</span>
+                  {q.unansweredCount > 0 && <span>— {q.unansweredCount} chưa trả lời</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

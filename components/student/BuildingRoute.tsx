@@ -16,7 +16,7 @@ import { VirtualLabModal } from '@/components/learning/VirtualLabModal';
 import { World3DModal } from '@/components/learning/World3DModal';
 
 /** Hiển thị hộp thoại của một địa điểm; dùng chung cho mọi route /student/<địa điểm>. */
-export function BuildingRoute({ id }: { id: BuildingId }) {
+export function BuildingRoute({ id, assignmentId }: { id: BuildingId; assignmentId?: string }) {
   const game = useStudentGame();
   const router = useRouter();
   const unlocked = ProgressionSystem.isBuildingUnlocked(id, game.progress).unlocked;
@@ -41,6 +41,7 @@ export function BuildingRoute({ id }: { id: BuildingId }) {
       return (
         <QuizArcadeModal
           onClose={game.closeBuilding}
+          assignmentId={assignmentId}
         />
       );
     case 'review_station':

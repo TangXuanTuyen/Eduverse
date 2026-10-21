@@ -13,13 +13,14 @@ import { RoomInteriorScene } from './RoomInteriorScene';
 import { DialogFrame } from '@/components/ui/DialogFrame';
 import { QuickChallengeClient } from '@/components/games/QuickChallengeClient';
 import { BossBattle } from '@/components/games/BossBattle';
-import Link from 'next/link';
+import { AssignmentQuizTaker } from '@/components/games/AssignmentQuizTaker';
 
 interface QuizArcadeModalProps {
   onClose: () => void;
+  assignmentId?: string | null;
 }
 
-type ArcadeScreen = 'menu' | 'quick_challenge' | 'boss_battle';
+type ArcadeScreen = 'menu' | 'quick_challenge' | 'boss_battle' | 'assignment_quiz';
 
 type QuizAssignment = {
   id: string;
@@ -31,8 +32,10 @@ type QuizAssignment = {
 
 export const QuizArcadeModal: React.FC<QuizArcadeModalProps> = ({
   onClose,
+  assignmentId,
 }) => {
-  const [screen, setScreen] = useState<ArcadeScreen>('menu');
+  const [screen, setScreen] = useState<ArcadeScreen>(assignmentId ? 'assignment_quiz' : 'menu');
+  const [activeAssignmentId, setActiveAssignmentId] = useState<string | null>(assignmentId ?? null);
   const [quizAssignments, setQuizAssignments] = useState<QuizAssignment[]>([]);
 
   useEffect(() => {
@@ -132,10 +135,14 @@ export const QuizArcadeModal: React.FC<QuizArcadeModalProps> = ({
                       const now = new Date();
                       const overdue = a.due_at && new Date(a.due_at) < now;
                       return (
-                        <Link
+                        <button
                           key={a.id}
-                          href={`/student/assignments/real/${a.id}`}
-                          className="flex items-center justify-between bg-slate-800/60 rounded-lg p-3 hover:bg-slate-700/60 transition"
+                          type="button"
+                          onClick={() => {
+                            setActiveAssignmentId(a.id);
+                            setScreen('assignment_quiz');
+                          }}
+                          className="w-full flex items-center justify-between bg-slate-800/60 rounded-lg p-3 hover:bg-slate-700/60 transition text-left cursor-pointer"
                         >
                           <div className="space-y-0.5 flex-1 min-w-0">
                             <p className="text-sm text-white font-medium truncate">📝 {a.title}</p>
@@ -155,7 +162,7 @@ export const QuizArcadeModal: React.FC<QuizArcadeModalProps> = ({
                           <span className="rounded-lg bg-blue-600 hover:bg-blue-500 px-3 py-2 text-xs text-white font-medium min-h-[44px] flex items-center gap-1.5 shrink-0">
                             Làm bài →
                           </span>
-                        </Link>
+                        </button>
                       );
                     })}
                   </div>
@@ -188,6 +195,16 @@ export const QuizArcadeModal: React.FC<QuizArcadeModalProps> = ({
 
           {screen === 'boss_battle' && (
             <BossBattle onClose={() => setScreen('menu')} />
+          )}
+
+          {screen === 'assignment_quiz' && activeAssignmentId && (
+            <AssignmentQuizTaker
+              assignmentId={activeAssignmentId}
+              onBack={() => {
+                setActiveAssignmentId(null);
+                setScreen('menu');
+              }}
+            />
           )}
         </div>
       </div>
