@@ -2,6 +2,7 @@ import 'server-only';
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { awardXp } from './xp';
+import { addToReviewQueue } from './review-queue';
 
 export type SubmissionRow = {
   id: string;
@@ -138,7 +139,7 @@ export async function submitAssignment(submissionId: string, studentId: string) 
   // Get assignment questions (with correct_answer for auto-grading)
   const { data: aqs } = await admin
     .from('assignment_questions')
-    .select('id, type, correct_answer, points')
+    .select('id, type, correct_answer, points, source_question_id')
     .eq('assignment_id', sub.assignment_id);
 
   // Get student attempts
@@ -154,6 +155,7 @@ export async function submitAssignment(submissionId: string, studentId: string) 
   let totalScore = 0;
   let maxScore = 0;
   let allAutoGraded = true;
+  const wrongSourceIds: string[] = [];
 
   for (const aq of aqs ?? []) {
     const q = aq as Record<string, unknown>;
@@ -194,6 +196,9 @@ export async function submitAssignment(submissionId: string, studentId: string) 
       .update({ is_correct: isCorrect, score })
       .eq('id', attempt.id);
 
+    if (isCorrect === false && q.source_question_id) {
+      wrongSourceIds.push(q.source_question_id as string);
+    }
     if (score != null) totalScore += score;
   }
 
@@ -232,6 +237,13 @@ export async function submitAssignment(submissionId: string, studentId: string) 
     }
   } catch {
     // XP failure should not block submission
+  }
+
+  // Đưa câu sai vào Trạm Sửa Lỗi
+  for (const srcId of wrongSourceIds) {
+    try {
+      await addToReviewQueue(studentId, srcId);
+    } catch { /* review failure should not block submission */ }
   }
 
   return { status: newStatus, totalScore, maxScore, isLate, xpAwarded };
