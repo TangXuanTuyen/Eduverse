@@ -26,6 +26,18 @@ const GRADE_LABELS: Record<number, string> = {
 
 const DEMO_EXPERIMENTS: Experiment[] = [
   {
+    id: 'vat_dan_dien_cach_dien',
+    title: 'Vật dẫn điện, vật cách điện & Điện nghiệm',
+    description: 'Bài 21 · Chương V: Điện — Thử các vật liệu trong mạch điện để phân biệt vật dẫn điện và vật cách điện. Quan sát sự dịch chuyển điện tích giữa hai điện nghiệm.',
+    subject: 'Vật lý',
+    grade_level: 8,
+    thumbnail_url: null,
+    embed_url: '/experiments/vat-dan-dien-cach-dien/index.html',
+    component_key: 'vat_dan_dien_cach_dien',
+    duration_minutes: 15,
+    difficulty: 1,
+  },
+  {
     id: 'simple_circuit',
     title: 'Thí nghiệm lắp mạch điện đơn giản',
     description: 'Bài 22 · Chương V: Điện — Kéo thả pin, bóng đèn, công tắc và dây dẫn để lắp mạch điện kín. Quan sát dòng điện và đèn sáng.',

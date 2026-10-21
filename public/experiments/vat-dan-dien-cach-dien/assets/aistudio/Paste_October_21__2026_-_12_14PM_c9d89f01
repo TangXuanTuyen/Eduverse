@@ -1,0 +1,485 @@
+XÂY DỰNG PHÒNG THÍ NGHIỆM ẢO KHOA HỌC TỰ NHIÊN – VINA-EDUVERSE
+1. Vai trò và mục tiêu
+Bạn là chuyên gia phát triển mô phỏng thí nghiệm khoa học tương tác, chuyên gia giáo dục STEM và lập trình viên web.
+Hãy xây dựng một trang Phòng thí nghiệm ảo (Virtual Science Lab) tích hợp vào nền tảng Vina-Eduverse, phục vụ học sinh THCS học Khoa học tự nhiên thông qua thao tác thí nghiệm, quan sát hiện tượng, kiểm tra giả thuyết, phát hiện lỗi và rút ra kết luận khoa học.
+Đây phải là một ứng dụng tương tác thực sự, không phải trang giới thiệu thí nghiệm, video minh họa hay hình ảnh tĩnh.
+Ưu tiên:
+Độ chính xác của kiến thức khoa học.
+Hành vi của các thiết bị và hiện tượng phù hợp với điều kiện vật lý.
+Học sinh được tự tay thao tác, thử nghiệm và mắc lỗi.
+Có phản hồi khi thao tác sai, giải thích nguyên nhân và hướng dẫn cách khắc phục.
+Giao diện tiếng Việt, thân thiện với học sinh THCS.
+Hoạt động ổn định trên máy tính và máy tính bảng.
+2. Giao diện tổng thể
+Thiết kế trang theo phong cách phòng thí nghiệm hiện đại, phù hợp với Vina-Eduverse:
+Nền sáng, bố cục sạch, màu xanh ngọc hoặc xanh dương làm màu chính.
+Có thể dùng màu cam làm màu nhấn, không sử dụng quá nhiều hiệu ứng.
+Mô hình dụng cụ theo phong cách 3D hoặc 2.5D, rõ ràng, dễ quan sát.
+Không dùng hoạt ảnh trang trí thay thế cho mô phỏng khoa học.
+Không bắt buộc kết nối AI API để các thí nghiệm cơ bản hoạt động.
+Bố cục gồm:
+Thanh tiêu đề: “PHÒNG THÍ NGHIỆM ẢO”.
+Danh mục thí nghiệm.
+Khu vực thao tác chính: bàn thí nghiệm, dụng cụ, dây nối và mẫu vật.
+Bảng dụng cụ và thông số.
+Bảng hướng dẫn thao tác.
+Khu vực quan sát hiện tượng.
+Nhật ký thí nghiệm, ghi lại thao tác, kết quả và lỗi.
+Bảng kết luận khoa học.
+Các nút: “Bắt đầu”, “Tạm dừng”, “Làm lại”, “Gợi ý”, “Kiểm tra kết quả”.
+Học sinh phải có thể kéo thả, lắp ráp, tháo rời, bật/tắt và thay đổi trạng thái các dụng cụ. Không chỉ cung cấp các nút chọn đáp án có sẵn.
+3. THÍ NGHIỆM 1: TÌM HIỂU VẬT DẪN ĐIỆN VÀ VẬT CÁCH ĐIỆN
+3.1. Mục tiêu
+Học sinh thực hiện được một mạch điện đơn giản để kiểm tra khả năng dẫn điện của các vật liệu, từ đó phân loại vật dẫn điện và vật cách điện.
+3.2. Dụng cụ
+Nguồn điện một chiều 3 V.
+Bóng đèn sợi đốt định mức 2,5 V.
+Dây nối có hai đầu kẹp.
+Công tắc.
+Hai kẹp kim loại để giữ mẫu thử.
+Các mẫu thử: lá đồng, lá nhôm và lá nhựa.
+Có thể bổ sung mẫu thử khác ở chế độ mở rộng.
+Dụng cụ phải có hình dạng, vị trí tiếp xúc và đầu nối hợp lý. Mỗi dụng cụ là một đối tượng tương tác độc lập.
+3.3. Cách lắp mạch
+Mạch điện phải được mô phỏng theo một mạch nối tiếp gồm:
+Cực dương nguồn điện → công tắc → bóng đèn → kẹp kim loại thứ nhất → mẫu vật cần thử → kẹp kim loại thứ hai → cực âm nguồn điện.
+Có thể thay đổi thứ tự các phần tử trong mạch nối tiếp nhưng phải bảo đảm chúng tạo thành một vòng kín.
+Hai kẹp kim loại phải tiếp xúc điện với hai đầu của mẫu vật. Dòng điện chỉ được chạy khi toàn bộ đường dẫn điện liên tục và công tắc đóng.
+3.4. Cơ chế vật lý bắt buộc
+Xây dựng mô hình mạch điện có các trạng thái thực:
+Mạch hở: không có dòng điện chạy qua, bóng đèn tắt.
+Mạch kín với mẫu dẫn điện: có dòng điện, bóng đèn sáng.
+Mạch kín với mẫu cách điện: không có dòng điện đáng kể, bóng đèn tắt.
+Mạch có dây bị đứt hoặc đầu kẹp không tiếp xúc: bóng đèn tắt.
+Công tắc mở: bóng đèn tắt.
+Mẫu vật không nằm giữa hai đầu kẹp hoặc không nối liền hai đầu kẹp: mạch không được coi là kín qua mẫu vật.
+Nếu mắc dây tạo thành nhánh nối tắt qua bóng đèn, phải mô phỏng sự phân bố dòng điện và cảnh báo ngắn mạch khi phù hợp.
+Không được quy định rằng chỉ cần học sinh kéo một mẫu vật vào màn hình là bóng đèn sẽ sáng. Phải xác định được mạch điện thực tế đã được kết nối đúng hay chưa.
+3.5. Mô phỏng từng mẫu vật
+Lá đồng:
+Khi tiếp xúc tốt với hai kẹp, dòng điện chạy qua mẫu.
+Bóng đèn sáng.
+Hiển thị kết luận: đồng là vật dẫn điện.
+Lá nhôm:
+Khi tiếp xúc tốt với hai kẹp, dòng điện chạy qua mẫu.
+Bóng đèn sáng.
+Hiển thị kết luận: nhôm là vật dẫn điện.
+Lá nhựa:
+Khi hai kẹp chỉ tiếp xúc với phần nhựa cách điện, dòng điện không chạy qua mạch.
+Bóng đèn tắt.
+Hiển thị kết luận: nhựa thông thường là vật cách điện.
+Mô hình phải cho phép quan sát độ sáng của bóng đèn. Với cấu hình nguồn 3 V và bóng đèn sợi đốt định mức 2,5 V theo dụng cụ của thí nghiệm, cần lưu ý nguồn điện cao hơn điện áp định mức; chỉ mô phỏng định tính hoặc nêu rõ đây là cấu hình minh họa theo bài học, không khuyến khích vận hành thực tế kéo dài ở điều kiện vượt định mức.
+Không sử dụng độ sáng để khẳng định đồng và nhôm có độ dẫn điện bằng nhau. Nếu không mô phỏng đầy đủ điện trở tiếp xúc, kích thước mẫu và đặc tính bóng đèn, chỉ nên kết luận định tính.
+3.6. Những lỗi học sinh có thể mắc
+Tạo cơ chế phát hiện các lỗi sau:
+Quên đóng công tắc.
+Chỉ nối một đầu mẫu vật.
+Một đầu kẹp không tiếp xúc với mẫu.
+Dây nối bị rời.
+Lắp dây khiến bóng đèn không nằm trong mạch.
+Dùng nhựa thay cho kim loại.
+Đặt mẫu vật nhưng hai kẹp không chạm vào hai phía dẫn điện của mẫu.
+Nối tắt qua hai cực nguồn điện.
+Khi phát hiện lỗi, không tự động sửa mạch cho học sinh.
+Hiển thị phản hồi theo ba cấp độ:
+Cấp 1 – Gợi ý nhẹ: “Hãy kiểm tra xem công tắc đã đóng chưa.”
+Cấp 2 – Gợi ý xác định vị trí: Tô sáng vị trí dây nối bị hở hoặc đầu kẹp chưa tiếp xúc.
+Cấp 3 – Giải thích khoa học: “Dòng điện chỉ chạy liên tục khi mạch kín. Một vị trí tiếp xúc bị hở có thể làm ngắt mạch và khiến bóng đèn không sáng.”
+Nếu học sinh dùng nhựa, giải thích rằng nhựa thông thường không có đủ hạt tải điện tự do để dẫn dòng điện đáng kể trong điều kiện thí nghiệm.
+3.7. Quan sát và đánh giá
+Hiển thị:
+Trạng thái công tắc.
+Trạng thái mạch: kín hoặc hở.
+Mẫu vật đang kiểm tra.
+Trạng thái bóng đèn.
+Kết quả: dẫn điện, không dẫn điện trong điều kiện thử nghiệm, hoặc chưa đủ điều kiện kết luận.
+Nhật ký các lần thử.
+Sau khi kiểm tra cả ba mẫu vật, học sinh hoàn thành bảng:
+Mẫu vật	Bóng đèn	Kết luận
+Đồng	Tự ghi nhận	Tự rút ra
+Nhôm	Tự ghi nhận	Tự rút ra
+Nhựa	Tự ghi nhận	Tự rút ra
+Chỉ công bố kết luận chính thức sau khi học sinh thực hiện thí nghiệm hoặc yêu cầu kiểm tra kết quả.
+4. THÍ NGHIỆM 2: HAI ĐIỆN NGHIỆM VÀ SỰ DỊCH CHUYỂN ĐIỆN TÍCH
+4.1. Mục tiêu
+Học sinh quan sát được sự thay đổi độ xòe của lá điện nghiệm khi nối hai điện nghiệm bằng thanh kim loại, từ đó hiểu rằng điện tích có thể dịch chuyển qua vật dẫn và phân bố lại.
+4.2. Dụng cụ và trạng thái ban đầu
+Điện nghiệm A đang tích điện, hai lá kim loại xòe ra.
+Điện nghiệm B ban đầu trung hòa về điện, hai lá kim loại khép lại.
+Một thanh kim loại dùng để nối hai quả cầu của điện nghiệm.
+Có thể bổ sung thanh nhựa cách điện để học sinh so sánh.
+Minh họa rõ các quả cầu kim loại, thanh dẫn, lá kim loại và phần đế cách điện.
+4.3. Cách tiến hành
+Quan sát trạng thái ban đầu của điện nghiệm A và B.
+Học sinh kéo thanh kim loại nối hai quả cầu.
+Mô phỏng sự dịch chuyển điện tích khi hai quả cầu tiếp xúc điện.
+Quan sát sự thay đổi độ xòe của hai cặp lá.
+Ngắt thanh nối và so sánh trạng thái sau thí nghiệm.
+4.4. Quy luật vật lý phải tuân thủ
+Ban đầu:
+Điện nghiệm A tích điện nên hai lá xòe ra.
+Điện nghiệm B trung hòa nên hai lá gần như khép lại.
+Khi nối hai quả cầu bằng thanh kim loại:
+Điện tích được phân bố lại qua hệ dẫn điện cho đến khi hệ đạt trạng thái cân bằng điện.
+Điện nghiệm A thường giảm độ xòe.
+Điện nghiệm B có điện tích và hai lá bắt đầu xòe ra.
+Nếu hai điện nghiệm giống nhau và có điện dung tương đương, trong mô hình lý tưởng, điện tích tổng ban đầu được chia sẻ giữa hai điện nghiệm, làm trạng thái của chúng tiến gần nhau.
+Khi ngắt thanh nối:
+Nếu không có sự rò điện đáng kể, mỗi điện nghiệm giữ lại điện tích của nó tại thời điểm ngắt.
+Hai lá của điện nghiệm có thể tiếp tục xòe sau khi ngắt.
+Không tự động đưa điện nghiệm B trở lại trung hòa sau khi ngắt thanh nối.
+4.5. Mô hình điện tích và giới hạn của mô phỏng
+Phải xây dựng mô hình trạng thái điện tích, không chỉ tạo hoạt ảnh hai lá chuyển động.
+Cho phép chọn điện nghiệm A tích điện dương hoặc âm trong chế độ nâng cao.
+Nếu A tích điện âm và B trung hòa, electron có xu hướng dịch chuyển từ A sang B.
+Nếu A tích điện dương và B trung hòa, electron có xu hướng dịch chuyển từ B sang A.
+Chiều dịch chuyển electron ngược với chiều dòng điện quy ước.
+Trong cả hai trường hợp, sự phân bố điện tích thay đổi có thể làm hai lá của B xòe ra.
+Ở chế độ cơ bản, có thể sử dụng mô hình định tính với hai điện nghiệm giống nhau, cùng điều kiện môi trường, để minh họa sự chia sẻ điện tích. Ở chế độ nâng cao, cần xét điện dung, điện tích ban đầu, dấu điện tích và ảnh hưởng của môi trường.
+Không được khẳng định rằng mọi cấu hình nối hai điện nghiệm đều cho kết quả chia điện tích chính xác 50/50. Kết quả thực tế phụ thuộc vào điện dung của từng điện nghiệm và điều kiện bố trí.
+Nếu mô phỏng bằng các con số, hãy ghi rõ đó là giá trị lý tưởng hoặc giá trị minh họa, không phải số đo thực nghiệm.
+4.6. Các lỗi thao tác cần mô phỏng
+Lỗi 1: Dùng thanh nhựa để nối hai quả cầu
+Không hình thành đường dẫn điện đáng kể qua thanh nhựa thông thường.
+Điện nghiệm A tiếp tục xòe.
+Điện nghiệm B gần như không đổi.
+Phản hồi: “Thanh nhựa là vật cách điện. Hãy thử bằng thanh kim loại.”
+Lỗi 2: Thanh kim loại chỉ chạm vào một quả cầu
+Không tạo được đường dẫn điện liên tục giữa hai điện nghiệm.
+Không được mô phỏng sự phân bố điện tích như khi nối hoàn chỉnh.
+Lỗi 3: Thanh nối bị hở hoặc mất tiếp xúc trong quá trình thao tác
+Dừng quá trình truyền điện tích tại thời điểm mất tiếp xúc.
+Giữ trạng thái điện tích phù hợp với trạng thái ngay trước khi ngắt.
+Lỗi 4: Học sinh cho rằng điện tích biến mất
+Không xóa điện tích khỏi hệ khi chỉ nối hai điện nghiệm.
+Giải thích rằng điện tích được phân bố lại trong hệ; nếu không có đường rò ra môi trường thì tổng điện tích được bảo toàn.
+Lỗi 5: Học sinh dự đoán điện nghiệm B không đổi sau khi nối kim loại
+Cho học sinh tiếp tục quan sát và so sánh trước – sau.
+Giải thích rằng điện tích có thể dịch chuyển qua thanh dẫn, khiến hai lá của B mang điện cùng dấu và đẩy nhau.
+Lỗi 6: Học sinh dự đoán cả hai điện nghiệm luôn có độ xòe bằng nhau
+Không mặc định điều này trong mọi cấu hình.
+Giải thích rằng độ xòe phụ thuộc vào lượng điện tích, hình học, điện dung và các điều kiện của điện nghiệm.
+4.7. Hoạt ảnh và quan sát
+Hiển thị:
+Trạng thái điện tích ban đầu.
+Đường nối kim loại hoặc nhựa.
+Chiều dịch chuyển electron bằng mũi tên khi đã xác định dấu điện tích.
+Độ xòe của hai cặp lá theo thời gian.
+Trạng thái trước khi nối, khi đang nối và sau khi ngắt.
+Tổng điện tích của hệ trong mô hình lý tưởng.
+Không dùng các hạt điện tích chạy theo quỹ đạo trang trí không có ý nghĩa vật lý. Mọi mũi tên và hoạt ảnh phải phản ánh đúng trạng thái của mô hình.
+5. CƠ CHẾ PHÁT HIỆN VÀ SỬA LỖI CHUNG
+Xây dựng một bộ kiểm tra trạng thái thí nghiệm.
+Mỗi thao tác của học sinh phải cập nhật trạng thái thiết bị, kết nối và kết quả quan sát.
+Không được:
+Tự động hiển thị kết quả đúng khi học sinh chưa thao tác.
+Cho bóng đèn sáng khi mạch điện hở.
+Cho dòng điện đi qua mẫu cách điện lý tưởng.
+Cho điện tích biến mất chỉ vì học sinh ngắt thanh nối.
+Tự sửa thao tác sai mà không thông báo.
+Đánh giá đúng hoặc sai chỉ dựa vào vị trí kéo thả mà bỏ qua kết nối thực tế.
+Khi học sinh mắc lỗi:
+Xác định trạng thái gây lỗi.
+Giữ nguyên trạng thái hiện tại để học sinh tự tìm cách sửa.
+Hiển thị thông báo ngắn gọn.
+Cung cấp gợi ý theo từng cấp độ.
+Sau khi học sinh sửa lỗi, chạy lại mô phỏng và cập nhật kết quả.
+6. CHẾ ĐỘ HỌC TẬP
+Tạo ba chế độ:
+Chế độ khám phá
+Học sinh tự do kéo thả, thử nghiệm.
+Không hiện sẵn kết luận.
+Có nhật ký thao tác.
+Chế độ hướng dẫn
+Hiển thị quy trình từng bước.
+Cung cấp gợi ý khi học sinh gặp khó khăn.
+Chỉ chuyển bước khi điều kiện tương ứng đã đạt.
+Chế độ thử thách
+Hệ thống đưa ra một nhiệm vụ, ví dụ: “Hãy tìm nguyên nhân khiến bóng đèn không sáng.”
+Cài đặt sẵn một hoặc nhiều lỗi.
+Học sinh tự phát hiện, sửa lỗi và giải thích kết quả.
+Chấm điểm dựa trên thao tác, khả năng giải thích và kết luận khoa học, không chỉ dựa vào tốc độ.
+7. KẾT LUẬN VÀ PHIẾU HỌC TẬP SỐ
+Sau mỗi thí nghiệm, hiển thị một phiếu học tập có thể điền trực tiếp:
+Câu hỏi nghiên cứu.
+Dự đoán ban đầu.
+Các bước đã thực hiện.
+Hiện tượng quan sát được.
+Lỗi đã gặp và cách khắc phục.
+Kết luận khoa học.
+Câu hỏi vận dụng.
+Cho phép học sinh lưu kết quả vào tài khoản của mình nếu Vina-Eduverse đã có chức năng đăng nhập và lưu dữ liệu. Nếu chưa có, phải có phương án lưu cục bộ hoặc xuất kết quả, không giả lập việc lưu dữ liệu lên máy chủ.
+8. YÊU CẦU KỸ THUẬT
+Trước khi lập trình, kiểm tra cấu trúc dự án hiện tại của Vina-Eduverse và tích hợp vào kiến trúc sẵn có.
+Không tạo một dự án độc lập nếu có thể tích hợp trực tiếp.
+Không làm hỏng các chức năng hiện có.
+Tách riêng giao diện, trạng thái thí nghiệm và logic vật lý.
+Xây dựng bộ kiểm thử cho các trạng thái đúng và sai.
+Các quy luật khoa học phải được xử lý bằng logic xác định, không phụ thuộc vào câu trả lời ngẫu nhiên của AI.
+AI chỉ hỗ trợ giải thích, đặt câu hỏi gợi mở và hướng dẫn học tập; không được phép thay đổi kết quả mô phỏng vật lý.
+Không yêu cầu API key để chạy hai thí nghiệm cơ bản.
+Tối ưu để thao tác kéo thả mượt trên trình duyệt máy tính và máy tính bảng.
+Nếu dự án đã có cơ chế đăng nhập, phân quyền giáo viên – học sinh, hãy tái sử dụng cơ chế đó.
+9. TIÊU CHÍ NGHIỆM THU
+Chỉ xem tính năng hoàn thành khi vượt qua các kiểm thử sau:
+Lắp đúng mạch với lá đồng, đóng công tắc: bóng đèn sáng.
+Thay lá đồng bằng lá nhôm: bóng đèn sáng.
+Thay mẫu thử bằng lá nhựa: bóng đèn tắt.
+Mở công tắc: bóng đèn tắt dù sử dụng mẫu kim loại.
+Làm đứt một dây nối: bóng đèn tắt.
+Dùng thanh nhựa nối hai điện nghiệm: không có sự phân bố điện tích đáng kể qua thanh nhựa.
+Dùng thanh kim loại nối hai điện nghiệm: mô phỏng sự phân bố điện tích và thay đổi độ xòe của hai cặp lá.
+Ngắt thanh nối sau khi điện tích đã phân bố: giữ trạng thái điện tích phù hợp, không tự đưa hệ về trạng thái ban đầu.
+Thử các thao tác sai: ứng dụng đưa ra phản hồi đúng với nguyên nhân.
+Làm mới trang: giao diện và các chức năng cơ bản vẫn hoạt động ổn định.
+10. CÁCH TRIỂN KHAI
+Hãy thực hiện theo thứ tự:
+Bước 1: Kiểm tra cấu trúc dự án, công nghệ và các thành phần giao diện hiện có.
+Bước 2: Xây dựng trang Phòng thí nghiệm ảo với hai thí nghiệm, điều hướng rõ ràng và giao diện hoàn chỉnh.
+Bước 3: Xây dựng mô hình trạng thái và logic vật lý cho từng thí nghiệm.
+Bước 4: Triển khai thao tác kéo thả, phản hồi lỗi, gợi ý và phiếu học tập.
+Bước 5: Viết và chạy các kiểm thử theo 10 tiêu chí nghiệm thu.
+Bước 6: Khắc phục lỗi và báo cáo những chức năng đã hoạt động thực tế, những ph# XÂY DỰNG PHÒNG THÍ NGHIỆM ẢO KHOA HỌC TỰ NHIÊN – VINA-EDUVERSE
+1. Vai trò và mục tiêu
+Bạn là chuyên gia phát triển mô phỏng thí nghiệm khoa học tương tác, chuyên gia giáo dục STEM và lập trình viên web.
+Hãy xây dựng một trang Phòng thí nghiệm ảo (Virtual Science Lab) tích hợp vào nền tảng Vina-Eduverse, phục vụ học sinh THCS học Khoa học tự nhiên thông qua thao tác thí nghiệm, quan sát hiện tượng, kiểm tra giả thuyết, phát hiện lỗi và rút ra kết luận khoa học.
+Đây phải là một ứng dụng tương tác thực sự, không phải trang giới thiệu thí nghiệm, video minh họa hay hình ảnh tĩnh.
+Ưu tiên:
+Độ chính xác của kiến thức khoa học.
+Hành vi của các thiết bị và hiện tượng phù hợp với điều kiện vật lý.
+Học sinh được tự tay thao tác, thử nghiệm và mắc lỗi.
+Có phản hồi khi thao tác sai, giải thích nguyên nhân và hướng dẫn cách khắc phục.
+Giao diện tiếng Việt, thân thiện với học sinh THCS.
+Hoạt động ổn định trên máy tính và máy tính bảng.
+2. Giao diện tổng thể
+Thiết kế trang theo phong cách phòng thí nghiệm hiện đại, phù hợp với Vina-Eduverse:
+Nền sáng, bố cục sạch, màu xanh ngọc hoặc xanh dương làm màu chính.
+Có thể dùng màu cam làm màu nhấn, không sử dụng quá nhiều hiệu ứng.
+Mô hình dụng cụ theo phong cách 3D hoặc 2.5D, rõ ràng, dễ quan sát.
+Không dùng hoạt ảnh trang trí thay thế cho mô phỏng khoa học.
+Không bắt buộc kết nối AI API để các thí nghiệm cơ bản hoạt động.
+Bố cục gồm:
+Thanh tiêu đề: “PHÒNG THÍ NGHIỆM ẢO”.
+Danh mục thí nghiệm.
+Khu vực thao tác chính: bàn thí nghiệm, dụng cụ, dây nối và mẫu vật.
+Bảng dụng cụ và thông số.
+Bảng hướng dẫn thao tác.
+Khu vực quan sát hiện tượng.
+Nhật ký thí nghiệm, ghi lại thao tác, kết quả và lỗi.
+Bảng kết luận khoa học.
+Các nút: “Bắt đầu”, “Tạm dừng”, “Làm lại”, “Gợi ý”, “Kiểm tra kết quả”.
+Học sinh phải có thể kéo thả, lắp ráp, tháo rời, bật/tắt và thay đổi trạng thái các dụng cụ. Không chỉ cung cấp các nút chọn đáp án có sẵn.
+3. THÍ NGHIỆM 1: TÌM HIỂU VẬT DẪN ĐIỆN VÀ VẬT CÁCH ĐIỆN
+3.1. Mục tiêu
+Học sinh thực hiện được một mạch điện đơn giản để kiểm tra khả năng dẫn điện của các vật liệu, từ đó phân loại vật dẫn điện và vật cách điện.
+3.2. Dụng cụ
+Nguồn điện một chiều 3 V.
+Bóng đèn sợi đốt định mức 2,5 V.
+Dây nối có hai đầu kẹp.
+Công tắc.
+Hai kẹp kim loại để giữ mẫu thử.
+Các mẫu thử: lá đồng, lá nhôm và lá nhựa.
+Có thể bổ sung mẫu thử khác ở chế độ mở rộng.
+Dụng cụ phải có hình dạng, vị trí tiếp xúc và đầu nối hợp lý. Mỗi dụng cụ là một đối tượng tương tác độc lập.
+3.3. Cách lắp mạch
+Mạch điện phải được mô phỏng theo một mạch nối tiếp gồm:
+Cực dương nguồn điện → công tắc → bóng đèn → kẹp kim loại thứ nhất → mẫu vật cần thử → kẹp kim loại thứ hai → cực âm nguồn điện.
+Có thể thay đổi thứ tự các phần tử trong mạch nối tiếp nhưng phải bảo đảm chúng tạo thành một vòng kín.
+Hai kẹp kim loại phải tiếp xúc điện với hai đầu của mẫu vật. Dòng điện chỉ được chạy khi toàn bộ đường dẫn điện liên tục và công tắc đóng.
+3.4. Cơ chế vật lý bắt buộc
+Xây dựng mô hình mạch điện có các trạng thái thực:
+Mạch hở: không có dòng điện chạy qua, bóng đèn tắt.
+Mạch kín với mẫu dẫn điện: có dòng điện, bóng đèn sáng.
+Mạch kín với mẫu cách điện: không có dòng điện đáng kể, bóng đèn tắt.
+Mạch có dây bị đứt hoặc đầu kẹp không tiếp xúc: bóng đèn tắt.
+Công tắc mở: bóng đèn tắt.
+Mẫu vật không nằm giữa hai đầu kẹp hoặc không nối liền hai đầu kẹp: mạch không được coi là kín qua mẫu vật.
+Nếu mắc dây tạo thành nhánh nối tắt qua bóng đèn, phải mô phỏng sự phân bố dòng điện và cảnh báo ngắn mạch khi phù hợp.
+Không được quy định rằng chỉ cần học sinh kéo một mẫu vật vào màn hình là bóng đèn sẽ sáng. Phải xác định được mạch điện thực tế đã được kết nối đúng hay chưa.
+3.5. Mô phỏng từng mẫu vật
+Lá đồng:
+Khi tiếp xúc tốt với hai kẹp, dòng điện chạy qua mẫu.
+Bóng đèn sáng.
+Hiển thị kết luận: đồng là vật dẫn điện.
+Lá nhôm:
+Khi tiếp xúc tốt với hai kẹp, dòng điện chạy qua mẫu.
+Bóng đèn sáng.
+Hiển thị kết luận: nhôm là vật dẫn điện.
+Lá nhựa:
+Khi hai kẹp chỉ tiếp xúc với phần nhựa cách điện, dòng điện không chạy qua mạch.
+Bóng đèn tắt.
+Hiển thị kết luận: nhựa thông thường là vật cách điện.
+Mô hình phải cho phép quan sát độ sáng của bóng đèn. Với cấu hình nguồn 3 V và bóng đèn sợi đốt định mức 2,5 V theo dụng cụ của thí nghiệm, cần lưu ý nguồn điện cao hơn điện áp định mức; chỉ mô phỏng định tính hoặc nêu rõ đây là cấu hình minh họa theo bài học, không khuyến khích vận hành thực tế kéo dài ở điều kiện vượt định mức.
+Không sử dụng độ sáng để khẳng định đồng và nhôm có độ dẫn điện bằng nhau. Nếu không mô phỏng đầy đủ điện trở tiếp xúc, kích thước mẫu và đặc tính bóng đèn, chỉ nên kết luận định tính.
+3.6. Những lỗi học sinh có thể mắc
+Tạo cơ chế phát hiện các lỗi sau:
+Quên đóng công tắc.
+Chỉ nối một đầu mẫu vật.
+Một đầu kẹp không tiếp xúc với mẫu.
+Dây nối bị rời.
+Lắp dây khiến bóng đèn không nằm trong mạch.
+Dùng nhựa thay cho kim loại.
+Đặt mẫu vật nhưng hai kẹp không chạm vào hai phía dẫn điện của mẫu.
+Nối tắt qua hai cực nguồn điện.
+Khi phát hiện lỗi, không tự động sửa mạch cho học sinh.
+Hiển thị phản hồi theo ba cấp độ:
+Cấp 1 – Gợi ý nhẹ: “Hãy kiểm tra xem công tắc đã đóng chưa.”
+Cấp 2 – Gợi ý xác định vị trí: Tô sáng vị trí dây nối bị hở hoặc đầu kẹp chưa tiếp xúc.
+Cấp 3 – Giải thích khoa học: “Dòng điện chỉ chạy liên tục khi mạch kín. Một vị trí tiếp xúc bị hở có thể làm ngắt mạch và khiến bóng đèn không sáng.”
+Nếu học sinh dùng nhựa, giải thích rằng nhựa thông thường không có đủ hạt tải điện tự do để dẫn dòng điện đáng kể trong điều kiện thí nghiệm.
+3.7. Quan sát và đánh giá
+Hiển thị:
+Trạng thái công tắc.
+Trạng thái mạch: kín hoặc hở.
+Mẫu vật đang kiểm tra.
+Trạng thái bóng đèn.
+Kết quả: dẫn điện, không dẫn điện trong điều kiện thử nghiệm, hoặc chưa đủ điều kiện kết luận.
+Nhật ký các lần thử.
+Sau khi kiểm tra cả ba mẫu vật, học sinh hoàn thành bảng:
+Mẫu vật	Bóng đèn	Kết luận
+Đồng	Tự ghi nhận	Tự rút ra
+Nhôm	Tự ghi nhận	Tự rút ra
+Nhựa	Tự ghi nhận	Tự rút ra
+Chỉ công bố kết luận chính thức sau khi học sinh thực hiện thí nghiệm hoặc yêu cầu kiểm tra kết quả.
+4. THÍ NGHIỆM 2: HAI ĐIỆN NGHIỆM VÀ SỰ DỊCH CHUYỂN ĐIỆN TÍCH
+4.1. Mục tiêu
+Học sinh quan sát được sự thay đổi độ xòe của lá điện nghiệm khi nối hai điện nghiệm bằng thanh kim loại, từ đó hiểu rằng điện tích có thể dịch chuyển qua vật dẫn và phân bố lại.
+4.2. Dụng cụ và trạng thái ban đầu
+Điện nghiệm A đang tích điện, hai lá kim loại xòe ra.
+Điện nghiệm B ban đầu trung hòa về điện, hai lá kim loại khép lại.
+Một thanh kim loại dùng để nối hai quả cầu của điện nghiệm.
+Có thể bổ sung thanh nhựa cách điện để học sinh so sánh.
+Minh họa rõ các quả cầu kim loại, thanh dẫn, lá kim loại và phần đế cách điện.
+4.3. Cách tiến hành
+Quan sát trạng thái ban đầu của điện nghiệm A và B.
+Học sinh kéo thanh kim loại nối hai quả cầu.
+Mô phỏng sự dịch chuyển điện tích khi hai quả cầu tiếp xúc điện.
+Quan sát sự thay đổi độ xòe của hai cặp lá.
+Ngắt thanh nối và so sánh trạng thái sau thí nghiệm.
+4.4. Quy luật vật lý phải tuân thủ
+Ban đầu:
+Điện nghiệm A tích điện nên hai lá xòe ra.
+Điện nghiệm B trung hòa nên hai lá gần như khép lại.
+Khi nối hai quả cầu bằng thanh kim loại:
+Điện tích được phân bố lại qua hệ dẫn điện cho đến khi hệ đạt trạng thái cân bằng điện.
+Điện nghiệm A thường giảm độ xòe.
+Điện nghiệm B có điện tích và hai lá bắt đầu xòe ra.
+Nếu hai điện nghiệm giống nhau và có điện dung tương đương, trong mô hình lý tưởng, điện tích tổng ban đầu được chia sẻ giữa hai điện nghiệm, làm trạng thái của chúng tiến gần nhau.
+Khi ngắt thanh nối:
+Nếu không có sự rò điện đáng kể, mỗi điện nghiệm giữ lại điện tích của nó tại thời điểm ngắt.
+Hai lá của điện nghiệm có thể tiếp tục xòe sau khi ngắt.
+Không tự động đưa điện nghiệm B trở lại trung hòa sau khi ngắt thanh nối.
+4.5. Mô hình điện tích và giới hạn của mô phỏng
+Phải xây dựng mô hình trạng thái điện tích, không chỉ tạo hoạt ảnh hai lá chuyển động.
+Cho phép chọn điện nghiệm A tích điện dương hoặc âm trong chế độ nâng cao.
+Nếu A tích điện âm và B trung hòa, electron có xu hướng dịch chuyển từ A sang B.
+Nếu A tích điện dương và B trung hòa, electron có xu hướng dịch chuyển từ B sang A.
+Chiều dịch chuyển electron ngược với chiều dòng điện quy ước.
+Trong cả hai trường hợp, sự phân bố điện tích thay đổi có thể làm hai lá của B xòe ra.
+Ở chế độ cơ bản, có thể sử dụng mô hình định tính với hai điện nghiệm giống nhau, cùng điều kiện môi trường, để minh họa sự chia sẻ điện tích. Ở chế độ nâng cao, cần xét điện dung, điện tích ban đầu, dấu điện tích và ảnh hưởng của môi trường.
+Không được khẳng định rằng mọi cấu hình nối hai điện nghiệm đều cho kết quả chia điện tích chính xác 50/50. Kết quả thực tế phụ thuộc vào điện dung của từng điện nghiệm và điều kiện bố trí.
+Nếu mô phỏng bằng các con số, hãy ghi rõ đó là giá trị lý tưởng hoặc giá trị minh họa, không phải số đo thực nghiệm.
+4.6. Các lỗi thao tác cần mô phỏng
+Lỗi 1: Dùng thanh nhựa để nối hai quả cầu
+Không hình thành đường dẫn điện đáng kể qua thanh nhựa thông thường.
+Điện nghiệm A tiếp tục xòe.
+Điện nghiệm B gần như không đổi.
+Phản hồi: “Thanh nhựa là vật cách điện. Hãy thử bằng thanh kim loại.”
+Lỗi 2: Thanh kim loại chỉ chạm vào một quả cầu
+Không tạo được đường dẫn điện liên tục giữa hai điện nghiệm.
+Không được mô phỏng sự phân bố điện tích như khi nối hoàn chỉnh.
+Lỗi 3: Thanh nối bị hở hoặc mất tiếp xúc trong quá trình thao tác
+Dừng quá trình truyền điện tích tại thời điểm mất tiếp xúc.
+Giữ trạng thái điện tích phù hợp với trạng thái ngay trước khi ngắt.
+Lỗi 4: Học sinh cho rằng điện tích biến mất
+Không xóa điện tích khỏi hệ khi chỉ nối hai điện nghiệm.
+Giải thích rằng điện tích được phân bố lại trong hệ; nếu không có đường rò ra môi trường thì tổng điện tích được bảo toàn.
+Lỗi 5: Học sinh dự đoán điện nghiệm B không đổi sau khi nối kim loại
+Cho học sinh tiếp tục quan sát và so sánh trước – sau.
+Giải thích rằng điện tích có thể dịch chuyển qua thanh dẫn, khiến hai lá của B mang điện cùng dấu và đẩy nhau.
+Lỗi 6: Học sinh dự đoán cả hai điện nghiệm luôn có độ xòe bằng nhau
+Không mặc định điều này trong mọi cấu hình.
+Giải thích rằng độ xòe phụ thuộc vào lượng điện tích, hình học, điện dung và các điều kiện của điện nghiệm.
+4.7. Hoạt ảnh và quan sát
+Hiển thị:
+Trạng thái điện tích ban đầu.
+Đường nối kim loại hoặc nhựa.
+Chiều dịch chuyển electron bằng mũi tên khi đã xác định dấu điện tích.
+Độ xòe của hai cặp lá theo thời gian.
+Trạng thái trước khi nối, khi đang nối và sau khi ngắt.
+Tổng điện tích của hệ trong mô hình lý tưởng.
+Không dùng các hạt điện tích chạy theo quỹ đạo trang trí không có ý nghĩa vật lý. Mọi mũi tên và hoạt ảnh phải phản ánh đúng trạng thái của mô hình.
+5. CƠ CHẾ PHÁT HIỆN VÀ SỬA LỖI CHUNG
+Xây dựng một bộ kiểm tra trạng thái thí nghiệm.
+Mỗi thao tác của học sinh phải cập nhật trạng thái thiết bị, kết nối và kết quả quan sát.
+Không được:
+Tự động hiển thị kết quả đúng khi học sinh chưa thao tác.
+Cho bóng đèn sáng khi mạch điện hở.
+Cho dòng điện đi qua mẫu cách điện lý tưởng.
+Cho điện tích biến mất chỉ vì học sinh ngắt thanh nối.
+Tự sửa thao tác sai mà không thông báo.
+Đánh giá đúng hoặc sai chỉ dựa vào vị trí kéo thả mà bỏ qua kết nối thực tế.
+Khi học sinh mắc lỗi:
+Xác định trạng thái gây lỗi.
+Giữ nguyên trạng thái hiện tại để học sinh tự tìm cách sửa.
+Hiển thị thông báo ngắn gọn.
+Cung cấp gợi ý theo từng cấp độ.
+Sau khi học sinh sửa lỗi, chạy lại mô phỏng và cập nhật kết quả.
+6. CHẾ ĐỘ HỌC TẬP
+Tạo ba chế độ:
+Chế độ khám phá
+Học sinh tự do kéo thả, thử nghiệm.
+Không hiện sẵn kết luận.
+Có nhật ký thao tác.
+Chế độ hướng dẫn
+Hiển thị quy trình từng bước.
+Cung cấp gợi ý khi học sinh gặp khó khăn.
+Chỉ chuyển bước khi điều kiện tương ứng đã đạt.
+Chế độ thử thách
+Hệ thống đưa ra một nhiệm vụ, ví dụ: “Hãy tìm nguyên nhân khiến bóng đèn không sáng.”
+Cài đặt sẵn một hoặc nhiều lỗi.
+Học sinh tự phát hiện, sửa lỗi và giải thích kết quả.
+Chấm điểm dựa trên thao tác, khả năng giải thích và kết luận khoa học, không chỉ dựa vào tốc độ.
+7. KẾT LUẬN VÀ PHIẾU HỌC TẬP SỐ
+Sau mỗi thí nghiệm, hiển thị một phiếu học tập có thể điền trực tiếp:
+Câu hỏi nghiên cứu.
+Dự đoán ban đầu.
+Các bước đã thực hiện.
+Hiện tượng quan sát được.
+Lỗi đã gặp và cách khắc phục.
+Kết luận khoa học.
+Câu hỏi vận dụng.
+Cho phép học sinh lưu kết quả vào tài khoản của mình nếu Vina-Eduverse đã có chức năng đăng nhập và lưu dữ liệu. Nếu chưa có, phải có phương án lưu cục bộ hoặc xuất kết quả, không giả lập việc lưu dữ liệu lên máy chủ.
+8. YÊU CẦU KỸ THUẬT
+Trước khi lập trình, kiểm tra cấu trúc dự án hiện tại của Vina-Eduverse và tích hợp vào kiến trúc sẵn có.
+Không tạo một dự án độc lập nếu có thể tích hợp trực tiếp.
+Không làm hỏng các chức năng hiện có.
+Tách riêng giao diện, trạng thái thí nghiệm và logic vật lý.
+Xây dựng bộ kiểm thử cho các trạng thái đúng và sai.
+Các quy luật khoa học phải được xử lý bằng logic xác định, không phụ thuộc vào câu trả lời ngẫu nhiên của AI.
+AI chỉ hỗ trợ giải thích, đặt câu hỏi gợi mở và hướng dẫn học tập; không được phép thay đổi kết quả mô phỏng vật lý.
+Không yêu cầu API key để chạy hai thí nghiệm cơ bản.
+Tối ưu để thao tác kéo thả mượt trên trình duyệt máy tính và máy tính bảng.
+Nếu dự án đã có cơ chế đăng nhập, phân quyền giáo viên – học sinh, hãy tái sử dụng cơ chế đó.
+9. TIÊU CHÍ NGHIỆM THU
+Chỉ xem tính năng hoàn thành khi vượt qua các kiểm thử sau:
+Lắp đúng mạch với lá đồng, đóng công tắc: bóng đèn sáng.
+Thay lá đồng bằng lá nhôm: bóng đèn sáng.
+Thay mẫu thử bằng lá nhựa: bóng đèn tắt.
+Mở công tắc: bóng đèn tắt dù sử dụng mẫu kim loại.
+Làm đứt một dây nối: bóng đèn tắt.
+Dùng thanh nhựa nối hai điện nghiệm: không có sự phân bố điện tích đáng kể qua thanh nhựa.
+Dùng thanh kim loại nối hai điện nghiệm: mô phỏng sự phân bố điện tích và thay đổi độ xòe của hai cặp lá.
+Ngắt thanh nối sau khi điện tích đã phân bố: giữ trạng thái điện tích phù hợp, không tự đưa hệ về trạng thái ban đầu.
+Thử các thao tác sai: ứng dụng đưa ra phản hồi đúng với nguyên nhân.
+Làm mới trang: giao diện và các chức năng cơ bản vẫn hoạt động ổn định.
+10. CÁCH TRIỂN KHAI
+Hãy thực hiện theo thứ tự:
+Bước 1: Kiểm tra cấu trúc dự án, công nghệ và các thành phần giao diện hiện có.
+Bước 2: Xây dựng trang Phòng thí nghiệm ảo với hai thí nghiệm, điều hướng rõ ràng và giao diện hoàn chỉnh.
+Bước 3: Xây dựng mô hình trạng thái và logic vật lý cho từng thí nghiệm.
+Bước 4: Triển khai thao tác kéo thả, phản hồi lỗi, gợi ý và phiếu học tập.
+Bước 5: Viết và chạy các kiểm thử theo 10 tiêu chí nghiệm thu.
+Bước 6: Khắc phục lỗi và báo cáo những chức năng đã hoạt động thực tế, những phần còn giới hạn và cách kiểm tra trên trình duyệt.
+Không chỉ trả về bản thiết kế hoặc đoạn mã minh họa. Hãy triển khai trực tiếp vào dự án hiện có, giữ nguyên các chức năng đang hoạt động và cung cấp hướng dẫn kiểm thử rõ ràng.ần còn giới hạn và cách kiểm tra trên trình duyệt.
+Không chỉ trả về bản thiết kế hoặc đoạn mã minh họa. Hãy triển khai trực tiếp vào dự án hiện có, giữ nguyên các chức năng đang hoạt động và cung cấp hướng dẫn kiểm thử rõ ràng.
