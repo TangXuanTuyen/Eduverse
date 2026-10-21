@@ -32,6 +32,18 @@ export const MODEL3D_CATALOG: Model3DResource[] = [
   { id: 'demo_nacl', title: 'Tinh thể NaCl', category: 'Hóa học' },
 ];
 
+export type StemResource = {
+  id: string;
+  title: string;
+  subject: string;
+};
+
+export const STEM_CATALOG: StemResource[] = [
+  { id: 'litmus', title: 'Nhận biết Axit - Bazơ bằng quỳ tím', subject: 'Hóa học' },
+  { id: 'circuit', title: 'Lắp mạch điện kín thắp sáng bóng đèn', subject: 'Vật lý' },
+  { id: 'microscope', title: 'Kính hiển vi quan sát tế bào thực vật', subject: 'Sinh học' },
+];
+
 export const EXPERIMENT_CATALOG: ExperimentResource[] = [
   { id: 'vat_dan_dien_cach_dien', title: 'Vật dẫn điện, vật cách điện & Điện nghiệm', subject: 'Vật lý', grade: 8 },
   { id: 'simple_circuit', title: 'Lắp mạch điện đơn giản', subject: 'Vật lý', grade: 8 },

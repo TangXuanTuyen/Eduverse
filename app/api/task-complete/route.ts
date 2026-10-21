@@ -31,7 +31,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Đây là bài tập, không phải nhiệm vụ' }, { status: 400 });
   }
 
-  const xpReason = assignment.assignment_type === 'model3d' ? 'model3d_complete' as const : 'task_complete' as const;
+  const xpReason = assignment.assignment_type === 'model3d' ? 'model3d_complete' as const
+    : assignment.assignment_type === 'stem' ? 'stem_complete' as const
+    : 'task_complete' as const;
 
   // Check room membership
   const { data: member } = await admin

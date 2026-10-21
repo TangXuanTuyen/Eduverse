@@ -2,7 +2,7 @@
 
 import { useActionState, useState, useEffect } from 'react';
 import { createTaskAction, type AssignmentActionState } from './actions';
-import { LESSON_CATALOG, EXPERIMENT_CATALOG, MODEL3D_CATALOG } from '@/lib/resources-catalog';
+import { LESSON_CATALOG, EXPERIMENT_CATALOG, MODEL3D_CATALOG, STEM_CATALOG } from '@/lib/resources-catalog';
 
 type Room = { id: string; name: string };
 
@@ -10,7 +10,7 @@ export function CreateTaskButton({ teacherId }: { teacherId: string }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState<AssignmentActionState, FormData>(createTaskAction, {});
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [taskType, setTaskType] = useState<'lesson' | 'experiment' | 'model3d'>('lesson');
+  const [taskType, setTaskType] = useState<'lesson' | 'experiment' | 'model3d' | 'stem'>('lesson');
   const [selectedResource, setSelectedResource] = useState('');
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export function CreateTaskButton({ teacherId }: { teacherId: string }) {
     setTimeout(() => { setOpen(false); setSelectedResource(''); }, 0);
   }
 
-  const catalog = taskType === 'lesson' ? LESSON_CATALOG : taskType === 'experiment' ? EXPERIMENT_CATALOG : MODEL3D_CATALOG;
+  const catalog = taskType === 'lesson' ? LESSON_CATALOG : taskType === 'experiment' ? EXPERIMENT_CATALOG : taskType === 'model3d' ? MODEL3D_CATALOG : STEM_CATALOG;
   const selected = catalog.find((r) => r.id === selectedResource);
 
   if (!open) {
@@ -77,12 +77,19 @@ export function CreateTaskButton({ teacherId }: { teacherId: string }) {
             >
               🌐 Xem mô hình 3D
             </button>
+            <button
+              type="button"
+              onClick={() => { setTaskType('stem'); setSelectedResource(''); }}
+              className={`px-3 py-2 rounded-lg text-sm min-h-[44px] ${taskType === 'stem' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+            >
+              🧪 Thí nghiệm STEM
+            </button>
           </div>
           <input type="hidden" name="assignment_type" value={taskType} />
         </div>
 
         <div>
-          <span className="text-xs text-slate-400">Chọn {taskType === 'lesson' ? 'bài học' : taskType === 'experiment' ? 'thí nghiệm' : 'mô hình 3D'}</span>
+          <span className="text-xs text-slate-400">Chọn {taskType === 'lesson' ? 'bài học' : taskType === 'experiment' ? 'thí nghiệm' : taskType === 'model3d' ? 'mô hình 3D' : 'trạm STEM'}</span>
           <div className="mt-1 space-y-2 max-h-48 overflow-y-auto">
             {catalog.map((r) => (
               <label
@@ -101,7 +108,7 @@ export function CreateTaskButton({ teacherId }: { teacherId: string }) {
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white font-medium">{r.title}</p>
-                  <p className="text-xs text-slate-400">{'grade' in r ? `Khối ${r.grade} · ${r.subject}` : `${(r as { category: string }).category}`}</p>
+                  <p className="text-xs text-slate-400">{'grade' in r ? `Khối ${(r as { grade: number }).grade} · ${(r as { subject: string }).subject}` : 'subject' in r ? (r as { subject: string }).subject : (r as { category: string }).category}</p>
                 </div>
               </label>
             ))}

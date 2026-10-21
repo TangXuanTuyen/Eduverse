@@ -13,6 +13,7 @@ const TYPE_ICON: Record<string, string> = {
   lesson: '📖',
   experiment: '🔬',
   model3d: '🌐',
+  stem: '🧪',
 };
 
 const TYPE_LABEL: Record<string, string> = {
@@ -20,6 +21,7 @@ const TYPE_LABEL: Record<string, string> = {
   lesson: 'Lý thuyết',
   experiment: 'Thí nghiệm',
   model3d: 'Mô hình 3D',
+  stem: 'STEM Lab',
 };
 
 type Props = { assignments: AssignmentRow[] };

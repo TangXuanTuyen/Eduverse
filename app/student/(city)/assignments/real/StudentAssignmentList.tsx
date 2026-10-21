@@ -41,11 +41,12 @@ export function StudentAssignmentList({ assignments }: { assignments: Assignment
           ) : (
             assignments.map((a) => {
               const overdue = a.due_at && new Date(a.due_at) < new Date();
-              const isTask = a.assignment_type === 'lesson' || a.assignment_type === 'experiment' || a.assignment_type === 'model3d';
+              const isTask = a.assignment_type === 'lesson' || a.assignment_type === 'experiment' || a.assignment_type === 'model3d' || a.assignment_type === 'stem';
               const taskRoute = a.assignment_type === 'lesson' ? '/student/library'
                 : a.assignment_type === 'model3d' ? '/student/world-3d'
+                : a.assignment_type === 'stem' ? '/student/stem'
                 : '/student/virtual-lab';
-              const typeIcon = a.assignment_type === 'lesson' ? '📖' : a.assignment_type === 'experiment' ? '🔬' : a.assignment_type === 'model3d' ? '🌐' : '📝';
+              const typeIcon = a.assignment_type === 'lesson' ? '📖' : a.assignment_type === 'experiment' ? '🔬' : a.assignment_type === 'model3d' ? '🌐' : a.assignment_type === 'stem' ? '🧪' : '📝';
               return (
                 <Link
                   key={a.id}

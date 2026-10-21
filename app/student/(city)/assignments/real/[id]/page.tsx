@@ -24,6 +24,7 @@ export default async function TakeAssignmentPage({ params }: Props) {
   if (assignment.assignment_type === 'lesson') redirect('/student/library');
   if (assignment.assignment_type === 'experiment') redirect('/student/virtual-lab');
   if (assignment.assignment_type === 'model3d') redirect('/student/world-3d');
+  if (assignment.assignment_type === 'stem') redirect('/student/stem');
 
   // Get questions via the student function (no correct_answer)
   const admin = createAdminClient();

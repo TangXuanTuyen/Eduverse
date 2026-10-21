@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { sound } from '@/lib/audio';
 import { FlaskConical, Zap, Eye, CheckCircle2, X, Sparkles, Award, ArrowLeft, Clock, Box } from 'lucide-react';
 import { RoomInteriorScene } from './RoomInteriorScene';
@@ -39,6 +39,8 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
   const [viewingExperimentId, setViewingExperimentId] = useState<string | null>(null);
   const [models3d, setModels3d] = useState<{ id: string; title: string; embed_url: string; thumbnail_url: string | null }[]>([]);
   const [viewing3dModelId, setViewing3dModelId] = useState<string | null>(null);
+  const [tasks, setTasks] = useState<{ id: string; resource_id: string; title: string; completed?: boolean }[]>([]);
+  const [completingTask, setCompletingTask] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/experiments')
@@ -53,6 +55,30 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setModels3d(data); })
       .catch(() => {});
+    fetch('/api/student-assignments')
+      .then((r) => r.json())
+      .then((data) => {
+        const stemTasks = (data.assignments ?? [])
+          .filter((a: Record<string, unknown>) => a.assignment_type === 'stem')
+          .map((a: Record<string, unknown>) => ({ id: a.id, resource_id: a.resource_id, title: a.title }));
+        setTasks(stemTasks);
+      })
+      .catch(() => {});
+  }, []);
+
+  const completeTask = useCallback(async (assignmentId: string) => {
+    setCompletingTask(assignmentId);
+    try {
+      const res = await fetch('/api/task-complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignment_id: assignmentId }),
+      });
+      if (res.ok) {
+        setTasks((prev) => prev.map((t) => t.id === assignmentId ? { ...t, completed: true } : t));
+      }
+    } catch { /* ignore */ }
+    setCompletingTask(null);
   }, []);
 
   // LITMUS SIMULATION STATE
@@ -299,12 +325,13 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {[
               { id: 'litmus', label: '1. Hóa Học (Quỳ Tím)', done: isLitmusDone, icon: FlaskConical },
               { id: 'circuit', label: '2. Mạch Điện (Vật Lý)', done: isCircuitDone, icon: Zap },
               { id: 'microscope', label: '3. Sinh Học (Hiển Vi)', done: isMicroscopeDone, icon: Eye },
             ].map((st) => {
+              const task = tasks.find((t) => t.resource_id === st.id);
               const Icon = st.icon;
               const isSel = activeTab === st.id;
               return (
@@ -325,6 +352,11 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
                 >
                   <Icon className="w-3.5 h-3.5" />
                   <span>{st.label}</span>
+                  {task && (
+                    <span className={`text-[9px] px-1 py-0.5 rounded font-bold ${task.completed ? 'bg-green-900 text-green-300' : 'bg-blue-900 text-blue-300'}`}>
+                      {task.completed ? '✓' : 'GV'}
+                    </span>
+                  )}
                   {st.done ? (
                     <span className="w-2 h-2 rounded-full bg-emerald-400 ml-0.5" />
                   ) : (
@@ -357,6 +389,15 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
                   </div>
                 )}
               </div>
+              {(() => {
+                const task = tasks.find((t) => t.resource_id === 'litmus');
+                return task && isLitmusDone && !task.completed && (
+                  <button type="button" onClick={() => completeTask(task.id)} disabled={completingTask === task.id}
+                    className="mt-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-xs font-bold min-h-[36px] disabled:opacity-50">
+                    {completingTask === task.id ? 'Đang xác nhận...' : '✅ Hoàn thành nhiệm vụ GV (+35 XP)'}
+                  </button>
+                );
+              })()}
 
               {/* EXPERIMENT WORKBENCH */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -447,6 +488,15 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
                   </div>
                 )}
               </div>
+              {(() => {
+                const task = tasks.find((t) => t.resource_id === 'circuit');
+                return task && isCircuitDone && !task.completed && (
+                  <button type="button" onClick={() => completeTask(task.id)} disabled={completingTask === task.id}
+                    className="mt-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-xs font-bold min-h-[36px] disabled:opacity-50">
+                    {completingTask === task.id ? 'Đang xác nhận...' : '✅ Hoàn thành nhiệm vụ GV (+35 XP)'}
+                  </button>
+                );
+              })()}
 
               {/* CIRCUIT SCHEMATIC CANVAS / SVG */}
               <div className="p-8 bg-slate-950 rounded-2xl border border-slate-800 flex flex-col items-center">
@@ -551,6 +601,15 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
                   </div>
                 )}
               </div>
+              {(() => {
+                const task = tasks.find((t) => t.resource_id === 'microscope');
+                return task && isMicroscopeDone && !task.completed && (
+                  <button type="button" onClick={() => completeTask(task.id)} disabled={completingTask === task.id}
+                    className="mt-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-xs font-bold min-h-[36px] disabled:opacity-50">
+                    {completingTask === task.id ? 'Đang xác nhận...' : '✅ Hoàn thành nhiệm vụ GV (+35 XP)'}
+                  </button>
+                );
+              })()}
 
               {/* LENS VIEWPORT */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
