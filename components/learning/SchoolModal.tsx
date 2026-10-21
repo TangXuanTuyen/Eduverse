@@ -168,10 +168,9 @@ export const SchoolModal: React.FC<SchoolModalProps> = ({
                   }
 
                   return (
-                    <Link
+                    <div
                       key={a.id}
-                      href={`/student/assignments/real/${a.id}`}
-                      className="block p-4 rounded-xl border bg-slate-800/60 border-slate-700 hover:border-blue-500/50 transition"
+                      className="p-4 rounded-xl border bg-slate-800/60 border-slate-700"
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-sm text-white">{typeIcon} {a.title}</span>
@@ -188,8 +187,17 @@ export const SchoolModal: React.FC<SchoolModalProps> = ({
                       {a.description && (
                         <p className="text-xs text-slate-400 mt-1 line-clamp-2">{a.description}</p>
                       )}
-                      <p className="text-xs text-slate-500 mt-1">{a.rooms.name}</p>
-                    </Link>
+                      <div className="flex items-center justify-between mt-2">
+                        <p className="text-xs text-slate-500">{a.rooms.name}</p>
+                        <button
+                          type="button"
+                          onClick={() => { onClose(); router.push('/student/arcade'); }}
+                          className="text-xs px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-medium min-h-[36px] transition"
+                        >
+                          ⚡ Đi đến Đấu Trường →
+                        </button>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
