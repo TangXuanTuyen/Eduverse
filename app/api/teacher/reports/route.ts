@@ -9,6 +9,7 @@ import {
   getInactiveStudents,
   getTimeSavedStats,
   createAuditLog,
+  sendReportToParent,
 } from '@/services/reports';
 
 export async function GET(req: NextRequest) {
@@ -30,6 +31,12 @@ export async function GET(req: NextRequest) {
       { tab, room_id: roomId },
       req.headers.get('x-forwarded-for') ?? undefined
     );
+  }
+
+  // Handle send-report action via tab param
+  if (tab === 'send-to-parent' && studentId) {
+    const result = await sendReportToParent(profile.id, studentId);
+    return NextResponse.json(result);
   }
 
   switch (tab) {

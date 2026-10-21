@@ -753,11 +753,21 @@ export async function getStudentDetailReport(
     }
 
     if (aqIds.length > 0) {
-      const { data: attempts } = await admin
-        .from('question_attempts')
-        .select('assignment_question_id, student_answer, is_correct')
+      // question_attempts has no student_id — filter via submission_id
+      const { data: studentSubs } = await admin
+        .from('submissions')
+        .select('id')
         .eq('student_id', studentId)
-        .in('assignment_question_id', aqIds);
+        .in('assignment_id', assignmentIds);
+      const subIds = (studentSubs ?? []).map((s) => s.id);
+
+      const { data: attempts } = subIds.length > 0
+        ? await admin
+            .from('question_attempts')
+            .select('assignment_question_id, student_answer, is_correct')
+            .in('submission_id', subIds)
+            .in('assignment_question_id', aqIds)
+        : { data: [] };
 
       // Get skill tags for source questions
       const sourceIds = new Set<string>();
@@ -817,6 +827,86 @@ export async function getStudentDetailReport(
     question_details: questionDetails,
     skill_breakdown: skillBreakdown,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Teacher → Parent: gửi báo cáo HS cho phụ huynh
+// ---------------------------------------------------------------------------
+
+export async function sendReportToParent(
+  teacherId: string,
+  studentId: string
+): Promise<{ sent: boolean; parent_names: string[]; error?: string }> {
+  const admin = createAdminClient();
+
+  // Verify teacher has access to student
+  const { data: rooms } = await admin
+    .from('rooms')
+    .select('id')
+    .eq('owner_id', teacherId);
+  const roomIds = (rooms ?? []).map((r) => r.id);
+  if (roomIds.length === 0) return { sent: false, parent_names: [], error: 'Không có lớp nào' };
+
+  const { data: membership } = await admin
+    .from('room_members')
+    .select('room_id')
+    .eq('user_id', studentId)
+    .in('room_id', roomIds)
+    .eq('is_active', true)
+    .limit(1);
+  if (!membership || membership.length === 0) {
+    return { sent: false, parent_names: [], error: 'Học sinh không thuộc lớp của bạn' };
+  }
+
+  // Find linked parents
+  const { data: parentLinks } = await admin
+    .from('parent_links')
+    .select('parent_id, profiles!parent_links_parent_id_fkey(display_name)')
+    .eq('student_id', studentId)
+    .eq('status', 'approved');
+
+  if (!parentLinks || parentLinks.length === 0) {
+    return { sent: false, parent_names: [], error: 'Học sinh chưa có phụ huynh liên kết' };
+  }
+
+  // Get report data
+  const report = await getStudentDetailReport(teacherId, studentId);
+  if (!report) return { sent: false, parent_names: [], error: 'Không lấy được báo cáo' };
+
+  // Create notification for each parent
+  const parentNames: string[] = [];
+  for (const pl of parentLinks) {
+    const parentProfile = pl.profiles as unknown as { display_name: string };
+    parentNames.push(parentProfile.display_name);
+
+    // Insert notification for parent
+    await admin.from('notifications').insert({
+      user_id: pl.parent_id,
+      type: 'student_report',
+      title: `Báo cáo học tập: ${report.display_name}`,
+      body: `GV đã gửi báo cáo kết quả học tập. Hoàn thành ${report.submissions.length} bài, XP: ${report.total_xp}, Cấp ${report.level}.`,
+      metadata: {
+        student_id: studentId,
+        student_name: report.display_name,
+        teacher_id: teacherId,
+        total_xp: report.total_xp,
+        level: report.level,
+        submissions_count: report.submissions.length,
+        avg_score: report.submissions.length > 0
+          ? Math.round(
+              report.submissions
+                .filter((s) => s.total_score != null && s.max_score)
+                .reduce((sum, s) => sum + (Number(s.total_score) / Number(s.max_score)) * 100, 0) /
+              (report.submissions.filter((s) => s.total_score != null && s.max_score).length || 1)
+            )
+          : 0,
+        skill_breakdown: report.skill_breakdown,
+        sent_at: new Date().toISOString(),
+      },
+    });
+  }
+
+  return { sent: true, parent_names: parentNames };
 }
 
 // ---------------------------------------------------------------------------

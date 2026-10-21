@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   X, CheckCircle2, XCircle, TrendingUp, Users, BookOpen,
   AlertTriangle, ChevronRight, ArrowLeft, BarChart3, Trophy,
-  Clock, Target, Zap,
+  Clock, Target, Zap, Send,
 } from 'lucide-react';
 
 // ── Types ──
@@ -550,6 +550,18 @@ function RoomsGrid({ data, onSelect }: { data: RoomRow[]; onSelect: (r: RoomRow)
 }
 
 function StudentsView({ data, onDetail }: { data: StudentRow[]; onDetail: (id: string) => void }) {
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const [sentIds, setSentIds] = useState<Set<string>>(new Set());
+
+  const handleSend = async (e: React.MouseEvent, studentId: string) => {
+    e.stopPropagation();
+    setSendingId(studentId);
+    const res = await fetch(`/api/teacher/reports?tab=send-to-parent&student=${studentId}`);
+    const result = await res.json();
+    if (result.sent) setSentIds((prev) => new Set(prev).add(studentId));
+    setSendingId(null);
+  };
+
   if (!data || data.length === 0) return <p className="text-slate-400 text-sm text-center py-8">Chưa có dữ liệu.</p>;
   return (
     <div className="space-y-2 animate-in fade-in duration-300">
@@ -560,7 +572,6 @@ function StudentsView({ data, onDetail }: { data: StudentRow[]; onDetail: (id: s
           onClick={() => onDetail(s.student_id)}
           className="w-full text-left bg-slate-900/80 border border-slate-800 rounded-xl p-4 hover:border-blue-500/30 transition-all cursor-pointer flex items-center gap-4"
         >
-          {/* Avatar placeholder */}
           <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
             s.needs_attention ? 'bg-amber-600/20 text-amber-400 border border-amber-500/30' : 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
           }`}>
@@ -587,6 +598,23 @@ function StudentsView({ data, onDetail }: { data: StudentRow[]; onDetail: (id: s
               delay={i * 50}
             />
             <div className="text-[10px] text-slate-500 text-right mt-0.5">{s.avg_score}%</div>
+          </div>
+          {/* Send to parent button */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={(e) => handleSend(e, s.student_id)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSend(e as unknown as React.MouseEvent, s.student_id); }}
+            className={`shrink-0 min-w-9 min-h-9 flex items-center justify-center rounded-lg transition ${
+              sentIds.has(s.student_id)
+                ? 'bg-emerald-600/20 text-emerald-400'
+                : sendingId === s.student_id
+                  ? 'bg-blue-600/20 text-blue-400 animate-pulse'
+                  : 'bg-slate-800 text-slate-400 hover:text-blue-400 hover:bg-blue-600/10'
+            }`}
+            title="Gửi báo cáo về PH"
+          >
+            {sentIds.has(s.student_id) ? <CheckCircle2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
           </div>
           <ChevronRight className="w-4 h-4 text-slate-600 shrink-0" />
         </button>
@@ -658,6 +686,8 @@ function QuestionsView({ data }: { data: QuestionRow[] }) {
 function StudentDetailModal({ studentId, onClose }: { studentId: string; onClose: () => void }) {
   const [report, setReport] = useState<DetailReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState<{ sent: boolean; parent_names: string[]; error?: string } | null>(null);
 
   useEffect(() => {
     fetch(`/api/teacher/reports/student?student_id=${studentId}`)
@@ -666,13 +696,33 @@ function StudentDetailModal({ studentId, onClose }: { studentId: string; onClose
       .finally(() => setLoading(false));
   }, [studentId]);
 
+  const handleSendToParent = async () => {
+    setSending(true);
+    setSendResult(null);
+    const res = await fetch(`/api/teacher/reports?tab=send-to-parent&student=${studentId}`);
+    const result = await res.json();
+    setSendResult(result);
+    setSending(false);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="w-full max-w-3xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] text-slate-100">
         <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-          <h3 className="text-base font-bold">
-            {loading ? 'Đang tải...' : report ? report.display_name : 'Không tìm thấy'}
-          </h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-base font-bold">
+              {loading ? 'Đang tải...' : report ? report.display_name : 'Không tìm thấy'}
+            </h3>
+            {report && (
+              <button
+                onClick={handleSendToParent}
+                disabled={sending}
+                className="px-3 py-1.5 text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg min-h-[36px] flex items-center gap-1.5 transition disabled:opacity-50"
+              >
+                {sending ? '⏳ Đang gửi...' : '📨 Gửi báo cáo về PH'}
+              </button>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="min-w-11 min-h-11 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
@@ -680,6 +730,19 @@ function StudentDetailModal({ studentId, onClose }: { studentId: string; onClose
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Send result notification */}
+        {sendResult && (
+          <div className={`mx-6 mt-4 p-3 rounded-xl text-sm ${
+            sendResult.sent
+              ? 'bg-emerald-950/30 border border-emerald-800/40 text-emerald-300'
+              : 'bg-red-950/30 border border-red-800/40 text-red-300'
+          }`}>
+            {sendResult.sent
+              ? `✅ Đã gửi báo cáo đến PH: ${sendResult.parent_names.join(', ')}`
+              : `❌ ${sendResult.error}`}
+          </div>
+        )}
 
         {report && (
           <div className="p-6 overflow-y-auto space-y-6">
