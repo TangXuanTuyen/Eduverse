@@ -681,13 +681,238 @@ function QuestionsView({ data }: { data: QuestionRow[] }) {
   );
 }
 
+// ── Helpers: auto-generate comments ──
+
+function generateComments(report: DetailReport) {
+  const strengths: string[] = [];
+  const improvements: string[] = [];
+
+  // Skill analysis
+  const goodSkills = report.skill_breakdown.filter((s) => s.accuracy >= 80);
+  const weakSkills = report.skill_breakdown.filter((s) => s.accuracy < 50);
+
+  if (goodSkills.length > 0) {
+    strengths.push(`Nắm vững ${goodSkills.map((s) => s.skill.replace(/-/g, ' ')).join(', ')}`);
+  }
+  if (weakSkills.length > 0) {
+    improvements.push(`Cần ôn lại ${weakSkills.map((s) => s.skill.replace(/-/g, ' ')).join(', ')}`);
+  }
+
+  // Score analysis
+  const scored = report.submissions.filter((s) => s.total_score != null && s.max_score);
+  if (scored.length > 0) {
+    const avgPct = Math.round(scored.reduce((sum, s) => sum + (Number(s.total_score) / Number(s.max_score)) * 100, 0) / scored.length);
+    if (avgPct >= 80) strengths.push(`Điểm trung bình cao (${avgPct}%)`);
+    else if (avgPct < 50) improvements.push(`Điểm trung bình còn thấp (${avgPct}%), cần cố gắng hơn`);
+  }
+
+  // Completion
+  const completed = report.submissions.filter((s) => s.status === 'graded' || s.status === 'published');
+  const drafts = report.submissions.filter((s) => s.status === 'draft');
+  if (completed.length > 0 && drafts.length === 0) {
+    strengths.push('Hoàn thành đầy đủ bài tập được giao');
+  }
+  if (drafts.length > 0) {
+    improvements.push(`Còn ${drafts.length} bài chưa nộp`);
+  }
+
+  // Question accuracy
+  const totalQ = report.question_details.length;
+  const correctQ = report.question_details.filter((q) => q.is_correct).length;
+  if (totalQ > 0) {
+    const rate = Math.round((correctQ / totalQ) * 100);
+    if (rate >= 90) strengths.push('Tỷ lệ trả lời đúng rất tốt');
+    else if (rate < 40) improvements.push('Cần luyện tập thêm, tỷ lệ đúng còn thấp');
+  }
+
+  // XP
+  if (report.total_xp >= 200) strengths.push('Tích cực tham gia học tập trên hệ thống');
+  if (report.total_xp === 0) improvements.push('Chưa tích lũy được XP, cần tham gia nhiều hơn');
+
+  if (strengths.length === 0) strengths.push('Đã bắt đầu sử dụng hệ thống');
+  if (improvements.length === 0) improvements.push('Tiếp tục duy trì phong độ');
+
+  return { strengths, improvements };
+}
+
+function getWeekOptions() {
+  const weeks: { label: string; start: string; end: string }[] = [];
+  const now = new Date();
+  for (let i = 0; i < 8; i++) {
+    const monday = new Date(now);
+    monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7) - i * 7);
+    monday.setHours(0, 0, 0, 0);
+    const sunday = new Date(monday);
+    sunday.setDate(sunday.getDate() + 6);
+    weeks.push({
+      label: i === 0 ? 'Tuần này' : i === 1 ? 'Tuần trước' : `${monday.toLocaleDateString('vi-VN')} – ${sunday.toLocaleDateString('vi-VN')}`,
+      start: monday.toISOString().slice(0, 10),
+      end: sunday.toISOString().slice(0, 10),
+    });
+  }
+  return weeks;
+}
+
+// ── Send Report Modal ──
+
+function SendReportModal({ report, studentId, onClose }: { report: DetailReport; studentId: string; onClose: () => void }) {
+  const { strengths, improvements } = generateComments(report);
+  const weekOptions = getWeekOptions();
+
+  const [selectedWeek, setSelectedWeek] = useState('all');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [strengthsText, setStrengthsText] = useState(strengths.map((s) => `• ${s}`).join('\n'));
+  const [improvementsText, setImprovementsText] = useState(improvements.map((s) => `• ${s}`).join('\n'));
+  const [teacherNote, setTeacherNote] = useState('');
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<{ sent: boolean; parent_names: string[]; error?: string } | null>(null);
+
+  const handleSend = async () => {
+    setSending(true);
+    setResult(null);
+    const body = {
+      student_id: studentId,
+      week: selectedWeek === 'all' ? null : selectedWeek,
+      phone_number: phoneNumber.trim() || null,
+      strengths: strengthsText,
+      improvements: improvementsText,
+      teacher_note: teacherNote.trim() || null,
+    };
+    const res = await fetch('/api/teacher/reports/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    setResult(data);
+    setSending(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] text-slate-100">
+        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+          <h3 className="text-base font-bold">📨 Gửi báo cáo — {report.display_name}</h3>
+          <button onClick={onClose} className="min-w-11 min-h-11 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto space-y-5">
+          {/* Week picker */}
+          <div>
+            <label className="text-xs font-semibold text-slate-300 block mb-1.5">Khoảng thời gian</label>
+            <select
+              value={selectedWeek}
+              onChange={(e) => setSelectedWeek(e.target.value)}
+              className="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2.5 text-sm text-white min-h-[44px]"
+            >
+              <option value="all">Toàn bộ (tất cả thời gian)</option>
+              {weekOptions.map((w) => (
+                <option key={w.start} value={w.start}>{w.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Phone number */}
+          <div>
+            <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+              SĐT phụ huynh <span className="text-slate-500 font-normal">(không bắt buộc — nếu PH chưa liên kết)</span>
+            </label>
+            <input
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="VD: 0912 345 678"
+              className="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2.5 text-sm text-white min-h-[44px] placeholder:text-slate-600"
+            />
+          </div>
+
+          {/* Auto-generated strengths */}
+          <div>
+            <label className="text-xs font-semibold text-emerald-400 block mb-1.5">✅ Điểm tốt</label>
+            <textarea
+              value={strengthsText}
+              onChange={(e) => setStrengthsText(e.target.value)}
+              rows={3}
+              className="w-full rounded-xl bg-emerald-950/20 border border-emerald-900/30 px-3 py-2.5 text-sm text-emerald-100 min-h-[44px] resize-none placeholder:text-emerald-800"
+              placeholder="Nhập điểm tốt của học sinh..."
+            />
+          </div>
+
+          {/* Auto-generated improvements */}
+          <div>
+            <label className="text-xs font-semibold text-amber-400 block mb-1.5">⚡ Cần cải thiện</label>
+            <textarea
+              value={improvementsText}
+              onChange={(e) => setImprovementsText(e.target.value)}
+              rows={3}
+              className="w-full rounded-xl bg-amber-950/20 border border-amber-900/30 px-3 py-2.5 text-sm text-amber-100 min-h-[44px] resize-none placeholder:text-amber-800"
+              placeholder="Nhập điểm cần cải thiện..."
+            />
+          </div>
+
+          {/* Teacher's personal note */}
+          <div>
+            <label className="text-xs font-semibold text-slate-300 block mb-1.5">💬 Lời nhắn từ GV <span className="text-slate-500 font-normal">(không bắt buộc)</span></label>
+            <textarea
+              value={teacherNote}
+              onChange={(e) => setTeacherNote(e.target.value)}
+              rows={2}
+              className="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2.5 text-sm text-white min-h-[44px] resize-none placeholder:text-slate-600"
+              placeholder="VD: Phụ huynh cho con ôn thêm phần mạch điện nhé..."
+            />
+          </div>
+
+          {/* Preview summary */}
+          <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-4 space-y-2">
+            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Xem trước nội dung gửi</h4>
+            <div className="text-sm text-slate-200 space-y-1">
+              <p>📊 <strong>{report.display_name}</strong> — Cấp {report.level}, {report.total_xp} XP</p>
+              <p>📝 {report.submissions.length} bài ({report.question_details.filter((q) => q.is_correct).length}/{report.question_details.length} câu đúng)</p>
+              {strengthsText && <p className="text-emerald-300 whitespace-pre-line">{strengthsText}</p>}
+              {improvementsText && <p className="text-amber-300 whitespace-pre-line">{improvementsText}</p>}
+              {teacherNote && <p className="text-blue-300 italic">💬 {teacherNote}</p>}
+            </div>
+          </div>
+
+          {/* Result */}
+          {result && (
+            <div className={`p-3 rounded-xl text-sm ${
+              result.sent ? 'bg-emerald-950/30 border border-emerald-800/40 text-emerald-300' : 'bg-red-950/30 border border-red-800/40 text-red-300'
+            }`}>
+              {result.sent
+                ? `✅ Đã gửi báo cáo đến: ${result.parent_names.join(', ')}`
+                : `❌ ${result.error}`}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-slate-800 flex items-center justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2.5 text-sm text-slate-400 hover:text-white min-h-[44px] rounded-xl transition">
+            Hủy
+          </button>
+          <button
+            onClick={handleSend}
+            disabled={sending || !!result?.sent}
+            className="px-5 py-2.5 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl min-h-[44px] flex items-center gap-2 transition disabled:opacity-50"
+          >
+            <Send className="w-4 h-4" />
+            {sending ? 'Đang gửi...' : result?.sent ? 'Đã gửi ✓' : 'Gửi báo cáo'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Student Detail Modal ──
 
 function StudentDetailModal({ studentId, onClose }: { studentId: string; onClose: () => void }) {
   const [report, setReport] = useState<DetailReport | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
-  const [sendResult, setSendResult] = useState<{ sent: boolean; parent_names: string[]; error?: string } | null>(null);
+  const [showSendModal, setShowSendModal] = useState(false);
 
   useEffect(() => {
     fetch(`/api/teacher/reports/student?student_id=${studentId}`)
@@ -696,16 +921,8 @@ function StudentDetailModal({ studentId, onClose }: { studentId: string; onClose
       .finally(() => setLoading(false));
   }, [studentId]);
 
-  const handleSendToParent = async () => {
-    setSending(true);
-    setSendResult(null);
-    const res = await fetch(`/api/teacher/reports?tab=send-to-parent&student=${studentId}`);
-    const result = await res.json();
-    setSendResult(result);
-    setSending(false);
-  };
-
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="w-full max-w-3xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] text-slate-100">
         <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
@@ -715,11 +932,10 @@ function StudentDetailModal({ studentId, onClose }: { studentId: string; onClose
             </h3>
             {report && (
               <button
-                onClick={handleSendToParent}
-                disabled={sending}
-                className="px-3 py-1.5 text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg min-h-[36px] flex items-center gap-1.5 transition disabled:opacity-50"
+                onClick={() => setShowSendModal(true)}
+                className="px-3 py-1.5 text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg min-h-[36px] flex items-center gap-1.5 transition"
               >
-                {sending ? '⏳ Đang gửi...' : '📨 Gửi báo cáo về PH'}
+                <Send className="w-3.5 h-3.5" /> Gửi báo cáo về PH
               </button>
             )}
           </div>
@@ -730,19 +946,6 @@ function StudentDetailModal({ studentId, onClose }: { studentId: string; onClose
             <X className="w-5 h-5" />
           </button>
         </div>
-
-        {/* Send result notification */}
-        {sendResult && (
-          <div className={`mx-6 mt-4 p-3 rounded-xl text-sm ${
-            sendResult.sent
-              ? 'bg-emerald-950/30 border border-emerald-800/40 text-emerald-300'
-              : 'bg-red-950/30 border border-red-800/40 text-red-300'
-          }`}>
-            {sendResult.sent
-              ? `✅ Đã gửi báo cáo đến PH: ${sendResult.parent_names.join(', ')}`
-              : `❌ ${sendResult.error}`}
-          </div>
-        )}
 
         {report && (
           <div className="p-6 overflow-y-auto space-y-6">
@@ -767,6 +970,27 @@ function StudentDetailModal({ studentId, onClose }: { studentId: string; onClose
                 <div className="text-xs text-emerald-300">Câu đúng</div>
               </div>
             </div>
+
+            {/* Auto comments preview */}
+            {(() => {
+              const c = generateComments(report);
+              return (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-emerald-950/20 border border-emerald-900/30 rounded-xl p-3">
+                    <h4 className="text-xs font-bold text-emerald-400 mb-1.5">✅ Điểm tốt</h4>
+                    <ul className="text-xs text-emerald-200 space-y-1">
+                      {c.strengths.map((s, i) => <li key={i}>• {s}</li>)}
+                    </ul>
+                  </div>
+                  <div className="bg-amber-950/20 border border-amber-900/30 rounded-xl p-3">
+                    <h4 className="text-xs font-bold text-amber-400 mb-1.5">⚡ Cần cải thiện</h4>
+                    <ul className="text-xs text-amber-200 space-y-1">
+                      {c.improvements.map((s, i) => <li key={i}>• {s}</li>)}
+                    </ul>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Skill breakdown */}
             {report.skill_breakdown.length > 0 && (
@@ -856,5 +1080,9 @@ function StudentDetailModal({ studentId, onClose }: { studentId: string; onClose
         )}
       </div>
     </div>
+    {showSendModal && report && (
+      <SendReportModal report={report} studentId={studentId} onClose={() => setShowSendModal(false)} />
+    )}
+    </>
   );
 }

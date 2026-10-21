@@ -833,9 +833,18 @@ export async function getStudentDetailReport(
 // Teacher → Parent: gửi báo cáo HS cho phụ huynh
 // ---------------------------------------------------------------------------
 
+type SendReportOptions = {
+  week?: string | null;
+  phoneNumber?: string | null;
+  strengths?: string | null;
+  improvements?: string | null;
+  teacherNote?: string | null;
+};
+
 export async function sendReportToParent(
   teacherId: string,
-  studentId: string
+  studentId: string,
+  options: SendReportOptions = {}
 ): Promise<{ sent: boolean; parent_names: string[]; error?: string }> {
   const admin = createAdminClient();
 
@@ -865,44 +874,74 @@ export async function sendReportToParent(
     .eq('student_id', studentId)
     .eq('status', 'approved');
 
-  if (!parentLinks || parentLinks.length === 0) {
-    return { sent: false, parent_names: [], error: 'Học sinh chưa có phụ huynh liên kết' };
+  const hasParents = parentLinks && parentLinks.length > 0;
+  const hasPhone = options.phoneNumber && options.phoneNumber.trim().length > 0;
+
+  if (!hasParents && !hasPhone) {
+    return { sent: false, parent_names: [], error: 'Học sinh chưa có phụ huynh liên kết và chưa nhập SĐT' };
   }
 
   // Get report data
   const report = await getStudentDetailReport(teacherId, studentId);
   if (!report) return { sent: false, parent_names: [], error: 'Không lấy được báo cáo' };
 
-  // Create notification for each parent
-  const parentNames: string[] = [];
-  for (const pl of parentLinks) {
-    const parentProfile = pl.profiles as unknown as { display_name: string };
-    parentNames.push(parentProfile.display_name);
+  const scored = report.submissions.filter((s) => s.total_score != null && s.max_score);
+  const avgScore = scored.length > 0
+    ? Math.round(scored.reduce((sum, s) => sum + (Number(s.total_score) / Number(s.max_score)) * 100, 0) / scored.length)
+    : 0;
 
-    // Insert notification for parent
+  const reportMetadata = {
+    student_id: studentId,
+    student_name: report.display_name,
+    teacher_id: teacherId,
+    total_xp: report.total_xp,
+    level: report.level,
+    submissions_count: report.submissions.length,
+    avg_score: avgScore,
+    skill_breakdown: report.skill_breakdown,
+    strengths: options.strengths ?? null,
+    improvements: options.improvements ?? null,
+    teacher_note: options.teacherNote ?? null,
+    week: options.week ?? 'all',
+    phone_number: options.phoneNumber ?? null,
+    sent_at: new Date().toISOString(),
+  };
+
+  const bodyText = [
+    `GV đã gửi báo cáo kết quả học tập${options.week ? ` (tuần ${options.week})` : ''}.`,
+    `Hoàn thành ${report.submissions.length} bài, XP: ${report.total_xp}, Cấp ${report.level}.`,
+    avgScore > 0 ? `Điểm TB: ${avgScore}%.` : '',
+    options.strengths ? `\n✅ Điểm tốt:\n${options.strengths}` : '',
+    options.improvements ? `\n⚡ Cần cải thiện:\n${options.improvements}` : '',
+    options.teacherNote ? `\n💬 Lời nhắn: ${options.teacherNote}` : '',
+  ].filter(Boolean).join(' ');
+
+  // Create notification for each linked parent
+  const parentNames: string[] = [];
+  if (hasParents) {
+    for (const pl of parentLinks!) {
+      const parentProfile = pl.profiles as unknown as { display_name: string };
+      parentNames.push(parentProfile.display_name);
+
+      await admin.from('notifications').insert({
+        user_id: pl.parent_id,
+        type: 'student_report',
+        title: `Báo cáo học tập: ${report.display_name}`,
+        body: bodyText,
+        metadata: reportMetadata,
+      });
+    }
+  }
+
+  // If phone number provided, save it for future reference
+  if (hasPhone) {
+    parentNames.push(`SĐT ${options.phoneNumber}`);
     await admin.from('notifications').insert({
-      user_id: pl.parent_id,
-      type: 'student_report',
-      title: `Báo cáo học tập: ${report.display_name}`,
-      body: `GV đã gửi báo cáo kết quả học tập. Hoàn thành ${report.submissions.length} bài, XP: ${report.total_xp}, Cấp ${report.level}.`,
-      metadata: {
-        student_id: studentId,
-        student_name: report.display_name,
-        teacher_id: teacherId,
-        total_xp: report.total_xp,
-        level: report.level,
-        submissions_count: report.submissions.length,
-        avg_score: report.submissions.length > 0
-          ? Math.round(
-              report.submissions
-                .filter((s) => s.total_score != null && s.max_score)
-                .reduce((sum, s) => sum + (Number(s.total_score) / Number(s.max_score)) * 100, 0) /
-              (report.submissions.filter((s) => s.total_score != null && s.max_score).length || 1)
-            )
-          : 0,
-        skill_breakdown: report.skill_breakdown,
-        sent_at: new Date().toISOString(),
-      },
+      user_id: teacherId,
+      type: 'report_sent_phone',
+      title: `Báo cáo ${report.display_name} → ${options.phoneNumber}`,
+      body: bodyText,
+      metadata: reportMetadata,
     });
   }
 
