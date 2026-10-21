@@ -93,7 +93,7 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
       // Tránh nhân vật tiếp tục chạy vì phím còn "đang giữ" khi modal mở
       stateRef.current.keys.clear();
       stateRef.current.virtualInput = { dx: 0, dy: 0 };
-      stateRef.current.path = [];
+      stateRef.current.path = []; stateRef.current.autoEnterBuilding = null;
     }
   }, [paused]);
 
@@ -122,6 +122,7 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
       y: 0,
     },
     path: [] as { x: number; y: number }[],
+    autoEnterBuilding: null as BuildingInfo | null,
     keys: new Set<string>(),
     virtualInput: { dx: 0, dy: 0 },
     animFrameId: 0,
@@ -175,7 +176,7 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
           stateRef.current.player.x = safe.x;
           stateRef.current.player.y = safe.y;
           stateRef.current.player.facing = facing;
-          stateRef.current.path = [];
+          stateRef.current.path = []; stateRef.current.autoEnterBuilding = null;
           setDismissedBuildingId(null);
           sound.playInteract();
         },
@@ -216,6 +217,19 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
       const worldX = (clickX + stateRef.current.camera.x) / TILE_SIZE;
       const worldY = (clickY + stateRef.current.camera.y) / TILE_SIZE;
 
+      // Check if click is on a building — pathfind to its entrance instead
+      let targetX = worldX;
+      let targetY = worldY;
+      let clickedBuilding: BuildingInfo | null = null;
+      for (const b of Object.values(BUILDINGS)) {
+        if (worldX >= b.x && worldX <= b.x + b.width && worldY >= b.y && worldY <= b.y + b.height) {
+          targetX = b.entrance.x;
+          targetY = b.entrance.y;
+          clickedBuilding = b;
+          break;
+        }
+      }
+
       const start = {
         x: stateRef.current.player.x,
         y: stateRef.current.player.y,
@@ -224,15 +238,21 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
       const path = pathfindingRef.current.findPath(
         start.x,
         start.y,
-        worldX,
-        worldY
+        targetX,
+        targetY
       );
 
       if (path.length > 0) {
         stateRef.current.path = path;
+        if (clickedBuilding) {
+          stateRef.current.autoEnterBuilding = clickedBuilding;
+        }
         setDismissedBuildingId(null);
         sound.playClick();
         setTargetToast(null);
+      } else if (clickedBuilding) {
+        // Already at the entrance — enter directly
+        onEnterBuildingRef.current(clickedBuilding);
       } else {
         sound.playError();
         setTargetToast('Vị trí này không thể đi tới. Hãy chọn một con đường gần đó!');
@@ -357,7 +377,7 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
 
       // Input movement
       if (moveX !== 0 || moveY !== 0) {
-        stateRef.current.path = [];
+        stateRef.current.path = []; stateRef.current.autoEnterBuilding = null;
 
         const len = Math.hypot(moveX, moveY);
         const normX = (moveX / len) * speed * dt;
@@ -405,6 +425,11 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
           player.x = nextTarget.x;
           player.y = nextTarget.y;
           stateRef.current.path.shift();
+          if (stateRef.current.path.length === 0 && stateRef.current.autoEnterBuilding) {
+            const bld = stateRef.current.autoEnterBuilding;
+            stateRef.current.autoEnterBuilding = null;
+            onEnterBuildingRef.current(bld);
+          }
         } else {
           const step = Math.min(speed * dt, dist);
           const dirX = (dx / dist) * step;
@@ -414,7 +439,7 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
             player.x += dirX;
             player.y += dirY;
           } else {
-            stateRef.current.path = [];
+            stateRef.current.path = []; stateRef.current.autoEnterBuilding = null;
           }
 
           player.isWalking = true;
