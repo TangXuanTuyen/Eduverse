@@ -21,15 +21,15 @@ export const LESSON_CATALOG: LessonResource[] = [
 export type Model3DResource = {
   id: string;
   title: string;
-  category: string;
+  grade: number;
 };
 
 export const MODEL3D_CATALOG: Model3DResource[] = [
-  { id: 'demo_cell_3d', title: 'Tế bào động vật', category: 'Sinh học' },
-  { id: 'demo_solar', title: 'Hệ Mặt Trời', category: 'Vật lý' },
-  { id: 'demo_water', title: 'Phân tử nước (H₂O)', category: 'Hóa học' },
-  { id: 'demo_heart', title: 'Tim người', category: 'Sinh học' },
-  { id: 'demo_nacl', title: 'Tinh thể NaCl', category: 'Hóa học' },
+  { id: 'demo_cell_3d', title: 'Tế bào động vật', grade: 6 },
+  { id: 'demo_solar', title: 'Hệ Mặt Trời', grade: 6 },
+  { id: 'demo_water', title: 'Phân tử nước (H₂O)', grade: 7 },
+  { id: 'demo_heart', title: 'Tim người', grade: 8 },
+  { id: 'demo_nacl', title: 'Tinh thể NaCl', grade: 8 },
 ];
 
 export type StemResource = {

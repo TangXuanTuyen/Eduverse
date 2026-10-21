@@ -108,7 +108,7 @@ export function CreateTaskButton({ teacherId }: { teacherId: string }) {
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white font-medium">{r.title}</p>
-                  <p className="text-xs text-slate-400">{'grade' in r ? `Khối ${(r as { grade: number }).grade} · ${(r as { subject: string }).subject}` : 'subject' in r ? (r as { subject: string }).subject : (r as { category: string }).category}</p>
+                  <p className="text-xs text-slate-400">{'grade' in r && 'subject' in r ? `Khối ${(r as { grade: number }).grade} · ${(r as { subject: string }).subject}` : 'grade' in r ? `Khối ${(r as { grade: number }).grade}` : 'subject' in r ? (r as { subject: string }).subject : ''}</p>
                 </div>
               </label>
             ))}

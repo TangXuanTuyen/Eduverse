@@ -8,16 +8,17 @@ type Model3D = {
   id: string;
   title: string;
   description: string;
-  category: string;
+  grade: number;
   embed_url: string | null;
   thumbnail_url: string | null;
 };
 
-const CATEGORIES = [
+const GRADE_FILTERS = [
   { key: 'all', label: 'Tất cả', icon: '🌐' },
-  { key: 'Sinh học', label: 'Sinh học', icon: '🧬' },
-  { key: 'Hóa học', label: 'Hóa học', icon: '⚗️' },
-  { key: 'Vật lý', label: 'Thiên văn', icon: '🪐' },
+  { key: '6', label: 'Khối 6', icon: '6️⃣' },
+  { key: '7', label: 'Khối 7', icon: '7️⃣' },
+  { key: '8', label: 'Khối 8', icon: '8️⃣' },
+  { key: '9', label: 'Khối 9', icon: '9️⃣' },
 ];
 
 const DEMO_MODELS: Model3D[] = [
@@ -25,7 +26,7 @@ const DEMO_MODELS: Model3D[] = [
     id: 'demo_cell_3d',
     title: 'Tế bào động vật',
     description: 'Mô hình 3D tế bào động vật với nhân, ti thể, lưới nội chất và các bào quan.',
-    category: 'Sinh học',
+    grade: 6,
     embed_url: null,
     thumbnail_url: null,
   },
@@ -33,7 +34,7 @@ const DEMO_MODELS: Model3D[] = [
     id: 'demo_solar',
     title: 'Hệ Mặt Trời',
     description: 'Mô hình hệ Mặt Trời với 8 hành tinh, quỹ đạo và khoảng cách tương đối.',
-    category: 'Vật lý',
+    grade: 6,
     embed_url: null,
     thumbnail_url: null,
   },
@@ -41,7 +42,7 @@ const DEMO_MODELS: Model3D[] = [
     id: 'demo_water',
     title: 'Phân tử nước (H₂O)',
     description: 'Cấu trúc phân tử nước: liên kết cộng hóa trị, góc liên kết 104.5°, phân cực.',
-    category: 'Hóa học',
+    grade: 7,
     embed_url: null,
     thumbnail_url: null,
   },
@@ -49,7 +50,7 @@ const DEMO_MODELS: Model3D[] = [
     id: 'demo_heart',
     title: 'Tim người',
     description: 'Mô hình 3D tim người với 4 ngăn, van tim và hệ mạch máu chính.',
-    category: 'Sinh học',
+    grade: 8,
     embed_url: null,
     thumbnail_url: null,
   },
@@ -57,7 +58,7 @@ const DEMO_MODELS: Model3D[] = [
     id: 'demo_nacl',
     title: 'Tinh thể NaCl',
     description: 'Cấu trúc tinh thể muối ăn: ion Na⁺ và Cl⁻ sắp xếp đều đặn trong không gian.',
-    category: 'Hóa học',
+    grade: 8,
     embed_url: null,
     thumbnail_url: null,
   },
@@ -119,7 +120,7 @@ export function World3DModal({ onClose }: World3DModalProps) {
     setCompletingTask(null);
   }, []);
 
-  const filtered = filter === 'all' ? models : models.filter((m) => m.category === filter);
+  const filtered = filter === 'all' ? models : models.filter((m) => String(m.grade) === filter);
 
   if (activeModel) {
     return (
@@ -135,7 +136,7 @@ export function World3DModal({ onClose }: World3DModalProps) {
             </button>
             <div className="flex-1 min-w-0">
               <h2 className="font-bold text-lg truncate">{activeModel.title}</h2>
-              <p className="text-sm text-cyan-300">{activeModel.category}</p>
+              <p className="text-sm text-cyan-300">Khối {activeModel.grade}</p>
             </div>
           </div>
           <div className="flex-1 overflow-auto p-4">
@@ -165,21 +166,12 @@ export function World3DModal({ onClose }: World3DModalProps) {
             })()}
             {/* Cross-building suggestions */}
             <div className="mb-4 flex flex-wrap gap-2">
-              {activeModel.category === 'Sinh học' && (
-                <a href="/student/library" className="text-xs px-3 py-1.5 rounded-lg bg-indigo-900/40 text-indigo-300 hover:bg-indigo-900/60 transition min-h-[36px] flex items-center gap-1">
-                  📖 Đọc lý thuyết Sinh học tại Thư viện
-                </a>
-              )}
-              {activeModel.category === 'Hóa học' && (
-                <a href="/student/virtual-lab" className="text-xs px-3 py-1.5 rounded-lg bg-orange-900/40 text-orange-300 hover:bg-orange-900/60 transition min-h-[36px] flex items-center gap-1">
-                  🔬 Thí nghiệm Hóa học tại Phòng TN Ảo
-                </a>
-              )}
-              {activeModel.category === 'Vật lý' && (
-                <a href="/student/virtual-lab" className="text-xs px-3 py-1.5 rounded-lg bg-orange-900/40 text-orange-300 hover:bg-orange-900/60 transition min-h-[36px] flex items-center gap-1">
-                  🔬 Thí nghiệm Vật lý tại Phòng TN Ảo
-                </a>
-              )}
+              <a href="/student/library" className="text-xs px-3 py-1.5 rounded-lg bg-indigo-900/40 text-indigo-300 hover:bg-indigo-900/60 transition min-h-[36px] flex items-center gap-1">
+                📖 Đọc lý thuyết tại Thư viện
+              </a>
+              <a href="/student/virtual-lab" className="text-xs px-3 py-1.5 rounded-lg bg-orange-900/40 text-orange-300 hover:bg-orange-900/60 transition min-h-[36px] flex items-center gap-1">
+                🔬 Thí nghiệm tại Phòng TN Ảo
+              </a>
             </div>
             {activeModel.embed_url ? (
               <iframe
@@ -228,7 +220,7 @@ export function World3DModal({ onClose }: World3DModalProps) {
           </div>
           {/* Category filter */}
           <div className="flex gap-2 flex-wrap">
-            {CATEGORIES.map((c) => (
+            {GRADE_FILTERS.map((c) => (
               <button
                 key={c.key}
                 onClick={() => setFilter(c.key)}
@@ -279,7 +271,7 @@ export function World3DModal({ onClose }: World3DModalProps) {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-cyan-400 mt-0.5">{model.category}</p>
+                  <p className="text-xs text-cyan-400 mt-0.5">Khối {model.grade}</p>
                 </button>
                 );
               })}
