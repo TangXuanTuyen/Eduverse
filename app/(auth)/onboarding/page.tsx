@@ -13,7 +13,7 @@ export default async function OnboardingPage() {
   if (profile.role) redirect(homeForRole(profile.role));
 
   return (
-    <AuthCard title="Chào mừng đến EDUVERSE!" subtitle="Bạn là ai?">
+    <AuthCard title="Chào mừng đến VINA-EDUVERSE!" subtitle="Bạn là ai?">
       <OnboardingForm />
     </AuthCard>
   );

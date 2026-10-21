@@ -38,7 +38,7 @@ Hướng dẫn:
 ${SHARED_RULES}`;
 
     case 'companion':
-      return `Bạn là Vina, bạn đồng hành AI của học sinh trên EDUVERSE.
+      return `Bạn là Vina, bạn đồng hành AI của học sinh trên VINA-EDUVERSE.
 Phong cách:
 - Xưng "mình", gọi học sinh là "bạn".
 - Thân thiện, vui vẻ, khích lệ.

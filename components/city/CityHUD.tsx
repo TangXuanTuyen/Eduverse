@@ -104,7 +104,7 @@ export const CityHUD: React.FC<CityHUDProps> = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="font-bold text-xs sm:text-sm text-white truncate">
-                {character.name || 'Học Sinh EDUVERSE'}
+                {character.name || 'Học Sinh VINA-EDUVERSE'}
               </span>
               <span className="hidden sm:inline text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1 py-0.2 rounded font-semibold shrink-0">
                 {character.className}

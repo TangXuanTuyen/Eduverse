@@ -26,8 +26,8 @@ const retro = Silkscreen({
 
 export const metadata: Metadata = {
   title: {
-    default: 'EDUVERSE - Thành Phố Học Tập',
-    template: '%s · EDUVERSE',
+    default: 'VINA-EDUVERSE - Thành Phố Học Tập',
+    template: '%s · VINA-EDUVERSE',
   },
   description:
     'Thế giới học tập Khoa học tự nhiên dạng thành phố pixel-art dành cho học sinh THCS: thư viện, Quiz Arcade, trạm sửa lỗi, phòng STEM.',

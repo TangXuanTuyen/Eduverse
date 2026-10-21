@@ -23,7 +23,7 @@ export type QuestId = (typeof QUEST_IDS)[keyof typeof QUEST_IDS];
 export const INITIAL_QUESTS: Quest[] = [
   {
     id: QUEST_IDS.schoolWelcome,
-    title: 'Đăng ký nhập học EDUVERSE',
+    title: 'Đăng ký nhập học VINA-EDUVERSE',
     description: 'Khám phá trường học và nhận thời khóa biểu môn Khoa học tự nhiên.',
     locationId: 'school',
     targetCount: 1,

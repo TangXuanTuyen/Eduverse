@@ -1003,7 +1003,7 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
     ctx.lineTo(bx + bw / 2 + Math.cos(hourAngle) * 5, by - 2 + Math.sin(hourAngle) * 5);
     ctx.stroke();
 
-    // School Banner Plaque: "TRƯỜNG THCS EDUVERSE"
+    // School Banner Plaque: "TRƯỜNG THCS VINA-EDUVERSE"
     ctx.fillStyle = '#1E3A8A';
     ctx.fillRect(bx + bw / 2 - 110, by + 16, 220, 24);
     ctx.strokeStyle = '#FBBF24';
@@ -1013,7 +1013,7 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
     ctx.fillStyle = '#FFFFFF';
     ctx.font = `bold 11px ${uiFontFamily}`;
     ctx.textAlign = 'center';
-    ctx.fillText('🏫 TRƯỜNG THCS EDUVERSE', bx + bw / 2, by + 32);
+    ctx.fillText('🏫 TRƯỜNG THCS VINA-EDUVERSE', bx + bw / 2, by + 32);
 
     // Symmetrical Arched Windows with glass reflections
     const drawWindow = (wx: number, wy: number) => {
@@ -3030,7 +3030,7 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
         onClick={handleCanvasClick}
         className="w-full h-full cursor-crosshair block"
         role="img"
-        aria-label="Bản đồ thành phố EDUVERSE. Dùng phím mũi tên hoặc W A S D để di chuyển, phím E để vào địa điểm. Có thể mở danh sách khu vực ở thanh trên cùng."
+        aria-label="Bản đồ thành phố VINA-EDUVERSE. Dùng phím mũi tên hoặc W A S D để di chuyển, phím E để vào địa điểm. Có thể mở danh sách khu vực ở thanh trên cùng."
       />
 
       {/* TARGET UNREACHABLE TOAST */}

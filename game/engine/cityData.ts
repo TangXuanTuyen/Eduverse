@@ -14,7 +14,7 @@ export const BUILDINGS: Record<BuildingId, BuildingInfo> = {
   school: {
     id: 'school',
     name: 'School',
-    vietnameseName: 'Trường THCS EDUVERSE',
+    vietnameseName: 'Trường THCS VINA-EDUVERSE',
     icon: '🏫',
     color: '#1E3A8A', // Deep architectural blue
     accentColor: '#3B82F6', // Vivid blue trim
@@ -25,7 +25,7 @@ export const BUILDINGS: Record<BuildingId, BuildingInfo> = {
     height: 4.5,
     entrance: { x: 18, y: 7 },
     unlockRequirement: {
-      description: 'Mở cửa tự do cho mọi học sinh EDUVERSE.',
+      description: 'Mở cửa tự do cho mọi học sinh VINA-EDUVERSE.',
     },
   },
   library: {

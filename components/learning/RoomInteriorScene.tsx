@@ -512,7 +512,7 @@ export const RoomInteriorScene: React.FC<RoomInteriorSceneProps> = ({
               <div className="text-center font-mono text-[9px] text-amber-200 font-bold">
                 HỌC SINH XUẤT SẮC
               </div>
-              <div className="text-[7.5px] text-amber-400/90 text-center">Tự hào THCS EDUVERSE</div>
+              <div className="text-[7.5px] text-amber-400/90 text-center">Tự hào THCS VINA-EDUVERSE</div>
             </div>
           </div>
         </div>

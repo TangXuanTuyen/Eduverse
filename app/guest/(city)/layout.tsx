@@ -1,7 +1,7 @@
 import { StudentGameProvider } from '@/components/student/StudentGameProvider';
 import { CityShell } from '@/components/student/CityShell';
 
-export const metadata = { title: 'EDUVERSE — Học tự do' };
+export const metadata = { title: 'VINA-EDUVERSE — Học tự do' };
 
 export default function GuestCityLayout({ children }: { children: React.ReactNode }) {
   return (

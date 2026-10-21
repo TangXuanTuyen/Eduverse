@@ -239,17 +239,17 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
   ];
 
   return (
-    <DialogFrame onClose={isEditing ? onCancel : undefined} label={isEditing ? 'Tùy chỉnh diện mạo nhân vật' : 'Tạo nhân vật EDUVERSE'} className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-sm overflow-y-auto">
+    <DialogFrame onClose={isEditing ? onCancel : undefined} label={isEditing ? 'Tùy chỉnh diện mạo nhân vật' : 'Tạo nhân vật VINA-EDUVERSE'} className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-sm overflow-y-auto">
       <div className="w-full max-w-4xl bg-slate-900 border-2 border-indigo-500/40 rounded-2xl shadow-2xl shadow-indigo-950/50 text-slate-100 flex flex-col md:flex-row overflow-hidden my-auto max-h-[92vh]">
         {/* LEFT COLUMN: LIVE AVATAR PREVIEW STAGE */}
         <div className="w-full md:w-5/12 bg-gradient-to-b from-slate-900 via-indigo-950/40 to-slate-900 p-6 flex flex-col items-center justify-between border-b md:border-b-0 md:border-r border-slate-800">
           <div className="text-center w-full">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-xs font-semibold mb-2 border border-indigo-500/30">
               <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-              <span>{isEditing ? 'TÙY CHỈNH DIỆN MẠO' : 'TẠO NHÂN VẬT EDUVERSE'}</span>
+              <span>{isEditing ? 'TÙY CHỈNH DIỆN MẠO' : 'TẠO NHÂN VẬT VINA-EDUVERSE'}</span>
             </div>
             <h2 className="text-xl font-bold text-white tracking-wide">
-              {config.name || 'Học Sinh EDUVERSE'}
+              {config.name || 'Học Sinh VINA-EDUVERSE'}
             </h2>
             <p className="text-xs text-indigo-300/80 font-medium">{config.className}</p>
           </div>
@@ -666,7 +666,7 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
               onClick={handleConfirm}
               className="px-6 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 rounded-xl shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition transform active:scale-95 cursor-pointer"
             >
-              <span>{isEditing ? 'Lưu Thay Đổi Nhân Vật' : 'Xác Nhận & Khám Phá EDUVERSE'}</span>
+              <span>{isEditing ? 'Lưu Thay Đổi Nhân Vật' : 'Xác Nhận & Khám Phá VINA-EDUVERSE'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

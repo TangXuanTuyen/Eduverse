@@ -12,7 +12,7 @@ export default async function LoginPage() {
   if (profile) redirect(homeForRole(profile.role));
 
   return (
-    <AuthCard title="Đăng nhập EDUVERSE" subtitle="Thành phố học Khoa học tự nhiên">
+    <AuthCard title="Đăng nhập VINA-EDUVERSE" subtitle="Thành phố học Khoa học tự nhiên">
       <LoginForm />
     </AuthCard>
   );

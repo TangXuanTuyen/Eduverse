@@ -64,7 +64,7 @@ export const SchoolModal: React.FC<SchoolModalProps> = ({
             </div>
             <div>
               <h2 id="dialog-title-school" className="text-base font-bold text-white">
-                Trường THCS EDUVERSE
+                Trường THCS VINA-EDUVERSE
               </h2>
               <p className="text-xs text-blue-300">
                 Bài giao từ giáo viên, nhiệm vụ học tập & thông báo

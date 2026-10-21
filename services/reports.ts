@@ -938,7 +938,7 @@ export async function getWeeklySummary(
     suggestions.push('Hỏi con: "Bài giao tuần này con đã làm xong chưa?"');
   }
   if (xpEarned === 0) {
-    suggestions.push('Hỏi con: "Tuần này con có vào EDUVERSE học không? Cần ba/mẹ giúp gì không?"');
+    suggestions.push('Hỏi con: "Tuần này con có vào VINA-EDUVERSE học không? Cần ba/mẹ giúp gì không?"');
   }
   if (reviewsFixed > 0) {
     suggestions.push('Khen con: "Con sửa được nhiều câu sai, tốt lắm! Con thấy phần nào khó nhất?"');

@@ -40,7 +40,7 @@ export function RoleShell({
       <header className="border-b border-slate-800 bg-slate-900/80">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="font-bold text-white">EDUVERSE</div>
+            <div className="font-bold text-white">VINA-EDUVERSE</div>
             <div className="text-xs text-slate-400 truncate">
               {ROLE_LABEL[role]} · {displayName || 'Chưa đặt tên'}
             </div>
