@@ -12,12 +12,14 @@ const TYPE_ICON: Record<string, string> = {
   quiz: '📝',
   lesson: '📖',
   experiment: '🔬',
+  model3d: '🌐',
 };
 
 const TYPE_LABEL: Record<string, string> = {
   quiz: 'Bài tập',
   lesson: 'Lý thuyết',
   experiment: 'Thí nghiệm',
+  model3d: 'Mô hình 3D',
 };
 
 type Props = { assignments: AssignmentRow[] };

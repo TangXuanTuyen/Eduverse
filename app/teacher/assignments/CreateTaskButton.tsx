@@ -2,7 +2,7 @@
 
 import { useActionState, useState, useEffect } from 'react';
 import { createTaskAction, type AssignmentActionState } from './actions';
-import { LESSON_CATALOG, EXPERIMENT_CATALOG } from '@/lib/resources-catalog';
+import { LESSON_CATALOG, EXPERIMENT_CATALOG, MODEL3D_CATALOG } from '@/lib/resources-catalog';
 
 type Room = { id: string; name: string };
 
@@ -10,7 +10,7 @@ export function CreateTaskButton({ teacherId }: { teacherId: string }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState<AssignmentActionState, FormData>(createTaskAction, {});
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [taskType, setTaskType] = useState<'lesson' | 'experiment'>('lesson');
+  const [taskType, setTaskType] = useState<'lesson' | 'experiment' | 'model3d'>('lesson');
   const [selectedResource, setSelectedResource] = useState('');
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export function CreateTaskButton({ teacherId }: { teacherId: string }) {
     setTimeout(() => { setOpen(false); setSelectedResource(''); }, 0);
   }
 
-  const catalog = taskType === 'lesson' ? LESSON_CATALOG : EXPERIMENT_CATALOG;
+  const catalog = taskType === 'lesson' ? LESSON_CATALOG : taskType === 'experiment' ? EXPERIMENT_CATALOG : MODEL3D_CATALOG;
   const selected = catalog.find((r) => r.id === selectedResource);
 
   if (!open) {
@@ -41,7 +41,7 @@ export function CreateTaskButton({ teacherId }: { teacherId: string }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
       <form action={formAction} className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-bold text-white">Giao nhiệm vụ</h3>
-        <p className="text-xs text-slate-400">Giao cho học sinh xem lý thuyết hoặc làm thí nghiệm ảo.</p>
+        <p className="text-xs text-slate-400">Giao cho học sinh xem lý thuyết, thí nghiệm ảo hoặc mô hình 3D.</p>
 
         {state.error && <p className="text-red-400 text-sm">{state.error}</p>}
 
@@ -70,12 +70,19 @@ export function CreateTaskButton({ teacherId }: { teacherId: string }) {
             >
               🔬 Xem thí nghiệm
             </button>
+            <button
+              type="button"
+              onClick={() => { setTaskType('model3d'); setSelectedResource(''); }}
+              className={`px-3 py-2 rounded-lg text-sm min-h-[44px] ${taskType === 'model3d' ? 'bg-cyan-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+            >
+              🌐 Xem mô hình 3D
+            </button>
           </div>
           <input type="hidden" name="assignment_type" value={taskType} />
         </div>
 
         <div>
-          <span className="text-xs text-slate-400">Chọn {taskType === 'lesson' ? 'bài học' : 'thí nghiệm'}</span>
+          <span className="text-xs text-slate-400">Chọn {taskType === 'lesson' ? 'bài học' : taskType === 'experiment' ? 'thí nghiệm' : 'mô hình 3D'}</span>
           <div className="mt-1 space-y-2 max-h-48 overflow-y-auto">
             {catalog.map((r) => (
               <label
@@ -94,7 +101,7 @@ export function CreateTaskButton({ teacherId }: { teacherId: string }) {
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white font-medium">{r.title}</p>
-                  <p className="text-xs text-slate-400">Khối {r.grade} · {r.subject}</p>
+                  <p className="text-xs text-slate-400">{'grade' in r ? `Khối ${r.grade} · ${r.subject}` : `${(r as { category: string }).category}`}</p>
                 </div>
               </label>
             ))}
@@ -109,7 +116,7 @@ export function CreateTaskButton({ teacherId }: { teacherId: string }) {
             name="title"
             type="text"
             required
-            defaultValue={selected ? `${taskType === 'lesson' ? 'Đọc' : 'Xem'}: ${selected.title}` : ''}
+            defaultValue={selected ? `${taskType === 'lesson' ? 'Đọc' : 'Xem'}: ${'title' in selected ? selected.title : ''}` : ''}
             key={selectedResource}
             className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white"
           />

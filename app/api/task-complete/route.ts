@@ -31,6 +31,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Đây là bài tập, không phải nhiệm vụ' }, { status: 400 });
   }
 
+  const xpReason = assignment.assignment_type === 'model3d' ? 'model3d_complete' as const : 'task_complete' as const;
+
   // Check room membership
   const { data: member } = await admin
     .from('room_members')
@@ -64,7 +66,7 @@ export async function POST(request: Request) {
   try {
     const result = await awardXp(
       profile.id,
-      'task_complete',
+      xpReason,
       `task:${assignment_id}:${profile.id}`,
     );
     xpAwarded = result.awarded;

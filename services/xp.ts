@@ -16,6 +16,7 @@ export const XP_REWARDS = {
   assignment_complete: 50,
   assignment_perfect: 30,
   task_complete: 30,
+  model3d_complete: 25,
 } as const;
 
 export type XpReason = keyof typeof XP_REWARDS;

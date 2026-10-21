@@ -14,7 +14,7 @@ type RealAssignment = {
   title: string;
   description: string;
   due_at: string | null;
-  assignment_type?: 'quiz' | 'lesson' | 'experiment';
+  assignment_type?: 'quiz' | 'lesson' | 'experiment' | 'model3d';
   resource_id?: string | null;
   resource_title?: string | null;
   rooms: { name: string };
@@ -127,10 +127,10 @@ export const SchoolModal: React.FC<SchoolModalProps> = ({
               <div className="space-y-2">
                 {assignments.slice(0, 8).map((a) => {
                   const overdue = a.due_at && new Date(a.due_at) < now;
-                  const isTask = a.assignment_type === 'lesson' || a.assignment_type === 'experiment';
-                  const typeIcon = a.assignment_type === 'lesson' ? '📖' : a.assignment_type === 'experiment' ? '🔬' : '📝';
-                  const buildingLabel = a.assignment_type === 'lesson' ? 'Đi đến Thư viện' : 'Đi đến Phòng TN Ảo';
-                  const buildingRoute = a.assignment_type === 'lesson' ? '/student/library' : '/student/virtual_lab';
+                  const isTask = a.assignment_type === 'lesson' || a.assignment_type === 'experiment' || a.assignment_type === 'model3d';
+                  const typeIcon = a.assignment_type === 'lesson' ? '📖' : a.assignment_type === 'experiment' ? '🔬' : a.assignment_type === 'model3d' ? '🌐' : '📝';
+                  const buildingLabel = a.assignment_type === 'lesson' ? 'Đi đến Thư viện' : a.assignment_type === 'model3d' ? 'Đi đến Thế Giới 3D' : 'Đi đến Phòng TN Ảo';
+                  const buildingRoute = a.assignment_type === 'lesson' ? '/student/library' : a.assignment_type === 'model3d' ? '/student/world-3d' : '/student/virtual-lab';
 
                   if (isTask) {
                     return (

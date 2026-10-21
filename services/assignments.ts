@@ -12,7 +12,7 @@ export type AssignmentRow = {
   max_retries: number;
   show_explanation_after_submit: boolean;
   results_published: boolean;
-  assignment_type: 'quiz' | 'lesson' | 'experiment';
+  assignment_type: 'quiz' | 'lesson' | 'experiment' | 'model3d';
   resource_id: string | null;
   resource_title: string | null;
   created_by: string;
@@ -196,7 +196,7 @@ export type CreateTaskAssignmentData = {
   room_id: string;
   title: string;
   description?: string;
-  assignment_type: 'lesson' | 'experiment';
+  assignment_type: 'lesson' | 'experiment' | 'model3d';
   resource_id: string;
   resource_title: string;
   due_at?: string | null;

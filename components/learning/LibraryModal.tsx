@@ -360,6 +360,14 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
                 {activeLesson.subject}
               </div>
               <h1 className="text-xl font-bold text-white">{activeLesson.title}</h1>
+              <div className="flex flex-wrap gap-2 mt-2">
+                <a href="/student/virtual-lab" className="text-[11px] px-2.5 py-1 rounded-lg bg-orange-900/40 text-orange-300 hover:bg-orange-900/60 transition flex items-center gap-1">
+                  🔬 Thí nghiệm liên quan
+                </a>
+                <a href="/student/world-3d" className="text-[11px] px-2.5 py-1 rounded-lg bg-cyan-900/40 text-cyan-300 hover:bg-cyan-900/60 transition flex items-center gap-1">
+                  🌐 Mô hình 3D liên quan
+                </a>
+              </div>
             </div>
 
             {/* Structured Sections */}

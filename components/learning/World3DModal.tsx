@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { DialogFrame } from '@/components/ui/DialogFrame';
-import { Globe, ArrowLeft, Loader2, RotateCcw, ZoomIn, Box } from 'lucide-react';
+import { Globe, ArrowLeft, Loader2, RotateCcw, ZoomIn, Box, CheckCircle2 } from 'lucide-react';
 
 type Model3D = {
   id: string;
@@ -63,6 +63,13 @@ const DEMO_MODELS: Model3D[] = [
   },
 ];
 
+type TaskAssignment = {
+  id: string;
+  resource_id: string;
+  title: string;
+  completed?: boolean;
+};
+
 interface World3DModalProps {
   onClose: () => void;
 }
@@ -72,6 +79,8 @@ export function World3DModal({ onClose }: World3DModalProps) {
   const [activeModel, setActiveModel] = useState<Model3D | null>(null);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [tasks, setTasks] = useState<TaskAssignment[]>([]);
+  const [completingTask, setCompletingTask] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/models')
@@ -83,6 +92,31 @@ export function World3DModal({ onClose }: World3DModalProps) {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    fetch('/api/student-assignments')
+      .then((r) => r.json())
+      .then((data) => {
+        const m3dTasks = (data.assignments ?? [])
+          .filter((a: Record<string, unknown>) => a.assignment_type === 'model3d')
+          .map((a: Record<string, unknown>) => ({ id: a.id, resource_id: a.resource_id, title: a.title }));
+        setTasks(m3dTasks);
+      })
+      .catch(() => {});
+  }, []);
+
+  const completeTask = useCallback(async (assignmentId: string) => {
+    setCompletingTask(assignmentId);
+    try {
+      const res = await fetch('/api/task-complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignment_id: assignmentId }),
+      });
+      if (res.ok) {
+        setTasks((prev) => prev.map((t) => t.id === assignmentId ? { ...t, completed: true } : t));
+      }
+    } catch { /* ignore */ }
+    setCompletingTask(null);
   }, []);
 
   const filtered = filter === 'all' ? models : models.filter((m) => m.category === filter);
@@ -105,6 +139,48 @@ export function World3DModal({ onClose }: World3DModalProps) {
             </div>
           </div>
           <div className="flex-1 overflow-auto p-4">
+            {(() => {
+              const task = tasks.find((t) => t.resource_id === activeModel.id);
+              return task && (
+                <div className="mb-4 p-3 rounded-lg bg-blue-900/30 border border-blue-500/40">
+                  <p className="text-sm text-blue-300 font-medium">
+                    📋 Nhiệm vụ từ GV: {task.title}
+                  </p>
+                  {task.completed ? (
+                    <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Đã hoàn thành
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => completeTask(task.id)}
+                      disabled={completingTask === task.id}
+                      className="mt-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-xs font-bold min-h-[36px] disabled:opacity-50"
+                    >
+                      {completingTask === task.id ? 'Đang xác nhận...' : 'Hoàn thành nhiệm vụ (+25 XP)'}
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
+            {/* Cross-building suggestions */}
+            <div className="mb-4 flex flex-wrap gap-2">
+              {activeModel.category === 'Sinh học' && (
+                <a href="/student/library" className="text-xs px-3 py-1.5 rounded-lg bg-indigo-900/40 text-indigo-300 hover:bg-indigo-900/60 transition min-h-[36px] flex items-center gap-1">
+                  📖 Đọc lý thuyết Sinh học tại Thư viện
+                </a>
+              )}
+              {activeModel.category === 'Hóa học' && (
+                <a href="/student/virtual-lab" className="text-xs px-3 py-1.5 rounded-lg bg-orange-900/40 text-orange-300 hover:bg-orange-900/60 transition min-h-[36px] flex items-center gap-1">
+                  🔬 Thí nghiệm Hóa học tại Phòng TN Ảo
+                </a>
+              )}
+              {activeModel.category === 'Vật lý' && (
+                <a href="/student/virtual-lab" className="text-xs px-3 py-1.5 rounded-lg bg-orange-900/40 text-orange-300 hover:bg-orange-900/60 transition min-h-[36px] flex items-center gap-1">
+                  🔬 Thí nghiệm Vật lý tại Phòng TN Ảo
+                </a>
+              )}
+            </div>
             {activeModel.embed_url ? (
               <iframe
                 src={activeModel.embed_url}
@@ -176,11 +252,15 @@ export function World3DModal({ onClose }: World3DModalProps) {
             <p className="text-center text-cyan-400 py-8">Chưa có mô hình nào cho danh mục này.</p>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {filtered.map((model) => (
+              {filtered.map((model) => {
+                const task = tasks.find((t) => t.resource_id === model.id);
+                return (
                 <button
                   key={model.id}
                   onClick={() => setActiveModel(model)}
-                  className="text-left p-3 rounded-xl bg-cyan-900/30 border border-cyan-800/30 hover:bg-cyan-900/50 hover:border-cyan-600/50 transition group min-h-[44px]"
+                  className={`text-left p-3 rounded-xl border hover:bg-cyan-900/50 hover:border-cyan-600/50 transition group min-h-[44px] ${
+                    task ? 'bg-blue-900/20 border-blue-500/30' : 'bg-cyan-900/30 border-cyan-800/30'
+                  }`}
                 >
                   <div className="w-full aspect-square rounded-lg bg-cyan-900/40 flex items-center justify-center mb-2">
                     {model.thumbnail_url ? (
@@ -189,12 +269,20 @@ export function World3DModal({ onClose }: World3DModalProps) {
                       <Globe className="w-8 h-8 text-cyan-500 group-hover:text-cyan-300 transition" />
                     )}
                   </div>
-                  <h3 className="font-semibold text-sm text-white group-hover:text-cyan-200 transition truncate">
-                    {model.title}
-                  </h3>
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="font-semibold text-sm text-white group-hover:text-cyan-200 transition truncate">
+                      {model.title}
+                    </h3>
+                    {task && (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold shrink-0 ${task.completed ? 'bg-green-900 text-green-300' : 'bg-blue-900 text-blue-300'}`}>
+                        {task.completed ? '✓' : 'GV'}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-cyan-400 mt-0.5">{model.category}</p>
                 </button>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

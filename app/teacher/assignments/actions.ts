@@ -60,8 +60,8 @@ const taskSchema = z.object({
   room_id: z.string().uuid('Chọn phòng'),
   title: z.string().trim().min(1, 'Nhập tiêu đề').max(200),
   description: z.string().max(2000).default(''),
-  assignment_type: z.enum(['lesson', 'experiment']),
-  resource_id: z.string().min(1, 'Chọn bài học hoặc thí nghiệm'),
+  assignment_type: z.enum(['lesson', 'experiment', 'model3d']),
+  resource_id: z.string().min(1, 'Chọn nội dung'),
   resource_title: z.string().min(1),
   due_at: z.string().optional(),
 });

@@ -189,6 +189,14 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
                 </div>
               );
             })()}
+            <div className="mb-4 flex flex-wrap gap-2">
+              <a href="/student/world-3d" className="text-xs px-3 py-1.5 rounded-lg bg-cyan-900/40 text-cyan-300 hover:bg-cyan-900/60 transition min-h-[36px] flex items-center gap-1">
+                🌐 Xem mô hình 3D liên quan tại Thế Giới 3D
+              </a>
+              <a href="/student/library" className="text-xs px-3 py-1.5 rounded-lg bg-indigo-900/40 text-indigo-300 hover:bg-indigo-900/60 transition min-h-[36px] flex items-center gap-1">
+                📖 Đọc lý thuyết tại Thư viện
+              </a>
+            </div>
             {activeExp.embed_url ? (
               <a
                 href={activeExp.embed_url}
