@@ -10,7 +10,7 @@ export default async function Page() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-white">Bài học trực quan</h1>
+      <h1 className="text-2xl font-bold text-white">Bài học trực quan</h1>
       <LessonCatalog lessons={lessons} />
     </div>
   );

@@ -10,8 +10,11 @@ export default async function GradingPage() {
   const queue = await getGradingQueue(profile.id);
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
-      <h1 className="text-xl font-bold text-white">Chấm bài</h1>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-white">Chấm bài</h1>
+        <p className="text-sm text-slate-400 mt-1">{queue.length} bài cần chấm</p>
+      </div>
       <GradingQueue items={queue} />
     </div>
   );

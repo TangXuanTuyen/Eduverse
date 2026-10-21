@@ -27,8 +27,11 @@ export default async function TeacherQuestionsPage({ searchParams }: Props) {
   });
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
-      <h1 className="text-xl font-bold text-white">Ngân hàng câu hỏi</h1>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-white">Ngân hàng câu hỏi</h1>
+        <p className="text-sm text-slate-400 mt-1">{total} câu hỏi</p>
+      </div>
       <QuestionToolbar />
       <QuestionList questions={questions} total={total} page={page} limit={20} />
     </div>
