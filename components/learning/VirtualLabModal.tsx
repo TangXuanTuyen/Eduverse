@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { DialogFrame } from '@/components/ui/DialogFrame';
-import { Microscope, Zap, FlaskConical, Atom, Play, Clock, ArrowLeft, Loader2, ExternalLink } from 'lucide-react';
+import { Atom, Play, Clock, ArrowLeft, Loader2, ExternalLink } from 'lucide-react';
 
 type Experiment = {
   id: string;
@@ -17,10 +17,11 @@ type Experiment = {
   difficulty: number;
 };
 
-const SUBJECT_ICONS: Record<string, React.ReactNode> = {
-  'Vật lý': <Zap className="w-5 h-5 text-yellow-400" />,
-  'Hóa học': <FlaskConical className="w-5 h-5 text-green-400" />,
-  'Sinh học': <Microscope className="w-5 h-5 text-pink-400" />,
+const GRADE_LABELS: Record<number, string> = {
+  6: 'Khối 6',
+  7: 'Khối 7',
+  8: 'Khối 8',
+  9: 'Khối 9',
 };
 
 const DEMO_EXPERIMENTS: Experiment[] = [
@@ -81,7 +82,7 @@ interface VirtualLabModalProps {
 export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
   const [experiments, setExperiments] = useState<Experiment[]>(DEMO_EXPERIMENTS);
   const [activeExp, setActiveExp] = useState<Experiment | null>(null);
-  const [filter, setFilter] = useState<string>('all');
+  const [filter, setFilter] = useState<number | 'all'>('all');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -96,8 +97,8 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = filter === 'all' ? experiments : experiments.filter((e) => e.subject === filter);
-  const subjects = [...new Set(experiments.map((e) => e.subject))];
+  const filtered = filter === 'all' ? experiments : experiments.filter((e) => e.grade_level === filter);
+  const grades = [6, 7, 8, 9] as const;
 
   if (activeExp) {
     return (
@@ -113,7 +114,7 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
             </button>
             <div className="flex-1 min-w-0">
               <h2 className="font-bold text-lg truncate">{activeExp.title}</h2>
-              <p className="text-sm text-orange-300">{activeExp.subject} · Lớp {activeExp.grade_level}</p>
+              <p className="text-sm text-orange-300">Khối {activeExp.grade_level} · {activeExp.subject}</p>
             </div>
           </div>
           <div className="flex-1 overflow-auto p-4">
@@ -167,15 +168,15 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
             >
               Tất cả
             </button>
-            {subjects.map((s) => (
+            {grades.map((g) => (
               <button
-                key={s}
-                onClick={() => setFilter(s)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition min-h-[36px] flex items-center gap-1.5 ${
-                  filter === s ? 'bg-orange-600 text-white' : 'bg-orange-900/40 text-orange-300 hover:bg-orange-900/60'
+                key={g}
+                onClick={() => setFilter(g)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition min-h-[36px] ${
+                  filter === g ? 'bg-orange-600 text-white' : 'bg-orange-900/40 text-orange-300 hover:bg-orange-900/60'
                 }`}
               >
-                {SUBJECT_ICONS[s]} {s}
+                {GRADE_LABELS[g]}
               </button>
             ))}
           </div>
@@ -197,15 +198,15 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
                 className="w-full text-left p-4 rounded-xl bg-orange-900/30 border border-orange-800/30 hover:bg-orange-900/50 hover:border-orange-600/50 transition group min-h-[44px]"
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-orange-900/60 flex items-center justify-center shrink-0 mt-0.5">
-                    {SUBJECT_ICONS[exp.subject] ?? <Atom className="w-5 h-5 text-orange-400" />}
+                  <div className="w-10 h-10 rounded-lg bg-orange-900/60 flex items-center justify-center shrink-0 mt-0.5 text-sm font-bold text-orange-300">
+                    {exp.grade_level}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-white group-hover:text-orange-200 transition">{exp.title}</h3>
                     <p className="text-sm text-orange-300/80 mt-0.5 line-clamp-2">{exp.description}</p>
                     <div className="flex items-center gap-3 mt-2 text-xs text-orange-400">
                       <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {exp.duration_minutes} phút</span>
-                      <span>Lớp {exp.grade_level}</span>
+                      <span>Khối {exp.grade_level} · {exp.subject}</span>
                       <span>{'⭐'.repeat(exp.difficulty)}</span>
                     </div>
                   </div>
