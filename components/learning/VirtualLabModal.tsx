@@ -1,12 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DialogFrame } from '@/components/ui/DialogFrame';
-import { Microscope, Zap, FlaskConical, Atom, Play, Clock, ArrowLeft, Loader2 } from 'lucide-react';
-
-const SimpleCircuitExperiment = lazy(() =>
-  import('@/components/experiments/SimpleCircuitExperiment').then((m) => ({ default: m.SimpleCircuitExperiment }))
-);
+import { Microscope, Zap, FlaskConical, Atom, Play, Clock, ArrowLeft, Loader2, ExternalLink } from 'lucide-react';
 
 type Experiment = {
   id: string;
@@ -35,7 +31,7 @@ const DEMO_EXPERIMENTS: Experiment[] = [
     subject: 'Vật lý',
     grade_level: 8,
     thumbnail_url: null,
-    embed_url: null,
+    embed_url: '/experiments/simple-circuit/index.html',
     component_key: 'simple_circuit',
     duration_minutes: 15,
     difficulty: 1,
@@ -120,32 +116,25 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
               <p className="text-sm text-orange-300">{activeExp.subject} · Lớp {activeExp.grade_level}</p>
             </div>
           </div>
-          <div className="flex-1 overflow-auto">
-            {activeExp.component_key === 'simple_circuit' ? (
-              <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-orange-400" /></div>}>
-                <SimpleCircuitExperiment onBack={() => setActiveExp(null)} />
-              </Suspense>
-            ) : activeExp.embed_url ? (
-              <div className="p-4">
-                <iframe
-                  src={activeExp.embed_url}
-                  className="w-full h-[60vh] rounded-xl border border-orange-800/30"
-                  title={activeExp.title}
-                  sandbox="allow-scripts allow-same-origin"
-                  loading="lazy"
-                />
-              </div>
+          <div className="flex-1 overflow-auto p-4">
+            <p className="text-orange-200 mb-4">{activeExp.description}</p>
+            {activeExp.embed_url ? (
+              <a
+                href={activeExp.embed_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm transition min-h-[44px]"
+              >
+                <Play className="w-5 h-5" /> Bắt đầu thí nghiệm <ExternalLink className="w-4 h-4 opacity-60" />
+              </a>
             ) : (
-              <div className="flex flex-col items-center justify-center h-64 text-center gap-4 p-4">
+              <div className="flex flex-col items-center justify-center h-48 text-center gap-4">
                 <div className="w-20 h-20 rounded-2xl bg-orange-900/50 border border-orange-700/50 flex items-center justify-center">
                   <Atom className="w-10 h-10 text-orange-400" />
                 </div>
-                <div>
-                  <p className="text-orange-200 font-medium">{activeExp.description}</p>
-                  <p className="text-sm text-orange-400 mt-2">
-                    Thí nghiệm này đang được phát triển. Giáo viên có thể gán thí nghiệm từ nguồn bên ngoài.
-                  </p>
-                </div>
+                <p className="text-sm text-orange-400">
+                  Thí nghiệm này đang được phát triển. Giáo viên có thể gán thí nghiệm từ nguồn bên ngoài.
+                </p>
               </div>
             )}
           </div>
