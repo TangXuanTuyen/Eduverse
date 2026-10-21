@@ -11,6 +11,8 @@ export const BUILDING_ROUTES: Record<BuildingId, string> = {
   stem_lab: '/student/stem',
   school: '/student/assignments',
   achievement_plaza: '/student/achievements',
+  virtual_lab: '/student/virtual-lab',
+  world_3d: '/student/world-3d',
 };
 
 export const GUEST_BUILDING_ROUTES: Record<BuildingId, string> = {
@@ -20,4 +22,6 @@ export const GUEST_BUILDING_ROUTES: Record<BuildingId, string> = {
   stem_lab: '/guest/stem',
   school: '/guest/assignments',
   achievement_plaza: '/guest/achievements',
+  virtual_lab: '/guest/virtual-lab',
+  world_3d: '/guest/world-3d',
 };

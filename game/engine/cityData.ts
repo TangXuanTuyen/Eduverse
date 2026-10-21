@@ -116,6 +116,40 @@ export const BUILDINGS: Record<BuildingId, BuildingInfo> = {
       description: 'Nơi vinh danh thành tích học tập cá nhân.',
     },
   },
+  virtual_lab: {
+    id: 'virtual_lab',
+    name: 'Virtual Lab',
+    vietnameseName: 'Phòng Thí Nghiệm Ảo',
+    icon: '🔬',
+    color: '#7C2D12',
+    accentColor: '#F97316',
+    description: 'Mô phỏng thí nghiệm KHTN: mạch điện, phản ứng hóa học, lực và chuyển động — an toàn, không giới hạn.',
+    x: 1,
+    y: 10,
+    width: 6,
+    height: 4,
+    entrance: { x: 4, y: 14.5 },
+    unlockRequirement: {
+      description: 'Mở cửa cho mọi học sinh muốn thí nghiệm.',
+    },
+  },
+  world_3d: {
+    id: 'world_3d',
+    name: '3D World',
+    vietnameseName: 'Thế Giới 3D',
+    icon: '🌐',
+    color: '#1E3A5F',
+    accentColor: '#06B6D4',
+    description: 'Khám phá mô hình 3D: tế bào, hệ mặt trời, cấu trúc phân tử — xoay, phóng to, tương tác.',
+    x: 29,
+    y: 10,
+    width: 6,
+    height: 4,
+    entrance: { x: 32, y: 14.5 },
+    unlockRequirement: {
+      description: 'Mở cửa cho mọi học sinh muốn khám phá.',
+    },
+  },
 };
 
 export function getCityColliders(): RectCollider[] {
@@ -156,13 +190,13 @@ export function getCityColliders(): RectCollider[] {
     { x: 11, y: 3.5, width: 1.8, height: 1.8, tag: 'tree' },
     { x: 23.2, y: 3.5, width: 1.8, height: 1.8, tag: 'tree' },
 
-    // Western park trees
-    { x: 1, y: 11, width: 1.8, height: 1.8, tag: 'tree' },
+    // Western park trees (moved to avoid virtual_lab)
+    { x: 8, y: 11, width: 1.8, height: 1.8, tag: 'tree' },
     { x: 10.5, y: 11, width: 1.8, height: 1.8, tag: 'tree' },
 
-    // Eastern park trees
+    // Eastern park trees (moved to avoid world_3d)
     { x: 23.5, y: 11, width: 1.8, height: 1.8, tag: 'tree' },
-    { x: 33, y: 11, width: 1.8, height: 1.8, tag: 'tree' },
+    { x: 27, y: 11, width: 1.8, height: 1.8, tag: 'tree' },
 
     // Fountain plaza stone benches
     { x: 14, y: 11, width: 1, height: 1.5, tag: 'bench' },

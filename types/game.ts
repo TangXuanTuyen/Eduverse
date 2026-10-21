@@ -32,7 +32,9 @@ export type BuildingId =
   | 'review_station'
   | 'stem_lab'
   | 'school'
-  | 'achievement_plaza';
+  | 'achievement_plaza'
+  | 'virtual_lab'
+  | 'world_3d';
 
 export interface BuildingInfo {
   id: BuildingId;

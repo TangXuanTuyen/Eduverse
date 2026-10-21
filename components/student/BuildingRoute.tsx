@@ -12,6 +12,8 @@ import { ReviewStationModal } from '@/components/learning/ReviewStationModal';
 import { StemLabModal } from '@/components/learning/StemLabModal';
 import { SchoolModal } from '@/components/learning/SchoolModal';
 import { AchievementPlazaModal } from '@/components/learning/AchievementPlazaModal';
+import { VirtualLabModal } from '@/components/learning/VirtualLabModal';
+import { World3DModal } from '@/components/learning/World3DModal';
 
 /** Hiển thị hộp thoại của một địa điểm; dùng chung cho mọi route /student/<địa điểm>. */
 export function BuildingRoute({ id }: { id: BuildingId }) {
@@ -59,5 +61,9 @@ export function BuildingRoute({ id }: { id: BuildingId }) {
           onOpenCustomizer={() => game.setEditingCharacter(true)}
         />
       );
+    case 'virtual_lab':
+      return <VirtualLabModal onClose={game.closeBuilding} />;
+    case 'world_3d':
+      return <World3DModal onClose={game.closeBuilding} />;
   }
 }

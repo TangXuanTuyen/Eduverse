@@ -18,6 +18,8 @@ export const TOWN_BUILDINGS: Record<BuildingId, TownBuilding> = {
   quiz_arcade: { id: 'quiz_arcade', zone: 'west' },
   review_station: { id: 'review_station', zone: 'east', unlockChapter: 1 },
   achievement_plaza: { id: 'achievement_plaza', zone: 'south' },
+  virtual_lab: { id: 'virtual_lab', zone: 'west' },
+  world_3d: { id: 'world_3d', zone: 'east' },
 };
 
 export const PRESET_EMOTES = ['👍', '🎉', '🤔', '👋'] as const;
