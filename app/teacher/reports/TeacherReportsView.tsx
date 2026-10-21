@@ -738,7 +738,8 @@ const SKILL_LABELS: Record<string, string> = {
   'am-thanh': 'Âm thanh',
 };
 
-function skillLabel(slug: string): string {
+function skillLabel(slug: string | undefined | null): string {
+  if (!slug) return 'Chung';
   return SKILL_LABELS[slug] ?? slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
