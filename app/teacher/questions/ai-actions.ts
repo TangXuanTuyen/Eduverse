@@ -47,9 +47,19 @@ export async function generateQuestionsAction(
     });
     return { questions };
   } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Lỗi tạo câu hỏi AI';
-    console.error('[AI Generate]', msg);
-    return { error: msg };
+    const raw = e instanceof Error ? e.message : 'Lỗi tạo câu hỏi AI';
+    console.error('[AI Generate]', raw);
+    const status = (e as { status?: number }).status;
+    if (status === 503 || raw.includes('high demand')) {
+      return { error: 'AI đang quá tải, vui lòng thử lại sau vài giây.' };
+    }
+    if (status === 429) {
+      return { error: 'Đã vượt giới hạn gọi AI, vui lòng thử lại sau.' };
+    }
+    if (raw.includes('timeout') || raw.includes('AI timeout')) {
+      return { error: 'AI phản hồi quá lâu, vui lòng thử lại.' };
+    }
+    return { error: raw };
   }
 }
 

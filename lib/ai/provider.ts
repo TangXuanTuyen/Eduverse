@@ -71,7 +71,7 @@ class GeminiProvider implements AIProvider {
         return { text, tokensUsed };
       } catch (err: unknown) {
         const status = (err as { status?: number }).status;
-        if (status === 429 && attempt < MAX_RETRIES) {
+        if ((status === 429 || status === 503) && attempt < MAX_RETRIES) {
           await new Promise((r) => setTimeout(r, BASE_DELAY_MS * 2 ** attempt));
           continue;
         }
