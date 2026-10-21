@@ -79,7 +79,7 @@ export const INITIAL_PROGRESS: PlayerProgress = {
   quizzesCompleted: 0,
   highScore: 0,
   experimentsCompleted: [],
-  unlockedBuildings: ['library', 'quiz_arcade', 'school', 'achievement_plaza'],
+  unlockedBuildings: ['library', 'quiz_arcade', 'school', 'achievement_plaza', 'virtual_lab', 'world_3d'],
   mistakes: [],
   quests: INITIAL_QUESTS,
   lastPosition: { x: 18.5, y: 7.5 }, // In front of the School
