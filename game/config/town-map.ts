@@ -1,7 +1,7 @@
 import type { BuildingId } from '@/types/game';
 
 export interface BuildingNotification {
-  type: 'assignment' | 'review' | 'achievement';
+  type: 'assignment' | 'review' | 'achievement' | 'notification';
   label: string;
 }
 

@@ -35,6 +35,7 @@ import {
   Map,
   Bell,
 } from 'lucide-react';
+import { NotificationBell } from './NotificationBell';
 
 interface CityHUDProps {
   character: CharacterConfig;
@@ -138,6 +139,9 @@ export const CityHUD: React.FC<CityHUDProps> = ({
             <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
             <span className="font-mono">{progress.eduPoints} EP</span>
           </div>
+
+          {/* Notification Bell */}
+          <NotificationBell />
 
           {/* Quests Button */}
           <button

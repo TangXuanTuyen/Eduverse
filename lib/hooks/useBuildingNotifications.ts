@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import type { BuildingId } from '@/types/game';
 import type { BuildingNotification } from '@/game/config/town-map';
 
@@ -13,32 +12,31 @@ export function useBuildingNotifications(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
-    const supabase = createClient();
 
     async function check() {
       const result: Record<string, BuildingNotification[]> = {};
 
-      // Bài giao chưa nộp → dấu "!" trên School
-      const { count: pendingAssignments } = await supabase
-        .from('assignments')
-        .select('id', { count: 'exact', head: true })
-        .not('id', 'in', `(select assignment_id from submissions where student_id = '${userId}' and status != 'draft')`)
-        .gte('due_at', new Date().toISOString());
+      try {
+        // Fetch real assignments count via API
+        const res = await fetch('/api/student-assignments');
+        if (res.ok) {
+          const data = await res.json();
+          const pending = (data.assignments ?? []).length;
+          if (pending > 0) {
+            result.school = [{ type: 'assignment', label: `${pending} bài giao` }];
+          }
+        }
 
-      if (pendingAssignments && pendingAssignments > 0) {
-        result.school = [{ type: 'assignment', label: `${pendingAssignments} bài chưa làm` }];
-      }
-
-      // Câu sai cần ôn → dấu "!" trên Review Station
-      const { count: pendingReview } = await supabase
-        .from('review_queue')
-        .select('id', { count: 'exact', head: true })
-        .eq('student_id', userId)
-        .eq('status', 'pending');
-
-      if (pendingReview && pendingReview > 0) {
-        result.review_station = [{ type: 'review', label: `${pendingReview} câu cần ôn` }];
-      }
+        // Fetch unread notifications count
+        const nRes = await fetch('/api/notifications');
+        if (nRes.ok) {
+          const nData = await nRes.json();
+          const unread = nData.unread_count ?? 0;
+          if (unread > 0 && !result.school) {
+            result.school = [{ type: 'notification', label: `${unread} thông báo mới` }];
+          }
+        }
+      } catch { /* ignore */ }
 
       if (!cancelled) {
         setNotifications(result as Record<BuildingId, BuildingNotification[]>);

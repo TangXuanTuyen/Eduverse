@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { X, CheckCircle2, XCircle } from 'lucide-react';
 
 type Tab = 'rooms' | 'students' | 'skills' | 'questions';
 
@@ -250,39 +251,208 @@ function RoomsTable({ data }: { data: RoomRow[] }) {
 }
 
 function StudentsTable({ data }: { data: StudentRow[] }) {
+  const [detailId, setDetailId] = useState<string | null>(null);
+
   if (data.length === 0) return <p className="text-slate-400 text-sm text-center py-8">Chưa có dữ liệu.</p>;
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-left text-slate-400 border-b border-slate-800">
-            <th className="pb-2 pr-3">Họ tên</th>
-            <th className="pb-2 pr-3 text-right">XP</th>
-            <th className="pb-2 pr-3 text-right">Bài xong</th>
-            <th className="pb-2 pr-3 w-40">Điểm TB</th>
-            <th className="pb-2 text-right">Không HĐ</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((s) => (
-            <tr
-              key={s.student_id}
-              className={`border-b border-slate-800/50 ${s.needs_attention ? 'text-amber-300' : ''}`}
-            >
-              <td className="py-2 pr-3">
-                {s.display_name}
-                {s.needs_attention && <span className="ml-1 text-xs">⚠</span>}
-              </td>
-              <td className="py-2 pr-3 text-right font-mono">{s.total_xp}</td>
-              <td className="py-2 pr-3 text-right">{s.assignments_completed}</td>
-              <td className="py-2 pr-3"><AccuracyBar value={s.avg_score} /></td>
-              <td className="py-2 text-right text-xs">
-                {s.days_inactive >= 999 ? 'Chưa HĐ' : s.days_inactive > 0 ? `${s.days_inactive}d` : 'Hôm nay'}
-              </td>
+    <>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-slate-400 border-b border-slate-800">
+              <th className="pb-2 pr-3">Họ tên</th>
+              <th className="pb-2 pr-3 text-right">XP</th>
+              <th className="pb-2 pr-3 text-right">Bài xong</th>
+              <th className="pb-2 pr-3 w-40">Điểm TB</th>
+              <th className="pb-2 pr-3 text-right">Không HĐ</th>
+              <th className="pb-2"></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.map((s) => (
+              <tr
+                key={s.student_id}
+                className={`border-b border-slate-800/50 ${s.needs_attention ? 'text-amber-300' : ''}`}
+              >
+                <td className="py-2 pr-3">
+                  {s.display_name}
+                  {s.needs_attention && <span className="ml-1 text-xs">⚠</span>}
+                </td>
+                <td className="py-2 pr-3 text-right font-mono">{s.total_xp}</td>
+                <td className="py-2 pr-3 text-right">{s.assignments_completed}</td>
+                <td className="py-2 pr-3"><AccuracyBar value={s.avg_score} /></td>
+                <td className="py-2 pr-3 text-right text-xs">
+                  {s.days_inactive >= 999 ? 'Chưa HĐ' : s.days_inactive > 0 ? `${s.days_inactive}d` : 'Hôm nay'}
+                </td>
+                <td className="py-2">
+                  <button
+                    onClick={() => setDetailId(s.student_id)}
+                    className="text-xs text-blue-400 hover:text-blue-300 underline min-h-[44px] px-2"
+                  >
+                    Chi tiết
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {detailId && (
+        <StudentDetailModal studentId={detailId} onClose={() => setDetailId(null)} />
+      )}
+    </>
+  );
+}
+
+type DetailReport = {
+  display_name: string;
+  total_xp: number;
+  level: number;
+  submissions: Array<{
+    assignment_title: string;
+    status: string;
+    total_score: number | null;
+    max_score: number | null;
+    submitted_at: string | null;
+  }>;
+  question_details: Array<{
+    question_content: string;
+    question_type: string;
+    is_correct: boolean | null;
+    assignment_title: string;
+  }>;
+  skill_breakdown: Array<{
+    skill: string;
+    correct: number;
+    total: number;
+    accuracy: number;
+  }>;
+};
+
+function StudentDetailModal({ studentId, onClose }: { studentId: string; onClose: () => void }) {
+  const [report, setReport] = useState<DetailReport | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/teacher/reports/student?student_id=${studentId}`)
+      .then((r) => r.json())
+      .then((d) => { if (d.display_name) setReport(d); })
+      .finally(() => setLoading(false));
+  }, [studentId]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+      <div className="w-full max-w-3xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] text-slate-100">
+        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+          <h3 className="text-base font-bold">
+            {loading ? 'Đang tải...' : report ? `Báo cáo: ${report.display_name}` : 'Không tìm thấy'}
+          </h3>
+          <button
+            onClick={onClose}
+            className="min-w-11 min-h-11 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {report && (
+          <div className="p-6 overflow-y-auto space-y-6">
+            {/* Overview */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-slate-800 rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-amber-400">{report.total_xp}</div>
+                <div className="text-xs text-slate-400">Tổng XP</div>
+              </div>
+              <div className="bg-slate-800 rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-indigo-400">Cấp {report.level}</div>
+                <div className="text-xs text-slate-400">Cấp độ</div>
+              </div>
+              <div className="bg-slate-800 rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold">
+                  {report.question_details.filter((q) => q.is_correct).length}/
+                  {report.question_details.length}
+                </div>
+                <div className="text-xs text-slate-400">Câu đúng</div>
+              </div>
+            </div>
+
+            {/* Skill breakdown */}
+            {report.skill_breakdown.length > 0 && (
+              <div>
+                <h4 className="text-sm font-bold mb-3">Phân tích theo kỹ năng</h4>
+                <div className="space-y-2">
+                  {report.skill_breakdown.map((s) => (
+                    <div key={s.skill} className="flex items-center gap-3">
+                      <span className="text-xs w-32 truncate">{s.skill}</span>
+                      <div className="flex-1"><AccuracyBar value={s.accuracy} /></div>
+                      <span className="text-xs text-slate-400 w-16 text-right">{s.correct}/{s.total}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Submissions */}
+            {report.submissions.length > 0 && (
+              <div>
+                <h4 className="text-sm font-bold mb-3">Bài nộp</h4>
+                <div className="space-y-2">
+                  {report.submissions.map((s, i) => (
+                    <div key={i} className="bg-slate-800 rounded-lg p-3 flex items-center justify-between">
+                      <div>
+                        <span className="text-sm font-medium">{s.assignment_title}</span>
+                        {s.submitted_at && (
+                          <span className="text-xs text-slate-500 ml-2">
+                            {new Date(s.submitted_at).toLocaleDateString('vi-VN')}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {s.total_score != null && s.max_score != null ? (
+                          <span className={`text-sm font-bold ${
+                            s.total_score / s.max_score >= 0.7 ? 'text-green-400' :
+                            s.total_score / s.max_score >= 0.4 ? 'text-amber-400' : 'text-red-400'
+                          }`}>
+                            {s.total_score}/{s.max_score}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-500">{s.status}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Question details */}
+            {report.question_details.length > 0 && (
+              <div>
+                <h4 className="text-sm font-bold mb-3">Chi tiết câu hỏi</h4>
+                <div className="space-y-1.5">
+                  {report.question_details.map((q, i) => (
+                    <div key={i} className="bg-slate-800 rounded-lg p-3 flex items-start gap-2">
+                      <div className="mt-0.5 shrink-0">
+                        {q.is_correct ? (
+                          <CheckCircle2 className="w-4 h-4 text-green-400" />
+                        ) : q.is_correct === false ? (
+                          <XCircle className="w-4 h-4 text-red-400" />
+                        ) : (
+                          <span className="w-4 h-4 block rounded-full bg-slate-700" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-white line-clamp-2">{q.question_content}</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">{q.assignment_title}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

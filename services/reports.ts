@@ -496,6 +496,199 @@ export async function getTimeSavedStats(teacherId: string): Promise<TimeSavedSta
 }
 
 // ---------------------------------------------------------------------------
+// Teacher: báo cáo chi tiết từng học sinh (câu đúng/sai, bài nộp)
+// ---------------------------------------------------------------------------
+
+export type StudentDetailReport = {
+  student_id: string;
+  display_name: string;
+  total_xp: number;
+  level: number;
+  submissions: Array<{
+    assignment_id: string;
+    assignment_title: string;
+    status: string;
+    total_score: number | null;
+    max_score: number | null;
+    submitted_at: string | null;
+  }>;
+  question_details: Array<{
+    question_content: string;
+    question_type: string;
+    student_answer: unknown;
+    is_correct: boolean | null;
+    assignment_title: string;
+  }>;
+  skill_breakdown: Array<{
+    skill: string;
+    correct: number;
+    total: number;
+    accuracy: number;
+  }>;
+};
+
+export async function getStudentDetailReport(
+  teacherId: string,
+  studentId: string
+): Promise<StudentDetailReport | null> {
+  const admin = createAdminClient();
+
+  // Verify teacher has access to this student (via rooms)
+  const { data: rooms } = await admin
+    .from('rooms')
+    .select('id')
+    .eq('owner_id', teacherId);
+  const roomIds = (rooms ?? []).map((r) => r.id);
+  if (roomIds.length === 0) return null;
+
+  const { data: membership } = await admin
+    .from('room_members')
+    .select('room_id')
+    .eq('user_id', studentId)
+    .in('room_id', roomIds)
+    .eq('is_active', true)
+    .limit(1);
+
+  if (!membership || membership.length === 0) return null;
+
+  // Profile
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('display_name')
+    .eq('id', studentId)
+    .single();
+  if (!profile) return null;
+
+  // Stats
+  const { data: stats } = await admin
+    .from('student_stats')
+    .select('total_xp')
+    .eq('student_id', studentId)
+    .maybeSingle();
+
+  const totalXp = stats?.total_xp ?? 0;
+  const { calculateLevel } = await import('@/services/xp');
+  const level = calculateLevel(totalXp).level;
+
+  // Submissions for assignments in teacher's rooms
+  const { data: assignments } = await admin
+    .from('assignments')
+    .select('id, title')
+    .in('room_id', roomIds);
+  const assignmentIds = (assignments ?? []).map((a) => a.id);
+  const assignmentTitleMap = new Map<string, string>();
+  for (const a of assignments ?? []) {
+    assignmentTitleMap.set(a.id, a.title);
+  }
+
+  let submissions: StudentDetailReport['submissions'] = [];
+  if (assignmentIds.length > 0) {
+    const { data: subs } = await admin
+      .from('submissions')
+      .select('assignment_id, status, total_score, max_score, submitted_at')
+      .eq('student_id', studentId)
+      .in('assignment_id', assignmentIds)
+      .order('submitted_at', { ascending: false });
+
+    submissions = (subs ?? []).map((s) => ({
+      assignment_id: s.assignment_id,
+      assignment_title: assignmentTitleMap.get(s.assignment_id) ?? '',
+      status: s.status,
+      total_score: s.total_score,
+      max_score: s.max_score,
+      submitted_at: s.submitted_at,
+    }));
+  }
+
+  // Question attempts with details
+  const questionDetails: StudentDetailReport['question_details'] = [];
+  const skillMap = new Map<string, { correct: number; total: number }>();
+
+  if (assignmentIds.length > 0) {
+    const { data: aqs } = await admin
+      .from('assignment_questions')
+      .select('id, assignment_id, content, type, source_question_id')
+      .in('assignment_id', assignmentIds);
+
+    const aqIds = (aqs ?? []).map((a) => a.id);
+    const aqMap = new Map<string, { content: string; type: string; assignment_id: string; source_question_id: string | null }>();
+    for (const aq of aqs ?? []) {
+      aqMap.set(aq.id, {
+        content: aq.content,
+        type: aq.type,
+        assignment_id: aq.assignment_id,
+        source_question_id: aq.source_question_id,
+      });
+    }
+
+    if (aqIds.length > 0) {
+      const { data: attempts } = await admin
+        .from('question_attempts')
+        .select('assignment_question_id, student_answer, is_correct')
+        .eq('student_id', studentId)
+        .in('assignment_question_id', aqIds);
+
+      // Get skill tags for source questions
+      const sourceIds = new Set<string>();
+      for (const aq of aqs ?? []) {
+        if (aq.source_question_id) sourceIds.add(aq.source_question_id);
+      }
+      const questionTagMap = new Map<string, string[]>();
+      if (sourceIds.size > 0) {
+        const { data: questions } = await admin
+          .from('questions')
+          .select('id, skill_tags')
+          .in('id', Array.from(sourceIds));
+        for (const q of questions ?? []) {
+          questionTagMap.set(q.id, q.skill_tags as string[]);
+        }
+      }
+
+      for (const a of attempts ?? []) {
+        const aqInfo = aqMap.get(a.assignment_question_id);
+        if (!aqInfo) continue;
+
+        questionDetails.push({
+          question_content: aqInfo.content,
+          question_type: aqInfo.type,
+          student_answer: a.student_answer,
+          is_correct: a.is_correct,
+          assignment_title: assignmentTitleMap.get(aqInfo.assignment_id) ?? '',
+        });
+
+        // Skill breakdown
+        const tags = aqInfo.source_question_id
+          ? questionTagMap.get(aqInfo.source_question_id) ?? []
+          : [];
+        for (const tag of tags) {
+          const entry = skillMap.get(tag) ?? { correct: 0, total: 0 };
+          entry.total++;
+          if (a.is_correct) entry.correct++;
+          skillMap.set(tag, entry);
+        }
+      }
+    }
+  }
+
+  const skillBreakdown = Array.from(skillMap.entries()).map(([skill, s]) => ({
+    skill,
+    correct: s.correct,
+    total: s.total,
+    accuracy: s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0,
+  }));
+
+  return {
+    student_id: studentId,
+    display_name: profile.display_name,
+    total_xp: totalXp,
+    level,
+    submissions,
+    question_details: questionDetails,
+    skill_breakdown: skillBreakdown,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Audit logging
 // ---------------------------------------------------------------------------
 

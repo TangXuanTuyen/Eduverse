@@ -154,6 +154,30 @@ export async function createAssignment(teacherId: string, data: CreateAssignment
     }
   }
 
+  // Auto-notify all students in the room
+  const { data: roomMembers } = await admin
+    .from('room_members')
+    .select('user_id, profiles!inner(role)')
+    .eq('room_id', data.room_id)
+    .eq('is_active', true);
+
+  const studentIds = (roomMembers ?? [])
+    .filter((m) => (m.profiles as unknown as { role: string }).role === 'student')
+    .map((m) => m.user_id);
+
+  if (studentIds.length > 0) {
+    const notifications = studentIds.map((uid) => ({
+      user_id: uid,
+      room_id: data.room_id,
+      type: 'new_assignment',
+      title: `Bài giao mới: ${data.title}`,
+      body: data.due_at
+        ? `Hạn nộp: ${new Date(data.due_at).toLocaleDateString('vi-VN')}`
+        : 'Chưa có hạn nộp',
+    }));
+    await admin.from('notifications').insert(notifications);
+  }
+
   return assignment.id as string;
 }
 
