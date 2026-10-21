@@ -575,7 +575,7 @@ function StudentsView({ data, onDetail }: { data: StudentRow[]; onDetail: (id: s
           <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
             s.needs_attention ? 'bg-amber-600/20 text-amber-400 border border-amber-500/30' : 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
           }`}>
-            {s.display_name.charAt(0).toUpperCase()}
+            {(s.display_name ?? '?').charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
