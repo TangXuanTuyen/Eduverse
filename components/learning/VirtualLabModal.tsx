@@ -1,8 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { DialogFrame } from '@/components/ui/DialogFrame';
 import { Microscope, Zap, FlaskConical, Atom, Play, Clock, ArrowLeft, Loader2 } from 'lucide-react';
+
+const SimpleCircuitExperiment = lazy(() =>
+  import('@/components/experiments/SimpleCircuitExperiment').then((m) => ({ default: m.SimpleCircuitExperiment }))
+);
 
 type Experiment = {
   id: string;
@@ -12,6 +16,7 @@ type Experiment = {
   grade_level: number;
   thumbnail_url: string | null;
   embed_url: string | null;
+  component_key: string | null;
   duration_minutes: number;
   difficulty: number;
 };
@@ -24,13 +29,14 @@ const SUBJECT_ICONS: Record<string, React.ReactNode> = {
 
 const DEMO_EXPERIMENTS: Experiment[] = [
   {
-    id: 'demo_circuit',
-    title: 'Mạch điện nối tiếp',
-    description: 'Lắp mạch điện nối tiếp với pin, bóng đèn và công tắc. Quan sát dòng điện chạy qua mạch.',
+    id: 'simple_circuit',
+    title: 'Thí nghiệm lắp mạch điện đơn giản',
+    description: 'Bài 22 · Chương V: Điện — Kéo thả pin, bóng đèn, công tắc và dây dẫn để lắp mạch điện kín. Quan sát dòng điện và đèn sáng.',
     subject: 'Vật lý',
-    grade_level: 7,
+    grade_level: 8,
     thumbnail_url: null,
     embed_url: null,
+    component_key: 'simple_circuit',
     duration_minutes: 15,
     difficulty: 1,
   },
@@ -42,6 +48,7 @@ const DEMO_EXPERIMENTS: Experiment[] = [
     grade_level: 8,
     thumbnail_url: null,
     embed_url: null,
+    component_key: null,
     duration_minutes: 10,
     difficulty: 1,
   },
@@ -53,6 +60,7 @@ const DEMO_EXPERIMENTS: Experiment[] = [
     grade_level: 6,
     thumbnail_url: null,
     embed_url: null,
+    component_key: null,
     duration_minutes: 12,
     difficulty: 1,
   },
@@ -64,6 +72,7 @@ const DEMO_EXPERIMENTS: Experiment[] = [
     grade_level: 8,
     thumbnail_url: null,
     embed_url: null,
+    component_key: null,
     duration_minutes: 15,
     difficulty: 2,
   },
@@ -111,17 +120,23 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
               <p className="text-sm text-orange-300">{activeExp.subject} · Lớp {activeExp.grade_level}</p>
             </div>
           </div>
-          <div className="flex-1 overflow-auto p-4">
-            {activeExp.embed_url ? (
-              <iframe
-                src={activeExp.embed_url}
-                className="w-full h-[60vh] rounded-xl border border-orange-800/30"
-                title={activeExp.title}
-                sandbox="allow-scripts allow-same-origin"
-                loading="lazy"
-              />
+          <div className="flex-1 overflow-auto">
+            {activeExp.component_key === 'simple_circuit' ? (
+              <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-orange-400" /></div>}>
+                <SimpleCircuitExperiment onBack={() => setActiveExp(null)} />
+              </Suspense>
+            ) : activeExp.embed_url ? (
+              <div className="p-4">
+                <iframe
+                  src={activeExp.embed_url}
+                  className="w-full h-[60vh] rounded-xl border border-orange-800/30"
+                  title={activeExp.title}
+                  sandbox="allow-scripts allow-same-origin"
+                  loading="lazy"
+                />
+              </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-64 text-center gap-4">
+              <div className="flex flex-col items-center justify-center h-64 text-center gap-4 p-4">
                 <div className="w-20 h-20 rounded-2xl bg-orange-900/50 border border-orange-700/50 flex items-center justify-center">
                   <Atom className="w-10 h-10 text-orange-400" />
                 </div>
