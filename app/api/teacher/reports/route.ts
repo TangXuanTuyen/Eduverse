@@ -2,6 +2,7 @@ import { getCurrentProfile } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   getRoomReports,
+  getRoomAssignmentDetails,
   getStudentReports,
   getSkillReports,
   getQuestionReports,
@@ -34,6 +35,9 @@ export async function GET(req: NextRequest) {
   switch (tab) {
     case 'rooms':
       return NextResponse.json(await getRoomReports(profile.id));
+    case 'room-detail':
+      if (!roomId) return NextResponse.json({ error: 'room required' }, { status: 400 });
+      return NextResponse.json(await getRoomAssignmentDetails(profile.id, roomId));
     case 'students':
       return NextResponse.json(await getStudentReports(profile.id, roomId));
     case 'skills':

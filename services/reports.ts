@@ -149,6 +149,137 @@ export async function getRoomReports(teacherId: string): Promise<RoomReportRow[]
 }
 
 // ---------------------------------------------------------------------------
+// Teacher: chi tiết phòng — từng bài giao + câu sai nhiều
+// ---------------------------------------------------------------------------
+
+export type RoomAssignmentDetail = {
+  assignment_id: string;
+  title: string;
+  assignment_type: string;
+  created_at: string;
+  due_at: string | null;
+  total_students: number;
+  submitted_count: number;
+  graded_count: number;
+  avg_score: number;
+  max_score: number;
+  score_distribution: { excellent: number; good: number; average: number; weak: number };
+  hard_questions: Array<{
+    question_id: string;
+    content: string;
+    correct_rate: number;
+    total_attempts: number;
+  }>;
+};
+
+export async function getRoomAssignmentDetails(
+  teacherId: string,
+  roomId: string
+): Promise<RoomAssignmentDetail[]> {
+  const admin = createAdminClient();
+
+  const { data: room } = await admin
+    .from('rooms')
+    .select('id')
+    .eq('id', roomId)
+    .eq('owner_id', teacherId)
+    .single();
+  if (!room) return [];
+
+  const { count: memberCount } = await admin
+    .from('room_members')
+    .select('user_id', { count: 'exact', head: true })
+    .eq('room_id', roomId)
+    .eq('is_active', true);
+  const totalStudents = memberCount ?? 0;
+
+  const { data: assignments } = await admin
+    .from('assignments')
+    .select('id, title, assignment_type, created_at, due_at')
+    .eq('room_id', roomId)
+    .order('created_at', { ascending: false });
+
+  if (!assignments || assignments.length === 0) return [];
+
+  const results: RoomAssignmentDetail[] = [];
+
+  for (const a of assignments) {
+    const { data: subs } = await admin
+      .from('submissions')
+      .select('id, status, total_score, max_score')
+      .eq('assignment_id', a.id);
+
+    const allSubs = subs ?? [];
+    const submitted = allSubs.filter((s) => s.status !== 'draft');
+    const graded = submitted.filter((s) => s.status === 'graded' || s.status === 'published');
+
+    const scores = graded.map((s) => Number(s.total_score) || 0);
+    const maxScore = graded[0] ? Number(graded[0].max_score) || 0 : 0;
+    const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+
+    const dist = maxScore > 0 ? {
+      excellent: scores.filter((s) => s / maxScore >= 0.9).length,
+      good: scores.filter((s) => s / maxScore >= 0.7 && s / maxScore < 0.9).length,
+      average: scores.filter((s) => s / maxScore >= 0.5 && s / maxScore < 0.7).length,
+      weak: scores.filter((s) => s / maxScore < 0.5).length,
+    } : { excellent: 0, good: 0, average: 0, weak: 0 };
+
+    // Question analytics — find hardest questions
+    const { data: aqs } = await admin
+      .from('assignment_questions')
+      .select('id, content, sort_order')
+      .eq('assignment_id', a.id)
+      .order('sort_order');
+
+    const hardQuestions: RoomAssignmentDetail['hard_questions'] = [];
+    if (aqs && aqs.length > 0) {
+      const aqIds = aqs.map((q) => q.id);
+      const { data: attempts } = await admin
+        .from('question_attempts')
+        .select('assignment_question_id, is_correct, submission_id, submissions!inner(status)')
+        .in('assignment_question_id', aqIds);
+
+      const submittedAttempts = (attempts ?? []).filter(
+        (at) => (at.submissions as unknown as { status: string }).status !== 'draft'
+      );
+
+      for (const q of aqs) {
+        const qAttempts = submittedAttempts.filter((at) => at.assignment_question_id === q.id);
+        const correct = qAttempts.filter((at) => at.is_correct === true).length;
+        const total = qAttempts.length;
+        const rate = total > 0 ? Math.round((correct / total) * 100) : 100;
+        if (rate < 70 && total > 0) {
+          hardQuestions.push({
+            question_id: q.id,
+            content: q.content,
+            correct_rate: rate,
+            total_attempts: total,
+          });
+        }
+      }
+      hardQuestions.sort((a, b) => a.correct_rate - b.correct_rate);
+    }
+
+    results.push({
+      assignment_id: a.id,
+      title: a.title,
+      assignment_type: a.assignment_type ?? 'quiz',
+      created_at: a.created_at,
+      due_at: a.due_at,
+      total_students: totalStudents,
+      submitted_count: submitted.length,
+      graded_count: graded.length,
+      avg_score: avgScore,
+      max_score: maxScore,
+      score_distribution: dist,
+      hard_questions: hardQuestions.slice(0, 5),
+    });
+  }
+
+  return results;
+}
+
+// ---------------------------------------------------------------------------
 // Teacher: báo cáo theo học sinh
 // ---------------------------------------------------------------------------
 
