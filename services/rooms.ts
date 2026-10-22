@@ -73,6 +73,25 @@ export async function refreshJoinCode(roomId: string, ownerId: string) {
   return code as string;
 }
 
+export async function updateRoom(roomId: string, ownerId: string, updates: { name?: string; subject?: string | null; grade?: number | null }) {
+  const admin = createAdminClient();
+  const { data: room } = await admin.from('rooms').select('owner_id').eq('id', roomId).single();
+  if (!room || room.owner_id !== ownerId) throw new Error('Không có quyền');
+
+  const { error } = await admin.from('rooms').update(updates).eq('id', roomId);
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteRoom(roomId: string, ownerId: string) {
+  const admin = createAdminClient();
+  const { data: room } = await admin.from('rooms').select('owner_id').eq('id', roomId).single();
+  if (!room || room.owner_id !== ownerId) throw new Error('Không có quyền');
+
+  await admin.from('room_members').delete().eq('room_id', roomId);
+  const { error } = await admin.from('rooms').delete().eq('id', roomId);
+  if (error) throw new Error(error.message);
+}
+
 export async function getRoomMemberCount(roomId: string) {
   const admin = createAdminClient();
   const { count } = await admin

@@ -1,9 +1,9 @@
 'use client';
 
 import { useActionState } from 'react';
-import { Copy, RefreshCw, Users, Check, Clock, Hash } from 'lucide-react';
-import { refreshCodeAction, type RoomActionState } from './actions';
-import { useState } from 'react';
+import { Copy, RefreshCw, Users, Check, Clock, Hash, Pencil, Trash2, X } from 'lucide-react';
+import { refreshCodeAction, updateRoomAction, deleteRoomAction, type RoomActionState } from './actions';
+import { useState, useTransition } from 'react';
 
 type Room = {
   id: string;
@@ -43,6 +43,13 @@ export function RoomCard({ room }: { room: Room }) {
   const code = state.success?.match(/:\s*(\S+)/)?.[1] ?? room.join_code;
   const expired = room.join_code_expires_at ? new Date(room.join_code_expires_at) < new Date() : false;
   const [copied, setCopied] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editName, setEditName] = useState(room.name);
+  const [editSubject, setEditSubject] = useState(room.subject ?? '');
+  const [editGrade, setEditGrade] = useState(room.grade?.toString() ?? '');
+  const [actionMsg, setActionMsg] = useState('');
+  const [isPending, startTransition] = useTransition();
   const idx = hashIndex(room.id);
   const gradient = GRADIENTS[idx];
   const accent = ACCENT_COLORS[idx];
@@ -53,6 +60,77 @@ export function RoomCard({ room }: { room: Room }) {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const handleUpdate = () => {
+    setActionMsg('');
+    startTransition(async () => {
+      const result = await updateRoomAction(room.id, {
+        name: editName.trim(),
+        subject: editSubject.trim() || null,
+        grade: editGrade ? parseInt(editGrade) : null,
+      });
+      if (result.error) {
+        setActionMsg(result.error);
+      } else {
+        setEditing(false);
+        setActionMsg('');
+      }
+    });
+  };
+
+  const handleDelete = () => {
+    setActionMsg('');
+    startTransition(async () => {
+      const result = await deleteRoomAction(room.id);
+      if (result.error) setActionMsg(result.error);
+    });
+  };
+
+  if (editing) {
+    return (
+      <div className={`bg-gradient-to-br ${gradient} border ${accent.border} rounded-2xl p-5 transition-all duration-300`}>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-300">Chỉnh sửa phòng</span>
+            <button onClick={() => { setEditing(false); setActionMsg(''); }} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 min-h-[44px] min-w-[44px] flex items-center justify-center">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <input
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            placeholder="Tên phòng"
+            className="w-full rounded-xl bg-black/30 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 min-h-[44px]"
+          />
+          <input
+            value={editSubject}
+            onChange={(e) => setEditSubject(e.target.value)}
+            placeholder="Môn học (tùy chọn)"
+            className="w-full rounded-xl bg-black/30 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 min-h-[44px]"
+          />
+          <select
+            value={editGrade}
+            onChange={(e) => setEditGrade(e.target.value)}
+            className="w-full rounded-xl bg-black/30 border border-slate-700 px-3 py-2.5 text-sm text-white min-h-[44px]"
+          >
+            <option value="">Khối (tùy chọn)</option>
+            <option value="6">Khối 6</option>
+            <option value="7">Khối 7</option>
+            <option value="8">Khối 8</option>
+            <option value="9">Khối 9</option>
+          </select>
+          <button
+            onClick={handleUpdate}
+            disabled={isPending || !editName.trim()}
+            className="w-full rounded-xl bg-cyan-600 hover:bg-cyan-500 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50 min-h-[44px] transition-colors"
+          >
+            {isPending ? 'Đang lưu...' : 'Lưu thay đổi'}
+          </button>
+          {actionMsg && <p className="text-sm text-rose-300 bg-rose-500/10 rounded-lg px-3 py-2">{actionMsg}</p>}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`bg-gradient-to-br ${gradient} border ${accent.border} rounded-2xl p-5 transition-all duration-300 hover:shadow-lg hover:shadow-black/20`}>
@@ -73,13 +151,50 @@ export function RoomCard({ room }: { room: Room }) {
             )}
           </div>
         </div>
-        <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl ${accent.bg}`}>
-          <Users className={`w-4 h-4 ${accent.text}`} />
-          <span className={`text-sm font-bold ${accent.text}`}>{room.memberCount}</span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => { setEditing(true); setEditName(room.name); setEditSubject(room.subject ?? ''); setEditGrade(room.grade?.toString() ?? ''); }}
+            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 min-h-[44px] min-w-[44px] flex items-center justify-center transition-all"
+            title="Chỉnh sửa"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 min-h-[44px] min-w-[44px] flex items-center justify-center transition-all"
+            title="Xóa phòng"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+          <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl ${accent.bg}`}>
+            <Users className={`w-4 h-4 ${accent.text}`} />
+            <span className={`text-sm font-bold ${accent.text}`}>{room.memberCount}</span>
+          </div>
         </div>
       </div>
 
-      {code && (
+      {confirmDelete && (
+        <div className="mt-3 bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 space-y-2">
+          <p className="text-sm text-rose-300">Xóa phòng <strong>{room.name}</strong>? Tất cả thành viên sẽ bị xóa khỏi phòng.</p>
+          <div className="flex gap-2">
+            <button
+              onClick={handleDelete}
+              disabled={isPending}
+              className="flex-1 rounded-lg bg-rose-600 hover:bg-rose-500 px-3 py-2 text-sm text-white disabled:opacity-50 min-h-[44px] transition-colors"
+            >
+              {isPending ? 'Đang xóa...' : 'Xác nhận xóa'}
+            </button>
+            <button
+              onClick={() => { setConfirmDelete(false); setActionMsg(''); }}
+              className="rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm text-slate-300 min-h-[44px] transition-colors"
+            >
+              Hủy
+            </button>
+          </div>
+        </div>
+      )}
+
+      {code && !confirmDelete && (
         <div className="mt-4 flex items-center gap-2 bg-black/20 rounded-xl px-4 py-2.5">
           <Hash className="w-4 h-4 text-slate-500" />
           <span className="text-xl font-mono font-bold tracking-[0.25em] text-white flex-1">{code}</span>
@@ -111,7 +226,7 @@ export function RoomCard({ room }: { room: Room }) {
         </div>
       )}
 
-      {state.error && <p className="mt-3 text-sm text-rose-300 bg-rose-500/10 rounded-lg px-3 py-2">{state.error}</p>}
+      {(state.error || actionMsg) && <p className="mt-3 text-sm text-rose-300 bg-rose-500/10 rounded-lg px-3 py-2">{state.error || actionMsg}</p>}
     </div>
   );
 }

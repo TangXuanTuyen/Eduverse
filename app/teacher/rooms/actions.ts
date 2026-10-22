@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getCurrentProfile } from '@/lib/auth/session';
-import { createRoom, refreshJoinCode } from '@/services/rooms';
+import { createRoom, refreshJoinCode, updateRoom, deleteRoom } from '@/services/rooms';
 
 const createSchema = z.object({
   name: z.string().trim().min(1, 'Nhập tên phòng').max(100),
@@ -31,6 +31,37 @@ export async function createRoomAction(
     const room = await createRoom(profile.id, parsed.data.name, parsed.data.subject, parsed.data.grade);
     revalidatePath('/teacher/rooms');
     return { success: `Đã tạo phòng! Mã vào: ${room.join_code}` };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Lỗi hệ thống' };
+  }
+}
+
+export async function updateRoomAction(
+  roomId: string,
+  updates: { name?: string; subject?: string | null; grade?: number | null }
+): Promise<RoomActionState> {
+  const profile = await getCurrentProfile();
+  if (!profile || profile.role !== 'teacher') return { error: 'Không có quyền' };
+
+  if (updates.name !== undefined && updates.name.trim().length === 0) return { error: 'Tên phòng không được trống' };
+
+  try {
+    await updateRoom(roomId, profile.id, updates);
+    revalidatePath('/teacher/rooms');
+    return { success: 'Đã cập nhật!' };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Lỗi hệ thống' };
+  }
+}
+
+export async function deleteRoomAction(roomId: string): Promise<RoomActionState> {
+  const profile = await getCurrentProfile();
+  if (!profile || profile.role !== 'teacher') return { error: 'Không có quyền' };
+
+  try {
+    await deleteRoom(roomId, profile.id);
+    revalidatePath('/teacher/rooms');
+    return { success: 'Đã xóa phòng!' };
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Lỗi hệ thống' };
   }
