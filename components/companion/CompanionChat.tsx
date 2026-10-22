@@ -11,7 +11,9 @@ export function CompanionChat({
   onClose: () => void;
   onOpenFullPage: () => void;
 }) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    { role: 'assistant', content: 'Chào bạn! Vina AI sẵn sàng hỗ trợ bạn 🌟' },
+  ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string>();
@@ -99,11 +101,6 @@ export function CompanionChat({
 
       {/* Messages */}
       <div ref={listRef} className="flex-1 overflow-y-auto p-3 space-y-3">
-        {messages.length === 0 && (
-          <p className="text-sm text-slate-500 text-center mt-8">
-            Chào bạn! Mình là Vina 🌟 Hỏi mình bất cứ gì về KHTN nhé!
-          </p>
-        )}
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
