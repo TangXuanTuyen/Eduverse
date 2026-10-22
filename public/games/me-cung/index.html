@@ -1,0 +1,3227 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>EDUVERSE - Mê Cung Tri Thức 2D (Bản HTML5 Độc Lập)</title>
+  <meta name="description" content="Game mê cung 2D hiện đại phong cách arcade dẫn lối robot Vina giải mã tri thức và thu thập vật phẩm." />
+  <style>
+    /* ------------------------------------------------------------- */
+    /* RESET & CORE TYPOGRAPHY                                       */
+    /* ------------------------------------------------------------- */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      min-height: 100vh;
+      background-color: #060b19;
+      color: #e2e8f0;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+    }
+    .font-display {
+      font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+      font-weight: 700;
+    }
+    .font-mono-numbers {
+      font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #090e1f; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.95); }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    @keyframes bounceGlow {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    .animate-fadeIn { animation: fadeIn 0.25s ease-out forwards; }
+    .animate-float { animation: float 3s ease-in-out infinite; }
+    .animate-shake { animation: shake 0.4s ease-in-out; }
+    .animate-pulse { animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    .animate-bounce { animation: bounceGlow 1.2s ease-in-out infinite; }
+
+    /* Layout Wrapper */
+    #app-root {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 12px 16px;
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+    @media (min-width: 640px) {
+      #app-root { padding: 18px 24px; }
+    }
+
+    /* Common Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 600;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+      text-decoration: none;
+      font-family: inherit;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-icon {
+      padding: 8px;
+      border-radius: 12px;
+      background: rgba(30, 41, 59, 0.8);
+      border-color: rgba(51, 65, 85, 0.6);
+      color: #94a3b8;
+    }
+    .btn-icon:hover {
+      background: rgba(51, 65, 85, 0.9);
+      color: #ffffff;
+    }
+
+    /* SVG utility icons */
+    .icon {
+      width: 16px;
+      height: 16px;
+      stroke-width: 2;
+      stroke: currentColor;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+
+    /* ------------------------------------------------------------- */
+    /* START SCREEN                                                  */
+    /* ------------------------------------------------------------- */
+    .start-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 8px;
+      animation: fadeIn 0.3s ease-out;
+    }
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: rgba(8, 51, 68, 0.8);
+      border: 1px solid rgba(6, 182, 212, 0.4);
+      color: #67e8f9;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.25);
+      margin-bottom: 12px;
+    }
+    .hero-title {
+      font-size: 32px;
+      line-height: 1.15;
+      font-weight: 800;
+      color: #ffffff;
+      text-align: center;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+    @media (min-width: 640px) {
+      .hero-title { font-size: 46px; }
+    }
+    .hero-desc {
+      font-size: 14px;
+      line-height: 1.5;
+      color: #94a3b8;
+      text-align: center;
+      max-width: 580px;
+      margin-bottom: 24px;
+    }
+    @media (min-width: 640px) {
+      .hero-desc { font-size: 16px; }
+    }
+
+    /* Mascot Box */
+    .mascot-container {
+      position: relative;
+      margin-bottom: 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .mascot-box {
+      width: 112px;
+      height: 112px;
+      border-radius: 24px;
+      background: #090e1f;
+      border: 2px solid rgba(6, 182, 212, 0.4);
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 35px rgba(6, 182, 212, 0.3);
+    }
+    @media (min-width: 640px) {
+      .mascot-box { width: 128px; height: 128px; }
+    }
+    .mascot-name {
+      margin-top: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #67e8f9;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dot-online {
+      width: 8px;
+      height: 8px;
+      border-radius: 9999px;
+      background: #34d399;
+      animation: pulseGlow 1.5s infinite;
+    }
+
+    /* Mode Selector Card */
+    .mode-card {
+      width: 100%;
+      max-width: 600px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid #1e293b;
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    }
+    .mode-card-title {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .mode-card-title .sub {
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .mode-card-title .main {
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-top: 2px;
+    }
+    .mode-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    @media (min-width: 640px) {
+      .mode-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .mode-btn {
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid #334155;
+      background: rgba(30, 41, 59, 0.5);
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .mode-btn:hover {
+      background: rgba(30, 41, 59, 0.8);
+      border-color: #475569;
+    }
+    .mode-btn.active-5 {
+      background: rgba(8, 51, 68, 0.7);
+      border-color: #22d3ee;
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+      outline: 1px solid #22d3ee;
+    }
+    .mode-btn.active-10 {
+      background: rgba(69, 26, 3, 0.7);
+      border-color: #fbbf24;
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+      outline: 1px solid #fbbf24;
+    }
+    .mode-btn-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .mode-count-cyan { font-size: 22px; font-weight: 900; color: #38bdf8; }
+    .mode-count-amber { font-size: 22px; font-weight: 900; color: #fbbf24; }
+    .mode-tag {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+    }
+    .tag-cyan { background: rgba(8, 51, 68, 0.6); color: #67e8f9; border-color: rgba(6, 182, 212, 0.4); }
+    .tag-amber { background: rgba(69, 26, 3, 0.6); color: #fde68a; border-color: rgba(245, 158, 11, 0.4); }
+    .mode-desc { font-size: 12px; color: #cbd5e1; line-height: 1.45; }
+
+    /* Highlights 4-Grid */
+    .highlights-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+      max-width: 600px;
+      margin-bottom: 28px;
+      text-align: center;
+    }
+    @media (min-width: 640px) {
+      .highlights-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    .hl-box {
+      padding: 12px 8px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid #1e293b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .hl-box .icon { width: 18px; height: 18px; margin-bottom: 4px; }
+    .hl-box .hl-name { font-size: 12px; font-weight: 700; color: #ffffff; }
+    .hl-box .hl-val { font-size: 11px; margin-top: 2px; }
+
+    /* Big Start Button */
+    .btn-start-game {
+      padding: 16px 36px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #06b6d4, #2563eb 50%, #f59e0b);
+      color: #ffffff;
+      font-size: 18px;
+      font-weight: 800;
+      box-shadow: 0 0 35px rgba(6, 182, 212, 0.4);
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-start-game:hover {
+      transform: scale(1.04);
+      box-shadow: 0 0 45px rgba(6, 182, 212, 0.6);
+    }
+    .btn-start-game:active { transform: scale(0.96); }
+
+    .highscore-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #fde68a;
+      background: rgba(69, 26, 3, 0.4);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      margin-top: 12px;
+    }
+
+    /* ------------------------------------------------------------- */
+    /* GAME SCREEN & HUD                                             */
+    /* ------------------------------------------------------------- */
+    .game-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: fadeIn 0.25s ease-out;
+      width: 100%;
+    }
+    .game-hud {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .hud-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #06b6d4, #2563eb);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 15px;
+      color: #ffffff;
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+    }
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .brand-title h1 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.01em;
+    }
+    .brand-title .tag {
+      font-size: 9px;
+      font-weight: 700;
+      color: #22d3ee;
+      background: rgba(8, 51, 68, 0.8);
+      border: 1px solid rgba(6, 182, 212, 0.4);
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .brand-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+    .hud-stats {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .hud-stat-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: rgba(3, 7, 18, 0.7);
+      border: 1px solid #1e293b;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+    .stat-score {
+      border-color: rgba(245, 158, 11, 0.3);
+      color: #fde68a;
+    }
+    .gate-badge-locked {
+      background: rgba(69, 10, 10, 0.4);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      font-weight: 600;
+    }
+    .gate-badge-open {
+      background: rgba(69, 26, 3, 0.4);
+      border-color: rgba(245, 158, 11, 0.5);
+      color: #fde68a;
+      font-weight: 700;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+    }
+
+    .hud-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Banners */
+    .banner-celebration {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto 12px auto;
+      padding: 12px 16px;
+      border-radius: 14px;
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.25), rgba(251, 191, 36, 0.35), rgba(245, 158, 11, 0.25));
+      border: 2px solid #fbbf24;
+      color: #fef08a;
+      font-size: 13px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 0 35px rgba(245, 158, 11, 0.5);
+    }
+    .banner-lock {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto 12px auto;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(69, 10, 10, 0.85);
+      border: 1px solid rgba(239, 68, 68, 0.6);
+      color: #fca5a5;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    /* Canvas Viewport */
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 19 / 13;
+      max-width: 1024px;
+      margin: 0 auto;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      box-shadow: 0 0 35px rgba(6, 182, 212, 0.15);
+      background-color: #060b19;
+    }
+    canvas#maze-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+    }
+
+    /* Virtual Controls & D-Pad */
+    .controls-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 0 6px 0;
+      user-select: none;
+    }
+    .keyboard-hint {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+    @media (min-width: 640px) {
+      .keyboard-hint { display: flex; }
+    }
+    kbd {
+      padding: 3px 8px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      font-size: 11px;
+      color: #38bdf8;
+      font-family: 'JetBrains Mono', Consolas, monospace;
+    }
+
+    /* Mobile D-Pad */
+    .dpad-container {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid #1e293b;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    }
+    @media (min-width: 768px) {
+      .dpad-container { display: none; }
+    }
+    .dpad-btn {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(71, 85, 105, 0.6);
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.1s ease;
+    }
+    .dpad-btn:active {
+      background: #06b6d4;
+      color: #ffffff;
+      transform: scale(0.92);
+    }
+    .dpad-btn.up { top: 6px; left: 50%; transform: translateX(-50%); }
+    .dpad-btn.down { bottom: 6px; left: 50%; transform: translateX(-50%); }
+    .dpad-btn.left { left: 6px; top: 50%; transform: translateY(-50%); }
+    .dpad-btn.right { right: 6px; top: 50%; transform: translateY(-50%); }
+    .dpad-btn.up:active { transform: translateX(-50%) scale(0.92); }
+    .dpad-btn.down:active { transform: translateX(-50%) scale(0.92); }
+    .dpad-btn.left:active { transform: translateY(-50%) scale(0.92); }
+    .dpad-btn.right:active { transform: translateY(-50%) scale(0.92); }
+    .dpad-center {
+      width: 30px;
+      height: 30px;
+      border-radius: 9999px;
+      background: rgba(8, 51, 68, 0.6);
+      border: 1px solid rgba(6, 182, 212, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .dpad-center-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 9999px;
+      background: #22d3ee;
+      animation: pulseGlow 1.5s infinite;
+    }
+
+    /* ------------------------------------------------------------- */
+    /* MODALS                                                        */
+    /* ------------------------------------------------------------- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      background: rgba(3, 7, 18, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      animation: fadeIn 0.2s ease-out;
+    }
+    .modal-card {
+      width: 100%;
+      max-width: 580px;
+      max-height: 92vh;
+      overflow-y: auto;
+      background: #0f172a;
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      border-radius: 20px;
+      padding: 22px;
+      position: relative;
+      box-shadow: 0 0 50px rgba(6, 182, 212, 0.25);
+    }
+    @media (min-width: 640px) {
+      .modal-card { padding: 28px; }
+    }
+    .modal-card.correct {
+      border-color: rgba(16, 185, 129, 0.8);
+      box-shadow: 0 0 60px rgba(16, 185, 129, 0.35);
+    }
+    .modal-card.incorrect {
+      border-color: rgba(244, 63, 94, 0.8);
+      box-shadow: 0 0 60px rgba(244, 63, 94, 0.35);
+    }
+    .modal-top-accent {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+      background: linear-gradient(90deg, #06b6d4, #3b82f6, #f59e0b);
+    }
+    .modal-top-accent.correct {
+      background: linear-gradient(90deg, #10b981, #14b8a6, #f59e0b);
+    }
+    .modal-top-accent.incorrect {
+      background: linear-gradient(90deg, #f43f5e, #ef4444, #f97316);
+    }
+
+    /* Hero Banner Inside Modal */
+    .hero-banner {
+      padding: 14px 16px;
+      border-radius: 14px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      animation: fadeIn 0.2s ease-out;
+    }
+    .hero-banner.correct {
+      background: linear-gradient(90deg, rgba(6, 78, 59, 0.8), rgba(6, 95, 70, 0.4), #0f172a);
+      border: 1px solid rgba(16, 185, 129, 0.6);
+    }
+    .hero-banner.incorrect {
+      background: linear-gradient(90deg, rgba(76, 5, 25, 0.8), rgba(136, 19, 55, 0.4), #0f172a);
+      border: 1px solid rgba(244, 63, 94, 0.6);
+    }
+    .hero-icon-box {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .hero-banner.correct .hero-icon-box {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      color: #34d399;
+    }
+    .hero-banner.incorrect .hero-icon-box {
+      background: rgba(244, 63, 94, 0.2);
+      border: 1px solid rgba(244, 63, 94, 0.5);
+      color: #fb7185;
+    }
+
+    /* Question Modal Details */
+    .qm-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #1e293b;
+    }
+    .qm-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .qm-icon-tag {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #083344;
+      border: 1px solid rgba(6, 182, 212, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #22d3ee;
+      flex-shrink: 0;
+    }
+    .qm-subtag {
+      font-size: 10px;
+      font-weight: 700;
+      color: #22d3ee;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .qm-subject {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .qm-points-badge {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #fde68a;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .qm-visual-box {
+      margin: 12px 0;
+      width: 100%;
+      border-radius: 14px;
+      background: rgba(3, 7, 18, 0.7);
+      border: 1px solid rgba(6, 182, 212, 0.2);
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .qm-prompt {
+      font-size: 15px;
+      font-weight: 500;
+      line-height: 1.6;
+      color: #f1f5f9;
+      margin-bottom: 12px;
+    }
+
+    /* Option Buttons */
+    .qm-options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .qm-opt-btn {
+      width: 100%;
+      text-align: left;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      background: rgba(30, 41, 59, 0.7);
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      transition: all 0.15s ease;
+    }
+    .qm-opt-btn:hover:not(:disabled) {
+      background: #1e293b;
+      border-color: rgba(6, 182, 212, 0.5);
+    }
+    .qm-opt-btn.correct {
+      background: rgba(6, 78, 59, 0.8) !important;
+      border-color: #10b981 !important;
+      color: #ecfdf5 !important;
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
+    }
+    .qm-opt-btn.wrong-chosen {
+      background: rgba(76, 5, 25, 0.8) !important;
+      border-color: #f43f5e !important;
+      color: #fff1f2 !important;
+      box-shadow: 0 0 15px rgba(244, 63, 94, 0.25);
+    }
+    .qm-opt-btn.dimmed {
+      opacity: 0.45;
+      background: rgba(30, 41, 59, 0.3);
+      border-color: #1e293b;
+    }
+    .qm-opt-label {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(51, 65, 85, 0.8);
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .qm-opt-btn.correct .qm-opt-label {
+      background: #059669;
+      color: #ffffff;
+    }
+    .qm-opt-btn.wrong-chosen .qm-opt-label {
+      background: #e11d48;
+      color: #ffffff;
+    }
+
+    /* Explanation Boxes */
+    .qm-expl-box {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .qm-expl-box.correct {
+      background: rgba(6, 78, 59, 0.4);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #a7f3d0;
+    }
+    .qm-expl-box.incorrect {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      color: #fecdd3;
+    }
+
+    /* Footer */
+    footer.app-footer {
+      width: 100%;
+      margin-top: 24px;
+      padding-top: 16px;
+      padding-bottom: 20px;
+      border-top: 1px solid #1e293b;
+      text-align: center;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .footer-links a {
+      color: #38bdf8;
+      text-decoration: none;
+    }
+    .footer-links a:hover { text-decoration: underline; }
+    .footer-brand {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      letter-spacing: 0.05em;
+    }
+  </style>
+<script src="/_aistudio-iframe.js?v=6634132a"></script></head>
+<body>
+  <div id="app-root">
+    <!-- Content injected via JS -->
+  </div>
+
+  <!-- Audio Context Synthesizer & Game Logic Script -->
+  <script>
+    /* ============================================================= */
+    /* 1. AUDIO SYNTHESIZER (Pure Web Audio API - Zero External Files) */
+    /* ============================================================= */
+    class WebAudioSoundSystem {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+      initCtx() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume().catch(() => {});
+        }
+      }
+      playStep() {
+        if (!this.enabled) return;
+        try {
+          this.initCtx();
+          if (!this.ctx) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const now = this.ctx.currentTime;
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(280, now);
+          osc.frequency.exponentialRampToValueAtTime(140, now + 0.04);
+          gain.gain.setValueAtTime(0.04, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.04);
+        } catch (e) {}
+      }
+      playBump() {
+        if (!this.enabled) return;
+        try {
+          this.initCtx();
+          if (!this.ctx) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const now = this.ctx.currentTime;
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(120, now);
+          osc.frequency.exponentialRampToValueAtTime(60, now + 0.08);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } catch (e) {}
+      }
+      playCollect() {
+        if (!this.enabled) return;
+        try {
+          this.initCtx();
+          if (!this.ctx) return;
+          const now = this.ctx.currentTime;
+          const notes = [523.25, 659.25, 783.99];
+          notes.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const start = now + idx * 0.04;
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, start);
+            gain.gain.setValueAtTime(0.07, start);
+            gain.gain.exponentialRampToValueAtTime(0.001, start + 0.12);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(start);
+            osc.stop(start + 0.12);
+          });
+        } catch (e) {}
+      }
+      playQuestionPortal() {
+        if (!this.enabled) return;
+        try {
+          this.initCtx();
+          if (!this.ctx) return;
+          const now = this.ctx.currentTime;
+          const notes = [440, 554.37, 659.25, 880];
+          notes.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const start = now + idx * 0.06;
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, start);
+            osc.frequency.exponentialRampToValueAtTime(freq * 1.05, start + 0.18);
+            gain.gain.setValueAtTime(0.08, start);
+            gain.gain.exponentialRampToValueAtTime(0.001, start + 0.2);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(start);
+            osc.stop(start + 0.2);
+          });
+        } catch (e) {}
+      }
+      playCorrect() {
+        if (!this.enabled) return;
+        try {
+          this.initCtx();
+          if (!this.ctx) return;
+          const now = this.ctx.currentTime;
+          const chord = [523.25, 659.25, 783.99, 1046.5];
+          chord.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const start = now + idx * 0.05;
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, start);
+            gain.gain.setValueAtTime(0.09, start);
+            gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(start);
+            osc.stop(start + 0.35);
+          });
+        } catch (e) {}
+      }
+      playIncorrect() {
+        if (!this.enabled) return;
+        try {
+          this.initCtx();
+          if (!this.ctx) return;
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(180, now);
+          osc.frequency.setValueAtTime(140, now + 0.1);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        } catch (e) {}
+      }
+      playVictory() {
+        if (!this.enabled) return;
+        try {
+          this.initCtx();
+          if (!this.ctx) return;
+          const now = this.ctx.currentTime;
+          const melody = [
+            { f: 523.25, t: 0.12 },
+            { f: 659.25, t: 0.12 },
+            { f: 783.99, t: 0.12 },
+            { f: 1046.5, t: 0.35 },
+          ];
+          let t = 0;
+          melody.forEach(note => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const start = now + t;
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(note.f, start);
+            gain.gain.setValueAtTime(0.1, start);
+            gain.gain.exponentialRampToValueAtTime(0.001, start + note.t);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(start);
+            osc.stop(start + note.t);
+            t += note.t * 0.9;
+          });
+        } catch (e) {}
+      }
+      playUnlockGate() {
+        if (!this.enabled) return;
+        try {
+          this.initCtx();
+          if (!this.ctx) return;
+          const now = this.ctx.currentTime;
+          const notes = [392, 523.25, 659.25, 783.99, 1046.5];
+          notes.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const start = now + idx * 0.07;
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, start);
+            osc.frequency.exponentialRampToValueAtTime(freq * 1.03, start + 0.3);
+            gain.gain.setValueAtTime(0.12, start);
+            gain.gain.exponentialRampToValueAtTime(0.001, start + 0.4);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(start);
+            osc.stop(start + 0.4);
+          });
+        } catch (e) {}
+      }
+    }
+    const soundManager = new WebAudioSoundSystem();
+
+    /* ============================================================= */
+    /* 2. MAZE DATA & QUESTION BANK                                  */
+    /* ============================================================= */
+    const MAP_WIDTH = 19;
+    const MAP_HEIGHT = 13;
+    const BASE_MAZE_WALLS = [
+      [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ],
+      [ 1, 4, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1 ],
+      [ 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1 ],
+      [ 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1 ],
+      [ 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1 ],
+      [ 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 ],
+      [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1 ],
+      [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ],
+      [ 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1 ],
+      [ 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1 ],
+      [ 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1 ],
+      [ 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 5, 1 ],
+      [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ],
+    ];
+    const INITIAL_START_POS = { x: 1, y: 1 };
+    const INITIAL_GOAL_POS = { x: 17, y: 11 };
+
+    const CANDIDATE_STATION_COORDS = [
+      { x: 7, y: 1 },
+      { x: 5, y: 3 },
+      { x: 13, y: 3 },
+      { x: 9, y: 5 },
+      { x: 3, y: 7 },
+      { x: 15, y: 7 },
+      { x: 3, y: 9 },
+      { x: 11, y: 9 },
+      { x: 15, y: 1 },
+      { x: 7, y: 11 },
+    ];
+
+    let QUESTION_BANK = [];
+    const _EDUVERSE_PARAMS = new URLSearchParams(window.location.search);
+    const _EDUVERSE_ASSIGNMENT_ID = _EDUVERSE_PARAMS.get('assignmentId');
+
+    const _DEFAULT_QUESTION_BANK = [
+      {
+        id: 'q1',
+        subject: 'Toán Học - Chu Vi Hình Chữ Nhật',
+        question: 'Quan sát hình chữ nhật có chiều dài 12m và chiều rộng 8m. Chu vi của hình chữ nhật đó là bao nhiêu mét?',
+        options: ['20 mét', '40 mét', '96 mét', '60 mét'],
+        correctIndex: 1,
+        explanation: 'Chu vi hình chữ nhật = (chiều dài + chiều rộng) × 2 = (12 + 8) × 2 = 40 (m).',
+        points: 100,
+        visualType: 'geometry',
+      },
+      {
+        id: 'q2',
+        subject: 'Khoa Học - Hệ Mặt Trời',
+        question: 'Hành tinh nào trong sơ đồ Hệ Mặt Trời trên có bề mặt màu đỏ cam đặc trưng và được mệnh danh là "Hành tinh Đỏ"?',
+        options: ['Sao Kim (Venus)', 'Sao Mộc (Jupiter)', 'Sao Hỏa (Mars)', 'Sao Thổ (Saturn)'],
+        correctIndex: 2,
+        explanation: 'Sao Hỏa (Mars) có bề mặt phủ lớp bụi oxit sắt dày đặc tạo nên màu đỏ gạch nổi bật trên bầu trời đêm.',
+        points: 100,
+        visualType: 'planet',
+      },
+      {
+        id: 'q3',
+        subject: 'Tin Học & Thuật Toán',
+        question: 'Trong sơ đồ thuật toán trên, khối cấu trúc cho phép lặp đi lặp lại một hành động khi điều kiện thỏa mãn gọi là gì?',
+        options: ['Vòng lặp (Loop)', 'Biến số (Variable)', 'Hằng số (Constant)', 'Mảng (Array)'],
+        correctIndex: 0,
+        explanation: 'Vòng lặp (Loop như for, while) kiểm tra điều kiện và thực thi lặp lại các lệnh mà không cần viết lại nhiều lần.',
+        points: 100,
+        visualType: 'algorithm',
+      },
+      {
+        id: 'q4',
+        subject: 'Địa Lý Việt Nam',
+        question: 'Đỉnh núi được đánh dấu trên bản đồ có độ cao 3.143m, được mệnh danh là "Nóc nhà Đông Dương" mang tên gì?',
+        options: ['Bà Nà', 'Fansipan', 'Bạch Mộc Lương Tử', 'Pu Si Lung'],
+        correctIndex: 1,
+        explanation: 'Đỉnh Fansipan cao 3.143m thuộc dãy núi Hoàng Liên Sơn, tỉnh Lào Cai, là đỉnh núi tự nhiên cao nhất Việt Nam và Đông Dương.',
+        points: 100,
+        visualType: 'map',
+      },
+      {
+        id: 'q5',
+        subject: 'Toán Học - Đo Lường Góc',
+        question: 'Quan sát mặt đồng hồ lúc đúng 3 giờ (3:00): Góc tạo bởi kim giờ và kim phút là góc gì?',
+        options: ['Góc nhọn (dưới 90°)', 'Góc tù (lớn hơn 90°)', 'Góc vuông (bằng 90°)', 'Góc bẹt (bằng 180°)'],
+        correctIndex: 2,
+        explanation: 'Lúc 3:00, kim phút chỉ số 12 và kim giờ chỉ số 3, hai kim vuông góc với nhau và tạo thành góc vuông 90°.',
+        points: 100,
+        visualType: 'clock',
+      },
+      {
+        id: 'q6',
+        subject: 'Toán Học - Phân Số',
+        question: 'Hình tròn được chia thành 8 phần bằng nhau và đã tô màu 3 phần. Phân số nào biểu thị phần được tô màu?',
+        options: ['3/8', '5/8', '8/3', '3/5'],
+        correctIndex: 0,
+        explanation: 'Phân số có tử số là số phần đã tô màu (3) và mẫu số là tổng số phần bằng nhau (8), vậy đáp án là 3/8.',
+        points: 100,
+        visualType: 'fraction',
+      },
+      {
+        id: 'q7',
+        subject: 'Khoa Học - Công Nghệ Robot',
+        question: 'Robot Vina sử dụng loại cảm biến nào phát sóng dội lại (như trên hình) để phát hiện chướng ngại vật phía trước?',
+        options: ['Cảm biến nhiệt độ', 'Cảm biến siêu âm (Ultrasonic)', 'Cảm biến vân tay', 'Cảm biến độ ẩm đất'],
+        correctIndex: 1,
+        explanation: 'Cảm biến siêu âm phát sóng âm thanh tần số cao và đo thời gian sóng dội lại khi gặp vật cản để xác định khoảng cách chính xác.',
+        points: 100,
+        visualType: 'circuit',
+      },
+      {
+        id: 'q8',
+        subject: 'Toán Học - Chu Vi Hình Tam Giác',
+        question: 'Hình tam giác đều có 3 cạnh đều bằng 5cm. Chu vi của tam giác đều đó là bao nhiêu?',
+        options: ['10 cm', '15 cm', '25 cm', '12 cm'],
+        correctIndex: 1,
+        explanation: 'Chu vi tam giác đều = cạnh × 3 = 5 × 3 = 15 (cm).',
+        points: 100,
+        visualType: 'triangle',
+      },
+      {
+        id: 'q9',
+        subject: 'Khoa Học Tự Nhiên - Thực Vật',
+        question: 'Trong quá trình quang hợp, cây xanh hấp thụ khí carbon dioxide (CO₂) và ánh sáng Mặt Trời để thải ra khí gì duy trì sự sống?',
+        options: ['Khí Nitrogen', 'Khí Oxygen (O₂)', 'Khí Hydrogen', 'Khí Carbon monoxide'],
+        correctIndex: 1,
+        explanation: 'Quá trình quang hợp của thực vật hấp thụ CO₂ và nước dưới tác dụng của diệp lục và ánh sáng để tạo chất hữu cơ và giải phóng khí Oxy (O₂).',
+        points: 100,
+        visualType: 'plant',
+      },
+      {
+        id: 'q10',
+        subject: 'Tin Học - Phần Cứng Máy Tính',
+        question: 'Bộ phận nào trong máy tính được ví như "bộ não" điều khiển và thực hiện mọi phép toán xử lý dữ liệu?',
+        options: ['Ổ đĩa cứng (Hard Drive)', 'Bàn phím (Keyboard)', 'Bộ xử lý trung tâm (CPU)', 'Màn hình (Monitor)'],
+        correctIndex: 2,
+        explanation: 'CPU (Central Processing Unit) là bộ vi xử lý trung tâm chịu trách nhiệm điều khiển toàn bộ phần cứng và tính toán các lệnh.',
+        points: 100,
+        visualType: 'cpu',
+      },
+      {
+        id: 'q11',
+        subject: 'Khoa Học - Định Hướng Không Gian',
+        question: 'Kim nam châm có màu đỏ của chiếc la ban luôn luôn chỉ về hướng địa lý nào của Trái Đất?',
+        options: ['Hướng Đông', 'Hướng Tây', 'Hướng Bắc', 'Hướng Nam'],
+        correctIndex: 2,
+        explanation: 'Từ trường Trái Đất định hướng cực từ Bắc của kim la bàn (thường sơn màu đỏ) luôn hướng về cực Bắc địa lý.',
+        points: 100,
+        visualType: 'compass',
+      },
+      {
+        id: 'q12',
+        subject: 'Toán Logic - Cân Thăng Bằng',
+        question: 'Trên chiếc cân đĩa thăng bằng: bên trái có 1 quả cân 8kg, bên phải có 2 khối hộp giống hệt nhau. Mỗi khối hộp nặng bao nhiêu kg?',
+        options: ['2 kg', '4 kg', '6 kg', '8 kg'],
+        correctIndex: 1,
+        explanation: 'Cân thăng bằng nghĩa là 2 khối hộp có tổng khối lượng bằng 8kg. Vậy mỗi khối hộp nặng: 8 ÷ 2 = 4 (kg).',
+        points: 100,
+        visualType: 'scale',
+      },
+      {
+        id: 'q13',
+        subject: 'Khoa Học - Vòng Tuần Hoàn Nước',
+        question: 'Dưới sức nóng Mặt Trời, nước ở sông hồ bốc hơi bay lên cao tạo thành mây rồi ngưng tụ rơi xuống tạo thành gì?',
+        options: ['Gió lốc', 'Mưa', 'Bão cát', 'Sóng thần'],
+        correctIndex: 1,
+        explanation: 'Hơi nước bốc lên cao gặp lạnh ngưng tụ thành các hạt nước nhỏ tạo thành mây, khi nặng hạt sẽ rơi xuống thành mưa.',
+        points: 100,
+        visualType: 'water',
+      },
+    ];
+
+    QUESTION_BANK = _DEFAULT_QUESTION_BANK;
+
+    async function _loadAssignmentQuestions() {
+      if (!_EDUVERSE_ASSIGNMENT_ID) return;
+      try {
+        const res = await fetch(`/api/game/questions?assignmentId=${encodeURIComponent(_EDUVERSE_ASSIGNMENT_ID)}`, {
+          credentials: 'include',
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (Array.isArray(data.questions) && data.questions.length > 0) {
+          QUESTION_BANK = data.questions.map((q, i) => ({
+            id: q.id || `q${i + 1}`,
+            subject: q.skill_tags || 'KHTN',
+            question: q.question_text,
+            options: q.options,
+            correctIndex: q.correct_index,
+            explanation: q.explanation || '',
+            points: 100,
+            visualType: 'geometry',
+          }));
+        }
+      } catch {}
+    }
+
+    function shuffleArray(arr) {
+      const res = [...arr];
+      for (let i = res.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [res[i], res[j]] = [res[j], res[i]];
+      }
+      return res;
+    }
+
+    function parseMapEntities(mode = 5) {
+      const questionCheckpoints = [];
+      const goldItems = [];
+      let selectedCoords = [];
+      if (mode === 5) {
+        selectedCoords = [
+          CANDIDATE_STATION_COORDS[0],
+          CANDIDATE_STATION_COORDS[1],
+          CANDIDATE_STATION_COORDS[3],
+          CANDIDATE_STATION_COORDS[5],
+          CANDIDATE_STATION_COORDS[7],
+        ];
+      } else {
+        selectedCoords = [...CANDIDATE_STATION_COORDS];
+      }
+
+      const shuffledQ = shuffleArray(QUESTION_BANK);
+      selectedCoords.forEach((coord, idx) => {
+        questionCheckpoints.push({
+          id: `station-${coord.x}-${coord.y}`,
+          x: coord.x,
+          y: coord.y,
+          question: shuffledQ[idx % shuffledQ.length],
+          isAnswered: false,
+          isCorrect: false,
+          scoreAwarded: 0,
+        });
+      });
+
+      const stationCoordSet = new Set(selectedCoords.map(c => `${c.x},${c.y}`));
+      const candidateWalkableCells = [];
+      for (let y = 0; y < MAP_HEIGHT; y++) {
+        for (let x = 0; x < MAP_WIDTH; x++) {
+          const isStart = x === INITIAL_START_POS.x && y === INITIAL_START_POS.y;
+          const isGoal = x === INITIAL_GOAL_POS.x && y === INITIAL_GOAL_POS.y;
+          const isStation = stationCoordSet.has(`${x},${y}`);
+          const isWall = BASE_MAZE_WALLS[y][x] === 1;
+          if (!isWall && !isStart && !isGoal && !isStation) {
+            candidateWalkableCells.push({ x, y });
+          }
+        }
+      }
+
+      const shuffledSlots = shuffleArray(candidateWalkableCells);
+      const diamondCount = Math.min(shuffledSlots.length, 18);
+      const selectedDiamonds = shuffledSlots.slice(0, diamondCount);
+      selectedDiamonds.forEach((pos, idx) => {
+        goldItems.push({
+          id: `diamond-${idx}`,
+          x: pos.x,
+          y: pos.y,
+          isCollected: false,
+          points: 50,
+        });
+      });
+
+      return { questionCheckpoints, goldItems };
+    }
+
+    /* ============================================================= */
+    /* 3. SVG VISUAL DIAGRAM GENERATOR                               */
+    /* ============================================================= */
+    function renderQuestionVisualSVG(type) {
+      switch (type) {
+        case 'geometry':
+          return `
+            <svg viewBox="0 0 320 130" style="width: 100%; max-width: 280px; height: auto;">
+              <rect x="60" y="30" width="200" height="70" rx="6" fill="rgba(6, 182, 212, 0.12)" stroke="#06b6d4" stroke-width="2.5" />
+              <line x1="60" y1="18" x2="260" y2="18" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="3 3" />
+              <polygon points="60,18 67,15 67,21" fill="#38bdf8" />
+              <polygon points="260,18 253,15 253,21" fill="#38bdf8" />
+              <text x="160" y="14" fill="#38bdf8" font-size="12" font-weight="bold" text-anchor="middle">Chiều dài: 12m</text>
+              <line x1="275" y1="30" x2="275" y2="100" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3 3" />
+              <polygon points="275,30 272,37 278,37" fill="#fbbf24" />
+              <polygon points="275,100 272,93 278,93" fill="#fbbf24" />
+              <text x="282" y="69" fill="#fbbf24" font-size="11" font-weight="bold">8m</text>
+              <text x="160" y="68" fill="#e2e8f0" font-size="13" font-weight="600" text-anchor="middle">Hình Chữ Nhật</text>
+              <text x="160" y="86" fill="#94a3b8" font-size="11" text-anchor="middle">Chu vi = ?</text>
+            </svg>
+          `;
+        case 'planet':
+          return `
+            <svg viewBox="0 0 320 120" style="width: 100%; max-width: 280px; height: auto;">
+              <defs>
+                <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#fef08a" />
+                  <stop offset="60%" stop-color="#f59e0b" />
+                  <stop offset="100%" stop-color="#b45309" />
+                </radialGradient>
+                <radialGradient id="marsGrad" cx="40%" cy="40%" r="60%">
+                  <stop offset="0%" stop-color="#f87171" />
+                  <stop offset="60%" stop-color="#ea580c" />
+                  <stop offset="100%" stop-color="#7c2d12" />
+                </radialGradient>
+              </defs>
+              <circle cx="10" cy="60" r="45" fill="url(#sunGrad)" opacity="0.9" />
+              <ellipse cx="10" cy="60" rx="90" ry="45" fill="none" stroke="#334155" stroke-width="1" stroke-dasharray="3 3" />
+              <ellipse cx="10" cy="60" rx="150" ry="50" fill="none" stroke="#334155" stroke-width="1" stroke-dasharray="3 3" />
+              <ellipse cx="10" cy="60" rx="220" ry="55" fill="none" stroke="#ea580c" stroke-width="1.5" opacity="0.5" />
+              <circle cx="155" cy="52" r="10" fill="#38bdf8" />
+              <text x="155" y="74" fill="#94a3b8" font-size="10" text-anchor="middle">Trái Đất</text>
+              <circle cx="225" cy="65" r="22" fill="rgba(234, 88, 12, 0.15)" stroke="#ea580c" stroke-width="1" stroke-dasharray="3 2" />
+              <circle cx="225" cy="65" r="14" fill="url(#marsGrad)" />
+              <circle cx="222" cy="62" r="4" fill="#c2410c" opacity="0.6" />
+              <text x="225" y="96" fill="#fb923c" font-size="11" font-weight="bold" text-anchor="middle">Hành tinh Đỏ (?)</text>
+            </svg>
+          `;
+        case 'algorithm':
+          return `
+            <svg viewBox="0 0 320 120" style="width: 100%; max-width: 300px; height: auto;">
+              <rect x="15" y="42" width="60" height="32" rx="16" fill="#1e1b4b" stroke="#818cf8" stroke-width="1.5" />
+              <text x="45" y="62" fill="#c7d2fe" font-size="11" font-weight="bold" text-anchor="middle">Bắt đầu</text>
+              <line x1="75" y1="58" x2="110" y2="58" stroke="#818cf8" stroke-width="1.5" />
+              <polygon points="110,58 103,54 103,62" fill="#818cf8" />
+              <polygon points="150,30 185,58 150,86 115,58" fill="#312e81" stroke="#a78bfa" stroke-width="1.5" />
+              <text x="150" y="55" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">Điều kiện</text>
+              <text x="150" y="68" fill="#e0e7ff" font-size="9" text-anchor="middle">lặp lại ?</text>
+              <path d="M 150,30 L 150,14 L 250,14 L 250,42" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="3 3" />
+              <polygon points="250,42 246,35 254,35" fill="#38bdf8" />
+              <text x="200" y="11" fill="#38bdf8" font-size="9" font-weight="bold" text-anchor="middle">Thực thi lại hành động</text>
+              <rect x="220" y="44" width="75" height="30" rx="6" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5" />
+              <text x="257" y="63" fill="#7dd3fc" font-size="10" font-weight="bold" text-anchor="middle">Khối lệnh</text>
+            </svg>
+          `;
+        case 'map':
+          return `
+            <svg viewBox="0 0 320 120" style="width: 100%; max-width: 280px; height: auto;">
+              <path d="M 120,15 Q 160,20 145,45 Q 130,65 155,80 Q 165,95 135,110" fill="none" stroke="#059669" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity="0.3" />
+              <circle cx="125" cy="25" r="16" fill="rgba(245, 158, 11, 0.2)" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="3 2" />
+              <polygon points="125,16 117,30 133,30" fill="#f59e0b" />
+              <polygon points="125,16 122,23 128,23" fill="#ffffff" />
+              <rect x="150" y="16" width="145" height="42" rx="8" fill="#0f172a" stroke="#f59e0b" stroke-width="1.5" />
+              <text x="160" y="32" fill="#fbbf24" font-size="11" font-weight="bold">Nóc nhà Đông Dương</text>
+              <text x="160" y="47" fill="#94a3b8" font-size="10">Độ cao: 3.143 mét</text>
+            </svg>
+          `;
+        case 'clock':
+          return `
+            <svg viewBox="0 0 320 120" style="width: 100%; max-width: 240px; height: auto;">
+              <circle cx="160" cy="60" r="44" fill="#0f172a" stroke="#38bdf8" stroke-width="2" />
+              <circle cx="160" cy="60" r="3" fill="#f59e0b" />
+              <line x1="160" y1="20" x2="160" y2="26" stroke="#94a3b8" stroke-width="2" />
+              <line x1="200" y1="60" x2="194" y2="60" stroke="#94a3b8" stroke-width="2" />
+              <line x1="160" y1="100" x2="160" y2="94" stroke="#94a3b8" stroke-width="2" />
+              <line x1="120" y1="60" x2="126" y2="60" stroke="#94a3b8" stroke-width="2" />
+              <line x1="160" y1="60" x2="160" y2="28" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" />
+              <line x1="160" y1="60" x2="190" y2="60" stroke="#fbbf24" stroke-width="3.5" stroke-linecap="round" />
+              <rect x="160" y="46" width="14" height="14" fill="none" stroke="#f59e0b" stroke-width="1.5" />
+              <text x="160" y="115" fill="#e2e8f0" font-size="11" font-weight="bold" text-anchor="middle">Thời điểm 3 giờ đúng (3:00)</text>
+            </svg>
+          `;
+        case 'fraction':
+          return `
+            <svg viewBox="0 0 320 120" style="width: 100%; max-width: 280px; height: auto;">
+              <g transform="translate(100, 60)">
+                <path d="M 0,0 L 40,0 A 40,40 0 0,1 28.28,28.28 Z" fill="#f59e0b" stroke="#0f172a" stroke-width="1.5" />
+                <path d="M 0,0 L 28.28,28.28 A 40,40 0 0,1 0,40 Z" fill="#f59e0b" stroke="#0f172a" stroke-width="1.5" />
+                <path d="M 0,0 L 0,40 A 40,40 0 0,1 -28.28,28.28 Z" fill="#f59e0b" stroke="#0f172a" stroke-width="1.5" />
+                <path d="M 0,0 L -28.28,28.28 A 40,40 0 0,1 -40,0 Z" fill="#1e293b" stroke="#0f172a" stroke-width="1.5" />
+                <path d="M 0,0 L -40,0 A 40,40 0 0,1 -28.28,-28.28 Z" fill="#1e293b" stroke="#0f172a" stroke-width="1.5" />
+                <path d="M 0,0 L -28.28,-28.28 A 40,40 0 0,1 0,-40 Z" fill="#1e293b" stroke="#0f172a" stroke-width="1.5" />
+                <path d="M 0,0 L 0,-40 A 40,40 0 0,1 28.28,-28.28 Z" fill="#1e293b" stroke="#0f172a" stroke-width="1.5" />
+                <path d="M 0,0 L 28.28,-28.28 A 40,40 0 0,1 40,0 Z" fill="#1e293b" stroke="#0f172a" stroke-width="1.5" />
+                <circle cx="0" cy="0" r="4" fill="#0f172a" />
+              </g>
+              <rect x="175" y="28" width="125" height="64" rx="8" fill="#0f172a" stroke="#38bdf8" stroke-width="1" />
+              <text x="237" y="48" fill="#fbbf24" font-size="11" font-weight="bold" text-anchor="middle">Tô màu: 3 phần</text>
+              <text x="237" y="65" fill="#94a3b8" font-size="10" text-anchor="middle">Tổng số: 8 phần bằng nhau</text>
+              <text x="237" y="82" fill="#38bdf8" font-size="11" font-weight="bold" text-anchor="middle">Phân số = ?</text>
+            </svg>
+          `;
+        case 'circuit':
+          return `
+            <svg viewBox="0 0 320 120" style="width: 100%; max-width: 280px; height: auto;">
+              <circle cx="80" cy="60" r="30" fill="#0f172a" stroke="#38bdf8" stroke-width="2" />
+              <circle cx="72" cy="56" r="4" fill="#38bdf8" />
+              <circle cx="88" cy="56" r="4" fill="#38bdf8" />
+              <text x="80" y="74" fill="#94a3b8" font-size="9" text-anchor="middle">Robot Vina</text>
+              <path d="M 115,48 A 18,18 0 0,1 115,72" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="3 2" />
+              <path d="M 130,42 A 28,28 0 0,1 130,78" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4 2" />
+              <path d="M 145,36 A 38,38 0 0,1 145,84" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="5 3" />
+              <rect x="200" y="30" width="18" height="60" rx="3" fill="#dc2626" opacity="0.8" />
+              <text x="209" y="103" fill="#f87171" font-size="10" text-anchor="middle">Vật cản</text>
+              <text x="145" y="24" fill="#fbbf24" font-size="10" font-weight="bold" text-anchor="middle">Sóng siêu âm (Echo)</text>
+            </svg>
+          `;
+        case 'triangle':
+          return `
+            <svg viewBox="0 0 320 120" style="width: 100%; max-width: 280px; height: auto;">
+              <polygon points="160,20 90,100 230,100" fill="rgba(56, 189, 248, 0.15)" stroke="#38bdf8" stroke-width="2.5" />
+              <text x="110" y="55" fill="#fbbf24" font-size="11" font-weight="bold">5cm</text>
+              <text x="200" y="55" fill="#fbbf24" font-size="11" font-weight="bold">5cm</text>
+              <text x="160" y="115" fill="#fbbf24" font-size="11" font-weight="bold" text-anchor="middle">5cm</text>
+              <text x="160" y="70" fill="#e2e8f0" font-size="11" font-weight="600" text-anchor="middle">Tam Giác Đều</text>
+              <text x="160" y="85" fill="#94a3b8" font-size="10" text-anchor="middle">Chu vi = ?</text>
+            </svg>
+          `;
+        case 'plant':
+          return `
+            <svg viewBox="0 0 320 120" style="width: 100%; max-width: 280px; height: auto;">
+              <circle cx="50" cy="35" r="18" fill="#fbbf24" />
+              <path d="M 50,10 L 50,5 M 50,60 L 50,65 M 25,35 L 20,35 M 75,35 L 80,35" stroke="#fbbf24" stroke-width="2" />
+              <path d="M 160,110 Q 160,60 160,40" stroke="#10b981" stroke-width="4" fill="none" />
+              <path d="M 160,75 Q 130,65 130,50 Q 145,50 160,65" fill="#34d399" />
+              <path d="M 160,60 Q 190,50 190,35 Q 175,35 160,50" fill="#34d399" />
+              <rect x="85" y="80" width="60" height="24" rx="4" fill="#1e293b" stroke="#38bdf8" stroke-width="1" />
+              <text x="115" y="96" fill="#38bdf8" font-size="10" text-anchor="middle">Khí CO₂ (vào)</text>
+              <rect x="180" y="80" width="70" height="24" rx="4" fill="#065f46" stroke="#34d399" stroke-width="1" />
+              <text x="215" y="96" fill="#a7f3d0" font-size="10" font-weight="bold" text-anchor="middle">Khí ? (thải ra)</text>
+            </svg>
+          `;
+        case 'cpu':
+          return `
+            <svg viewBox="0 0 320 120" style="width: 100%; max-width: 280px; height: auto;">
+              <g stroke="#f59e0b" stroke-width="2">
+                <line x1="120" y1="25" x2="120" y2="35" /><line x1="140" y1="25" x2="140" y2="35" />
+                <line x1="160" y1="25" x2="160" y2="35" /><line x1="180" y1="25" x2="180" y2="35" />
+                <line x1="200" y1="25" x2="200" y2="35" /><line x1="120" y1="85" x2="120" y2="95" />
+                <line x1="140" y1="85" x2="140" y2="95" /><line x1="160" y1="85" x2="160" y2="95" />
+                <line x1="180" y1="85" x2="180" y2="95" /><line x1="200" y1="85" x2="200" y2="95" />
+              </g>
+              <rect x="105" y="35" width="110" height="50" rx="8" fill="#0f172a" stroke="#38bdf8" stroke-width="2" />
+              <text x="160" y="58" fill="#38bdf8" font-size="13" font-weight="bold" text-anchor="middle">CPU Core</text>
+              <text x="160" y="74" fill="#94a3b8" font-size="10" text-anchor="middle">Bộ Xử Lý Trung Tâm</text>
+            </svg>
+          `;
+        case 'compass':
+          return `
+            <svg viewBox="0 0 320 120" style="width: 100%; max-width: 240px; height: auto;">
+              <circle cx="160" cy="60" r="42" fill="#0f172a" stroke="#38bdf8" stroke-width="2" />
+              <text x="160" y="30" fill="#f43f5e" font-size="12" font-weight="bold" text-anchor="middle">B (Bắc)</text>
+              <text x="160" y="100" fill="#94a3b8" font-size="12" font-weight="bold" text-anchor="middle">N (Nam)</text>
+              <text x="125" y="64" fill="#94a3b8" font-size="11" text-anchor="middle">T</text>
+              <text x="195" y="64" fill="#94a3b8" font-size="11" text-anchor="middle">Đ</text>
+              <polygon points="160,32 154,60 166,60" fill="#f43f5e" />
+              <polygon points="160,88 154,60 166,60" fill="#94a3b8" />
+              <circle cx="160" cy="60" r="4" fill="#fbbf24" />
+            </svg>
+          `;
+        case 'scale':
+          return `
+            <svg viewBox="0 0 320 120" style="width: 100%; max-width: 280px; height: auto;">
+              <polygon points="160,40 148,105 172,105" fill="#334155" />
+              <line x1="80" y1="40" x2="240" y2="40" stroke="#38bdf8" stroke-width="3" />
+              <circle cx="160" cy="40" r="4" fill="#fbbf24" />
+              <line x1="90" y1="40" x2="90" y2="70" stroke="#94a3b8" stroke-width="1.5" />
+              <rect x="70" y="70" width="40" height="28" rx="4" fill="#f59e0b" />
+              <text x="90" y="88" fill="#0f172a" font-size="11" font-weight="bold" text-anchor="middle">8 kg</text>
+              <line x1="230" y1="40" x2="230" y2="70" stroke="#94a3b8" stroke-width="1.5" />
+              <rect x="210" y="70" width="18" height="28" rx="3" fill="#0284c7" />
+              <rect x="232" y="70" width="18" height="28" rx="3" fill="#0284c7" />
+              <text x="219" y="88" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">?</text>
+              <text x="241" y="88" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">?</text>
+              <text x="160" y="118" fill="#94a3b8" font-size="10" text-anchor="middle">Cân thăng bằng (2 bên bằng nhau)</text>
+            </svg>
+          `;
+        case 'water':
+          return `
+            <svg viewBox="0 0 320 120" style="width: 100%; max-width: 280px; height: auto;">
+              <g fill="#475569" stroke="#94a3b8" stroke-width="1">
+                <circle cx="160" cy="35" r="16" />
+                <circle cx="180" cy="35" r="14" />
+                <circle cx="140" cy="35" r="14" />
+              </g>
+              <line x1="140" y1="58" x2="135" y2="70" stroke="#38bdf8" stroke-width="2" stroke-dasharray="3 3" />
+              <line x1="160" y1="58" x2="155" y2="70" stroke="#38bdf8" stroke-width="2" stroke-dasharray="3 3" />
+              <line x1="180" y1="58" x2="175" y2="70" stroke="#38bdf8" stroke-width="2" stroke-dasharray="3 3" />
+              <rect x="60" y="90" width="200" height="20" rx="4" fill="#0284c7" />
+              <text x="160" y="104" fill="#ffffff" font-size="10" text-anchor="middle">Nước sông, biển</text>
+              <path d="M 90,85 Q 95,65 90,45" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3 2" />
+              <polygon points="90,45 86,52 94,52" fill="#fbbf24" />
+              <text x="90" y="35" fill="#fbbf24" font-size="9" text-anchor="middle">Bốc hơi</text>
+            </svg>
+          `;
+        default:
+          return '';
+      }
+    }
+
+    /* ============================================================= */
+    /* 4. GAME STATE CONTROLLER                                      */
+    /* ============================================================= */
+    const gameState = {
+      status: 'intro', // 'intro' | 'playing' | 'question' | 'completed'
+      questionMode: 5,
+      score: 0,
+      timeElapsed: 0,
+      steps: 0,
+      highScore: 0,
+      isMuted: false,
+
+      // Entities
+      questionCheckpoints: [],
+      goldItems: [],
+
+      // Player
+      playerPos: { x: 1, y: 1 },
+      targetPos: { x: 1, y: 1 },
+      renderPos: { x: 1, y: 1 },
+      direction: 'right',
+      bumpDirection: null,
+
+      // Modals & UI alerts
+      activeCheckpoint: null,
+      showHelp: false,
+      lockAlert: null,
+      unlockCelebration: false,
+
+      // Particles & Canvas internal
+      particles: [],
+      floatingScores: [],
+      shockwaves: [],
+      pulse: 0,
+      blink: 0,
+      timerInterval: null,
+      animFrame: null,
+
+      // Prev states for canvas burst triggering
+      prevItemsCollected: 0,
+      prevQuestionsAnswered: 0,
+      prevGoalUnlocked: false,
+    };
+
+    // Load Highscore
+    try {
+      const saved = localStorage.getItem('eduverse_maze_highscore');
+      if (saved) gameState.highScore = parseInt(saved, 10) || 0;
+    } catch (e) {}
+
+    /* ============================================================= */
+    /* 5. CANVAS RENDERING ENGINE                                    */
+    /* ============================================================= */
+    function startCanvasLoop() {
+      const canvas = document.getElementById('maze-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      function renderFrame() {
+        if (gameState.status !== 'playing' && gameState.status !== 'question' && gameState.status !== 'completed') {
+          return;
+        }
+
+        gameState.pulse += 0.05;
+        gameState.blink = (gameState.blink + 1) % 180;
+
+        // Smooth lerp robot position
+        const lerpSpeed = 0.28;
+        gameState.renderPos.x += (gameState.targetPos.x - gameState.renderPos.x) * lerpSpeed;
+        gameState.renderPos.y += (gameState.targetPos.y - gameState.renderPos.y) * lerpSpeed;
+
+        const isMoving = Math.hypot(gameState.targetPos.x - gameState.renderPos.x, gameState.targetPos.y - gameState.renderPos.y) > 0.04;
+
+        // Resize Canvas with DevicePixelRatio
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const expectedW = rect.width * dpr;
+        const expectedH = rect.height * dpr;
+        if (canvas.width !== expectedW || canvas.height !== expectedH) {
+          canvas.width = expectedW;
+          canvas.height = expectedH;
+        }
+
+        ctx.save();
+        ctx.scale(dpr, dpr);
+
+        const width = rect.width;
+        const height = rect.height;
+        const cellSize = Math.min(width / MAP_WIDTH, height / MAP_HEIGHT);
+        const offsetX = (width - cellSize * MAP_WIDTH) / 2;
+        const offsetY = (height - cellSize * MAP_HEIGHT) / 2;
+
+        const isGoalUnlocked = gameState.questionCheckpoints.every(cp => cp.isAnswered);
+
+        // Detect Goal Unlocked Burst
+        if (isGoalUnlocked && !gameState.prevGoalUnlocked) {
+          const gx = INITIAL_GOAL_POS.x * cellSize + cellSize / 2;
+          const gy = INITIAL_GOAL_POS.y * cellSize + cellSize / 2;
+          for (let p = 0; p < 24; p++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 2 + Math.random() * 4;
+            gameState.particles.push({
+              x: gx,
+              y: gy,
+              vx: Math.cos(angle) * speed,
+              vy: Math.sin(angle) * speed,
+              size: 2.5 + Math.random() * 2.5,
+              color: Math.random() > 0.4 ? '#f59e0b' : '#38bdf8',
+              alpha: 1,
+              decay: 0.02,
+            });
+          }
+          gameState.shockwaves.push({
+            x: gx,
+            y: gy,
+            radius: 6,
+            maxRadius: cellSize * 2.2,
+            color: '#f59e0b',
+            alpha: 1,
+            width: 3.5,
+          });
+          gameState.floatingScores.push({
+            text: '★ CỔNG ĐÍCH MỞ!',
+            x: gx,
+            y: gy - 16,
+            vy: -1.0,
+            color: '#f59e0b',
+            alpha: 1,
+          });
+        }
+        gameState.prevGoalUnlocked = isGoalUnlocked;
+
+        // 1. Draw Space Floor
+        ctx.fillStyle = '#060b19';
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.save();
+        ctx.translate(offsetX, offsetY);
+
+        // Draw maze walls & paths
+        for (let y = 0; y < MAP_HEIGHT; y++) {
+          for (let x = 0; x < MAP_WIDTH; x++) {
+            const px = x * cellSize;
+            const py = y * cellSize;
+            const cell = BASE_MAZE_WALLS[y][x];
+
+            if (cell !== 1) {
+              ctx.fillStyle = '#0d1527';
+              ctx.fillRect(px, py, cellSize, cellSize);
+
+              ctx.fillStyle = '#1e293b';
+              ctx.beginPath();
+              ctx.arc(px + cellSize / 2, py + cellSize / 2, 1.2, 0, Math.PI * 2);
+              ctx.fill();
+            } else {
+              drawArcadeWall(ctx, px, py, cellSize, x, y);
+            }
+          }
+        }
+
+        // 2. Start Pad
+        const startX = INITIAL_START_POS.x * cellSize;
+        const startY = INITIAL_START_POS.y * cellSize;
+        ctx.save();
+        ctx.strokeStyle = '#0284c7';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.strokeRect(startX + 4, startY + 4, cellSize - 8, cellSize - 8);
+        ctx.restore();
+
+        // 3. Diamonds (Gold Items)
+        gameState.goldItems.forEach(item => {
+          if (!item.isCollected) {
+            drawGoldItem(ctx, item.x * cellSize + cellSize / 2, item.y * cellSize + cellSize / 2, cellSize, gameState.pulse);
+          }
+        });
+
+        // 4. Question Portals
+        gameState.questionCheckpoints.forEach(cp => {
+          drawQuestionPortal(
+            ctx,
+            cp.x * cellSize + cellSize / 2,
+            cp.y * cellSize + cellSize / 2,
+            cellSize,
+            cp.isAnswered,
+            cp.isCorrect || false,
+            gameState.pulse
+          );
+        });
+
+        // 5. Goal / Finish Portal
+        drawGoalPortal(
+          ctx,
+          INITIAL_GOAL_POS.x * cellSize + cellSize / 2,
+          INITIAL_GOAL_POS.y * cellSize + cellSize / 2,
+          cellSize,
+          isGoalUnlocked,
+          gameState.pulse
+        );
+
+        // Robot screen coords
+        let bumpOffsetX = 0;
+        let bumpOffsetY = 0;
+        if (gameState.bumpDirection) {
+          const mag = 5;
+          if (gameState.bumpDirection === 'up') bumpOffsetY = -mag;
+          if (gameState.bumpDirection === 'down') bumpOffsetY = mag;
+          if (gameState.bumpDirection === 'left') bumpOffsetX = -mag;
+          if (gameState.bumpDirection === 'right') bumpOffsetX = mag;
+        }
+
+        const robotScreenX = gameState.renderPos.x * cellSize + cellSize / 2 + bumpOffsetX;
+        const robotScreenY = gameState.renderPos.y * cellSize + cellSize / 2 + bumpOffsetY;
+
+        // Plasma trail
+        if (isMoving && Math.random() < 0.7) {
+          let exhaustX = robotScreenX;
+          let exhaustY = robotScreenY + cellSize * 0.22;
+          if (gameState.direction === 'up') exhaustY += 10;
+          if (gameState.direction === 'down') exhaustY -= 14;
+          if (gameState.direction === 'left') exhaustX += 10;
+          if (gameState.direction === 'right') exhaustX -= 10;
+
+          gameState.particles.push({
+            x: exhaustX + (Math.random() - 0.5) * 6,
+            y: exhaustY + (Math.random() - 0.5) * 4,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: 0.5 + Math.random() * 0.8,
+            size: 2 + Math.random() * 2,
+            color: Math.random() > 0.4 ? 'rgba(56, 189, 248, 0.7)' : 'rgba(129, 140, 248, 0.6)',
+            alpha: 0.8,
+            decay: 0.05,
+          });
+        }
+
+        // 6. Cute Robot Vina
+        drawRobotVina(
+          ctx,
+          robotScreenX,
+          robotScreenY,
+          cellSize,
+          gameState.direction,
+          gameState.pulse,
+          gameState.blink < 8
+        );
+
+        // 7. Shockwaves
+        for (let i = gameState.shockwaves.length - 1; i >= 0; i--) {
+          const sw = gameState.shockwaves[i];
+          ctx.save();
+          ctx.strokeStyle = sw.color;
+          ctx.globalAlpha = Math.max(0, sw.alpha);
+          ctx.lineWidth = sw.width;
+          ctx.beginPath();
+          ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+
+          sw.radius += 2.2;
+          sw.alpha -= 0.025;
+          if (sw.alpha <= 0 || sw.radius >= sw.maxRadius) {
+            gameState.shockwaves.splice(i, 1);
+          }
+        }
+
+        // 8. Particles
+        for (let i = gameState.particles.length - 1; i >= 0; i--) {
+          const p = gameState.particles[i];
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, p.alpha);
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+
+          p.x += p.vx;
+          p.y += p.vy;
+          p.alpha -= p.decay;
+          p.size = Math.max(0.5, p.size * 0.97);
+          if (p.alpha <= 0) {
+            gameState.particles.splice(i, 1);
+          }
+        }
+
+        // 9. Floating Scores
+        for (let i = gameState.floatingScores.length - 1; i >= 0; i--) {
+          const fs = gameState.floatingScores[i];
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, fs.alpha);
+          ctx.font = `bold ${Math.round(cellSize * 0.38)}px 'Outfit', sans-serif`;
+          ctx.fillStyle = fs.color;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.shadowColor = fs.color;
+          ctx.shadowBlur = 8;
+          ctx.fillText(fs.text, fs.x, fs.y);
+          ctx.restore();
+
+          fs.y += fs.vy;
+          fs.alpha -= 0.022;
+          if (fs.alpha <= 0) {
+            gameState.floatingScores.splice(i, 1);
+          }
+        }
+
+        ctx.restore();
+        ctx.restore();
+
+        gameState.animFrame = requestAnimationFrame(renderFrame);
+      }
+
+      if (gameState.animFrame) cancelAnimationFrame(gameState.animFrame);
+      gameState.animFrame = requestAnimationFrame(renderFrame);
+    }
+
+    // Canvas Helpers
+    function drawArcadeWall(ctx, px, py, size, gx, gy) {
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(px, py, size, size);
+
+      ctx.strokeStyle = '#0284c7';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px + 0.5, py + 0.5, size - 1, size - 1);
+
+      const innerPad = size * 0.18;
+      const innerSize = size - innerPad * 2;
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(px + innerPad, py + innerPad, innerSize, innerSize);
+
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.4;
+      if ((gx + gy) % 2 === 0) {
+        ctx.beginPath();
+        ctx.moveTo(px + innerPad + 2, py + innerPad + 2);
+        ctx.lineTo(px + size - innerPad - 2, py + size - innerPad - 2);
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(px + size - innerPad - 2, py + innerPad + 2);
+        ctx.lineTo(px + innerPad + 2, py + size - innerPad - 2);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1.0;
+    }
+
+    function drawGoldItem(ctx, cx, cy, size, pulse) {
+      const r = size * 0.24;
+      const scale = 1 + Math.sin(pulse * 2.4) * 0.05;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(scale, scale);
+
+      const shimmer = (Math.sin(pulse * 3.5) + 1) / 2;
+      const glow = ctx.createRadialGradient(0, 0, 1, 0, 0, r * (2.0 + shimmer * 0.4));
+      glow.addColorStop(0, `rgba(251, 191, 36, ${0.4 + shimmer * 0.35})`);
+      glow.addColorStop(0.6, `rgba(245, 158, 11, ${0.15 + shimmer * 0.15})`);
+      glow.addColorStop(1, 'rgba(251, 191, 36, 0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * (2.0 + shimmer * 0.4), 0, Math.PI * 2);
+      ctx.fill();
+
+      // Stationary Faceted Diamond
+      const topW = r * 0.6;
+      const midW = r * 0.95;
+      const topY = -r * 0.85;
+      const midY = -r * 0.2;
+      const botY = r * 0.95;
+
+      ctx.fillStyle = shimmer > 0.6 ? '#fef08a' : '#fde047';
+      ctx.beginPath();
+      ctx.moveTo(-topW, topY);
+      ctx.lineTo(topW, topY);
+      ctx.lineTo(midW, midY);
+      ctx.lineTo(-midW, midY);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.moveTo(-midW, midY);
+      ctx.lineTo(midW, midY);
+      ctx.lineTo(0, botY);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = shimmer > 0.5 ? '#ffffff' : '#fffbeb';
+      ctx.beginPath();
+      ctx.moveTo(-topW * 0.6, topY + 2);
+      ctx.lineTo(topW * 0.6, topY + 2);
+      ctx.lineTo(0, midY);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-topW, topY);
+      ctx.lineTo(topW, topY);
+      ctx.lineTo(midW, midY);
+      ctx.lineTo(0, botY);
+      ctx.lineTo(-midW, midY);
+      ctx.closePath();
+      ctx.stroke();
+
+      // Glints
+      const sparkle1 = Math.max(0, Math.sin(pulse * 3.8));
+      if (sparkle1 > 0.1) {
+        const glintSize = 3.2 * sparkle1;
+        ctx.save();
+        ctx.translate(topW * 0.7, topY + 1);
+        ctx.fillStyle = `rgba(255, 255, 255, ${sparkle1})`;
+        ctx.shadowColor = '#ffffff';
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.moveTo(0, -glintSize);
+        ctx.lineTo(glintSize * 0.25, -glintSize * 0.25);
+        ctx.lineTo(glintSize, 0);
+        ctx.lineTo(glintSize * 0.25, glintSize * 0.25);
+        ctx.lineTo(0, glintSize);
+        ctx.lineTo(-glintSize * 0.25, glintSize * 0.25);
+        ctx.lineTo(-glintSize, 0);
+        ctx.lineTo(-glintSize * 0.25, -glintSize * 0.25);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    function drawQuestionPortal(ctx, cx, cy, size, isAnswered, isCorrect, pulse) {
+      const r = size * 0.42;
+      const floatY = Math.sin(pulse * 3) * 2.5;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+
+      if (isAnswered) {
+        if (isCorrect) {
+          ctx.strokeStyle = '#10b981';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(0, 0, r * 0.85, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
+          ctx.fill();
+
+          ctx.strokeStyle = '#34d399';
+          ctx.lineWidth = 3;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.beginPath();
+          ctx.moveTo(-r * 0.35, 0);
+          ctx.lineTo(-r * 0.05, r * 0.3);
+          ctx.lineTo(r * 0.4, -r * 0.25);
+          ctx.stroke();
+        } else {
+          ctx.strokeStyle = '#f43f5e';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(0, 0, r * 0.85, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(244, 63, 94, 0.25)';
+          ctx.fill();
+
+          ctx.strokeStyle = '#fb7185';
+          ctx.lineWidth = 3;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(-r * 0.28, -r * 0.28);
+          ctx.lineTo(r * 0.28, r * 0.28);
+          ctx.moveTo(r * 0.28, -r * 0.28);
+          ctx.lineTo(-r * 0.28, r * 0.28);
+          ctx.stroke();
+        }
+        ctx.restore();
+        return;
+      }
+
+      // Active Knowledge Cube
+      ctx.save();
+      ctx.scale(1, 0.55);
+      const floorGlow = ctx.createRadialGradient(0, 0, 1, 0, 0, r * 1.6);
+      floorGlow.addColorStop(0, 'rgba(56, 189, 248, 0.45)');
+      floorGlow.addColorStop(0.7, 'rgba(147, 51, 234, 0.2)');
+      floorGlow.addColorStop(1, 'rgba(56, 189, 248, 0)');
+      ctx.fillStyle = floorGlow;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 1.6, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.rotate(pulse * 1.2);
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 1.1, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // Floating Cyber Cube
+      ctx.save();
+      ctx.translate(0, floatY - 2);
+      const cubeSize = r * 0.55;
+
+      // Top Face
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.35)';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(0, -cubeSize);
+      ctx.lineTo(cubeSize * 0.85, -cubeSize * 0.5);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(-cubeSize * 0.85, -cubeSize * 0.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Left Face
+      ctx.fillStyle = 'rgba(129, 140, 248, 0.4)';
+      ctx.strokeStyle = '#818cf8';
+      ctx.beginPath();
+      ctx.moveTo(-cubeSize * 0.85, -cubeSize * 0.5);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(0, cubeSize * 0.85);
+      ctx.lineTo(-cubeSize * 0.85, cubeSize * 0.35);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Right Face
+      ctx.fillStyle = 'rgba(168, 85, 247, 0.35)';
+      ctx.strokeStyle = '#c084fc';
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(cubeSize * 0.85, -cubeSize * 0.5);
+      ctx.lineTo(cubeSize * 0.85, cubeSize * 0.35);
+      ctx.lineTo(0, cubeSize * 0.85);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Pulsing ?
+      const wave = (Math.sin(pulse * 3) + 1) / 2;
+      ctx.fillStyle = wave > 0.4 ? '#ffffff' : '#38bdf8';
+      ctx.font = `bold ${Math.round(size * 0.38)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 8;
+      ctx.fillText('?', 0, -cubeSize * 0.05);
+      ctx.shadowBlur = 0;
+
+      ctx.restore();
+      ctx.restore();
+    }
+
+    function drawGoalPortal(ctx, cx, cy, size, isUnlocked, pulse) {
+      const r = size * 0.44;
+      ctx.save();
+      ctx.translate(cx, cy);
+
+      if (isUnlocked) {
+        ctx.save();
+        ctx.rotate(pulse * 1.5);
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([8, 4]);
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.95, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.save();
+        ctx.rotate(-pulse * 2);
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 6]);
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.75, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        const coreGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, r * 0.7);
+        coreGrad.addColorStop(0, '#ffffff');
+        coreGrad.addColorStop(0.3, '#fef08a');
+        coreGrad.addColorStop(0.7, '#f59e0b');
+        coreGrad.addColorStop(1, '#78350f');
+        ctx.fillStyle = coreGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.65, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `bold ${Math.round(size * 0.38)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = '#f59e0b';
+        ctx.shadowBlur = 10;
+        ctx.fillText('★', 0, 0);
+        ctx.shadowBlur = 0;
+      } else {
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.9, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        const lockedGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, r * 0.7);
+        lockedGrad.addColorStop(0, 'rgba(239, 68, 68, 0.25)');
+        lockedGrad.addColorStop(0.7, '#1e293b');
+        lockedGrad.addColorStop(1, '#0f172a');
+        ctx.fillStyle = lockedGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#f87171';
+        ctx.font = `bold ${Math.round(size * 0.32)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🔒', 0, -1);
+      }
+
+      ctx.restore();
+    }
+
+    function drawRobotVina(ctx, cx, cy, cellSize, dir, pulse, isBlinking) {
+      const radius = cellSize * 0.36;
+      const hoverOffset = Math.sin(pulse * 4) * 1.5;
+
+      ctx.save();
+      ctx.translate(cx, cy + hoverOffset);
+
+      // Thruster
+      const thrusterGrad = ctx.createRadialGradient(0, radius * 0.8, 1, 0, radius * 0.8, radius * 0.6);
+      thrusterGrad.addColorStop(0, 'rgba(56, 189, 248, 0.9)');
+      thrusterGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+      ctx.fillStyle = thrusterGrad;
+      ctx.beginPath();
+      ctx.arc(0, radius * 0.85, radius * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Antenna
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(0, -radius * 0.7);
+      ctx.lineTo(0, -radius * 1.15);
+      ctx.stroke();
+
+      ctx.fillStyle = '#38bdf8';
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(0, -radius * 1.15, radius * 0.16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Body
+      const bodyGrad = ctx.createLinearGradient(0, -radius, 0, radius);
+      bodyGrad.addColorStop(0, '#ffffff');
+      bodyGrad.addColorStop(0.7, '#e2e8f0');
+      bodyGrad.addColorStop(1, '#cbd5e1');
+      ctx.fillStyle = bodyGrad;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, radius * 0.85, radius * 0.95, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#0284c7';
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+
+      // Ears
+      ctx.fillStyle = '#0284c7';
+      ctx.beginPath();
+      ctx.arc(-radius * 0.85, 0, radius * 0.22, 0, Math.PI * 2);
+      ctx.arc(radius * 0.85, 0, radius * 0.22, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Visor
+      ctx.fillStyle = '#090e1f';
+      ctx.beginPath();
+      const visorW = radius * 1.1;
+      const visorH = radius * 0.55;
+      const visorY = -radius * 0.18;
+      if (ctx.roundRect) {
+        ctx.roundRect(-visorW / 2, visorY, visorW, visorH, 6);
+      } else {
+        ctx.rect(-visorW / 2, visorY, visorW, visorH);
+      }
+      ctx.fill();
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // LED Eyes
+      let eyeOffsetX = 0;
+      let eyeOffsetY = 0;
+      if (dir === 'left') eyeOffsetX = -radius * 0.14;
+      if (dir === 'right') eyeOffsetX = radius * 0.14;
+      if (dir === 'up') eyeOffsetY = -radius * 0.1;
+      if (dir === 'down') eyeOffsetY = radius * 0.1;
+
+      ctx.fillStyle = '#38bdf8';
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 4;
+      const eyeSpacing = radius * 0.32;
+      const eyeCenterY = visorY + visorH / 2 + eyeOffsetY;
+
+      if (isBlinking) {
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-eyeSpacing - radius * 0.12 + eyeOffsetX, eyeCenterY);
+        ctx.lineTo(-eyeSpacing + radius * 0.12 + eyeOffsetX, eyeCenterY);
+        ctx.moveTo(eyeSpacing - radius * 0.12 + eyeOffsetX, eyeCenterY);
+        ctx.lineTo(eyeSpacing + radius * 0.12 + eyeOffsetX, eyeCenterY);
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.arc(-eyeSpacing + eyeOffsetX, eyeCenterY, radius * 0.14, 0, Math.PI * 2);
+        ctx.arc(eyeSpacing + eyeOffsetX, eyeCenterY, radius * 0.14, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-eyeSpacing + eyeOffsetX + 1, eyeCenterY - 1, radius * 0.05, 0, Math.PI * 2);
+        ctx.arc(eyeSpacing + eyeOffsetX + 1, eyeCenterY - 1, radius * 0.05, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+
+      // Chest Emblem
+      ctx.fillStyle = '#0284c7';
+      ctx.beginPath();
+      ctx.arc(0, radius * 0.52, radius * 0.13, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, radius * 0.52, radius * 0.06, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    /* ============================================================= */
+    /* 6. CHARACTER MOVEMENT & COLLISIONS                            */
+    /* ============================================================= */
+    function moveCharacter(dir) {
+      if (gameState.status !== 'playing') return;
+
+      gameState.direction = dir;
+      const curr = gameState.playerPos;
+      let nextX = curr.x;
+      let nextY = curr.y;
+
+      if (dir === 'up') nextY -= 1;
+      if (dir === 'down') nextY += 1;
+      if (dir === 'left') nextX -= 1;
+      if (dir === 'right') nextX += 1;
+
+      // Bounds
+      if (nextX < 0 || nextX >= MAP_WIDTH || nextY < 0 || nextY >= MAP_HEIGHT) {
+        triggerBump(dir);
+        return;
+      }
+
+      // Wall collision
+      if (BASE_MAZE_WALLS[nextY][nextX] === 1) {
+        triggerBump(dir);
+        return;
+      }
+
+      // Check Question Checkpoint
+      const cpIndex = gameState.questionCheckpoints.findIndex(cp => !cp.isAnswered && cp.x === nextX && cp.y === nextY);
+      if (cpIndex !== -1) {
+        const cp = gameState.questionCheckpoints[cpIndex];
+        const newPos = { x: nextX, y: nextY };
+        gameState.playerPos = newPos;
+        gameState.targetPos = newPos;
+        gameState.steps++;
+        gameState.activeCheckpoint = cp;
+        gameState.status = 'question';
+        soundManager.playQuestionPortal();
+        renderApp();
+        return;
+      }
+
+      // Check Goal reached
+      if (nextX === INITIAL_GOAL_POS.x && nextY === INITIAL_GOAL_POS.y) {
+        const allAnswered = gameState.questionCheckpoints.every(cp => cp.isAnswered);
+        if (!allAnswered) {
+          triggerBump(dir);
+          const remaining = gameState.questionCheckpoints.filter(cp => !cp.isAnswered).length;
+          gameState.lockAlert = `🔒 Cổng về đích đang khóa! Bạn cần giải mã thêm ${remaining} câu hỏi tri thức nữa để mở khóa cổng.`;
+          renderApp();
+          setTimeout(() => {
+            if (gameState.lockAlert) {
+              gameState.lockAlert = null;
+              renderApp();
+            }
+          }, 3500);
+          return;
+        }
+
+        // Victory reached
+        const newPos = { x: nextX, y: nextY };
+        gameState.playerPos = newPos;
+        gameState.targetPos = newPos;
+        gameState.score += 200; // Finish bonus
+        if (gameState.score > gameState.highScore) {
+          gameState.highScore = gameState.score;
+          try {
+            localStorage.setItem('eduverse_maze_highscore', gameState.highScore.toString());
+          } catch (e) {}
+        }
+        gameState.status = 'completed';
+        soundManager.playVictory();
+        renderApp();
+        return;
+      }
+
+      // Path move
+      const newPos = { x: nextX, y: nextY };
+      gameState.playerPos = newPos;
+      gameState.targetPos = newPos;
+      gameState.steps++;
+      soundManager.playStep();
+
+      // Collect diamond
+      const diamondIdx = gameState.goldItems.findIndex(i => !i.isCollected && i.x === nextX && i.y === nextY);
+      if (diamondIdx !== -1) {
+        gameState.goldItems[diamondIdx].isCollected = true;
+        gameState.score += 50;
+        soundManager.playCollect();
+
+        // Spawn gold sparkles in canvas
+        const cellSize = 30; // approx
+        const sx = nextX * cellSize + cellSize / 2;
+        const sy = nextY * cellSize + cellSize / 2;
+        for (let p = 0; p < 10; p++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 1.2 + Math.random() * 2.5;
+          gameState.particles.push({
+            x: sx,
+            y: sy,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            size: 1.5 + Math.random() * 2,
+            color: Math.random() > 0.3 ? '#fbbf24' : '#ffffff',
+            alpha: 1,
+            decay: 0.035,
+          });
+        }
+        gameState.floatingScores.push({
+          text: '+50',
+          x: sx,
+          y: sy - 4,
+          vy: -1.2,
+          color: '#fbbf24',
+          alpha: 1,
+        });
+
+        updateHUDStats();
+      }
+    }
+
+    function triggerBump(dir) {
+      soundManager.playBump();
+      gameState.bumpDirection = dir;
+      setTimeout(() => {
+        gameState.bumpDirection = null;
+      }, 120);
+    }
+
+    // Keyboard listener
+    window.addEventListener('keydown', e => {
+      if (gameState.status !== 'playing') return;
+      let dir = null;
+      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') dir = 'up';
+      else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') dir = 'down';
+      else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') dir = 'left';
+      else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') dir = 'right';
+
+      if (dir) {
+        e.preventDefault();
+        moveCharacter(dir);
+      }
+    });
+
+    /* ============================================================= */
+    /* 7. APP CONTROLLER ACTIONS                                     */
+    /* ============================================================= */
+    async function startGame(mode = 5) {
+      await _loadAssignmentQuestions();
+      gameState.questionMode = mode;
+      const fresh = parseMapEntities(mode);
+      gameState.questionCheckpoints = fresh.questionCheckpoints;
+      gameState.goldItems = fresh.goldItems;
+      gameState.playerPos = { ...INITIAL_START_POS };
+      gameState.targetPos = { ...INITIAL_START_POS };
+      gameState.renderPos = { ...INITIAL_START_POS };
+      gameState.direction = 'right';
+      gameState.bumpDirection = null;
+      gameState.score = 0;
+      gameState.timeElapsed = 0;
+      gameState.steps = 0;
+      gameState.lockAlert = null;
+      gameState.unlockCelebration = false;
+      gameState.activeCheckpoint = null;
+      gameState.particles = [];
+      gameState.floatingScores = [];
+      gameState.shockwaves = [];
+      gameState.prevGoalUnlocked = false;
+      gameState.status = 'playing';
+
+      if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+      gameState.timerInterval = setInterval(() => {
+        if (gameState.status === 'playing') {
+          gameState.timeElapsed++;
+          const timerEl = document.getElementById('hud-time');
+          if (timerEl) timerEl.textContent = formatTime(gameState.timeElapsed);
+        }
+      }, 1000);
+
+      soundManager.playCollect();
+      renderApp();
+      setTimeout(startCanvasLoop, 50);
+    }
+
+    function goHome() {
+      if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+      gameState.status = 'intro';
+      gameState.activeCheckpoint = null;
+      gameState.lockAlert = null;
+      renderApp();
+    }
+
+    function resetGame() {
+      startGame(gameState.questionMode);
+    }
+
+    function toggleMute() {
+      gameState.isMuted = !gameState.isMuted;
+      soundManager.enabled = !gameState.isMuted;
+      renderApp();
+    }
+
+    function formatTime(secs) {
+      const m = Math.floor(secs / 60);
+      const s = secs % 60;
+      return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    function updateHUDStats() {
+      const scoreEl = document.getElementById('hud-score');
+      if (scoreEl) scoreEl.textContent = gameState.score;
+      const diamondsEl = document.getElementById('hud-diamonds');
+      if (diamondsEl) {
+        const collected = gameState.goldItems.filter(i => i.isCollected).length;
+        diamondsEl.textContent = `${collected}/${gameState.goldItems.length}`;
+      }
+      const questionsEl = document.getElementById('hud-questions');
+      if (questionsEl) {
+        const solved = gameState.questionCheckpoints.filter(cp => cp.isAnswered).length;
+        questionsEl.textContent = `${solved}/${gameState.questionCheckpoints.length}`;
+      }
+    }
+
+    /* ============================================================= */
+    /* 8. HTML UI RENDERING                                          */
+    /* ============================================================= */
+    function renderApp() {
+      const root = document.getElementById('app-root');
+      if (!root) return;
+
+      const itemsCollectedCount = gameState.goldItems.filter(i => i.isCollected).length;
+      const questionsAnsweredCount = gameState.questionCheckpoints.filter(c => c.isAnswered).length;
+      const questionsCorrectCount = gameState.questionCheckpoints.filter(c => c.isCorrect).length;
+      const isGoalUnlocked = gameState.questionCheckpoints.length > 0 && questionsAnsweredCount >= gameState.questionCheckpoints.length;
+
+      let html = '';
+
+      if (gameState.status === 'intro') {
+        html += `
+          <div class="start-screen">
+            <div class="badge-pill">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              <span>Vina - Eduverse</span>
+            </div>
+
+            <h1 class="hero-title font-display">MÊ CUNG TRI THỨC</h1>
+            <p class="hero-desc">Dẫn lối Robot Vina thu thập năng lượng vàng và giải mã các Trạm Tri Thức để mở khóa Cổng Vinh Quang!</p>
+
+            <!-- Robot Mascot Card -->
+            <div class="mascot-container animate-float">
+              <div class="mascot-box">
+                <svg viewBox="0 0 100 100" style="width: 100%; height: 100%;">
+                  <circle cx="50" cy="85" r="14" fill="rgba(56, 189, 248, 0.4)" />
+                  <circle cx="50" cy="85" r="8" fill="#38bdf8" />
+                  <line x1="50" y1="26" x2="50" y2="10" stroke="#94a3b8" stroke-width="3" />
+                  <circle cx="50" cy="10" r="5" fill="#38bdf8" />
+                  <ellipse cx="50" cy="52" rx="36" ry="32" fill="#f8fafc" stroke="#0284c7" stroke-width="3" />
+                  <rect x="25" y="38" width="50" height="24" rx="10" fill="#090e1f" stroke="#38bdf8" stroke-width="2" />
+                  <circle cx="39" cy="50" r="5" fill="#38bdf8" />
+                  <circle cx="61" cy="50" r="5" fill="#38bdf8" />
+                  <circle cx="41" cy="48" r="1.5" fill="#ffffff" />
+                  <circle cx="63" cy="48" r="1.5" fill="#ffffff" />
+                  <circle cx="14" cy="52" r="6" fill="#0284c7" />
+                  <circle cx="86" cy="52" r="6" fill="#0284c7" />
+                </svg>
+              </div>
+              <div class="mascot-name">
+                <span>Robot Vina</span>
+                <span class="dot-online"></span>
+              </div>
+            </div>
+
+            <!-- Mode Selection Card -->
+            <div class="mode-card">
+              <div class="mode-card-title">
+                <div class="sub">CHỌN SỐ LƯỢNG CÂU HỎI TRI THỨC</div>
+                <div class="main">Lựa chọn cấp độ thử thách của bạn</div>
+              </div>
+              <div class="mode-grid">
+                <div class="mode-btn ${gameState.questionMode === 5 ? 'active-5' : ''}" onclick="selectMode(5)">
+                  <div class="mode-btn-header">
+                    <span class="mode-count-cyan font-mono-numbers">5 CÂU HỎI</span>
+                    <span class="mode-tag tag-cyan">Cơ Bản</span>
+                  </div>
+                  <div class="mode-desc">5 Trạm Tri Thức phân bổ hợp lý, giải mã nhanh, phù hợp làm quen và rèn luyện tốc độ.</div>
+                </div>
+
+                <div class="mode-btn ${gameState.questionMode === 10 ? 'active-10' : ''}" onclick="selectMode(10)">
+                  <div class="mode-btn-header">
+                    <span class="mode-count-amber font-mono-numbers">10 CÂU HỎI</span>
+                    <span class="mode-tag tag-amber">Nâng Cao</span>
+                  </div>
+                  <div class="mode-desc">10 Trạm Tri Thức khắp mê cung, thử thách toàn diện đa môn học, điểm thưởng tối đa!</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4 Highlights -->
+            <div class="highlights-grid">
+              <div class="hl-box">
+                <svg class="icon" style="color: #fbbf24;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <div class="hl-name">Kim Cương</div>
+                <div class="hl-val font-mono-numbers" style="color: #fbbf24;">+50đ / viên</div>
+              </div>
+              <div class="hl-box">
+                <svg class="icon" style="color: #38bdf8;" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <div class="hl-name">Tri Thức</div>
+                <div class="hl-val font-mono-numbers" style="color: #67e8f9;">+100đ / câu đúng</div>
+              </div>
+              <div class="hl-box">
+                <svg class="icon" style="color: #34d399;" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <div class="hl-name">Mở Khóa</div>
+                <div class="hl-val" style="color: #a7f3d0;">Trả lời đủ câu</div>
+              </div>
+              <div class="hl-box">
+                <svg class="icon" style="color: #c084fc;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+                <div class="hl-name">Điều Khiển</div>
+                <div class="hl-val" style="color: #94a3b8;">WASD / Mũi tên</div>
+              </div>
+            </div>
+
+            <!-- Start Button -->
+            <button class="btn btn-start-game font-display" onclick="startGame(gameState.questionMode)">
+              <svg class="icon" style="width: 22px; height: 22px; fill: currentColor;" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>BẮT ĐẦU KHÁM PHÁ (${gameState.questionMode} CÂU)</span>
+            </button>
+
+            <!-- Download Button -->
+            <button class="btn" style="margin-top: 12px; padding: 10px 20px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(6, 182, 212, 0.4); color: #67e8f9; font-size: 13px;" onclick="downloadThisGameHTML()">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Tải file HTML này về máy (.html)</span>
+            </button>
+
+            ${gameState.highScore > 0 ? `
+              <div class="highscore-badge font-mono-numbers">
+                <svg class="icon" style="color: #fbbf24;" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                <span>Kỷ lục cao nhất: ${gameState.highScore} điểm</span>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      } else {
+        // Playing & Maze screen
+        html += `
+          <div class="game-screen">
+            <!-- HUD -->
+            <header class="game-hud">
+              <div class="hud-brand">
+                <div class="logo-badge">EV</div>
+                <div>
+                  <div class="brand-title">
+                    <h1 class="font-display">VINA - EDUVERSE</h1>
+                    <span class="tag">Mê Cung 2D</span>
+                  </div>
+                  <div class="brand-sub">Dẫn lối Robot Vina giải mã tri thức</div>
+                </div>
+              </div>
+
+              <!-- Stats Row -->
+              <div class="hud-stats">
+                <div class="hud-stat-pill stat-score">
+                  <svg class="icon" style="color: #fbbf24;" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                  <span>Điểm:</span>
+                  <strong id="hud-score" class="font-mono-numbers" style="color: #fbbf24; font-size: 14px;">${gameState.score}</strong>
+                </div>
+
+                <div class="hud-stat-pill">
+                  <svg class="icon" style="color: #fbbf24;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  <span>Kim cương:</span>
+                  <strong id="hud-diamonds" class="font-mono-numbers">${itemsCollectedCount}/${gameState.goldItems.length}</strong>
+                </div>
+
+                <div class="hud-stat-pill">
+                  <svg class="icon" style="color: ${isGoalUnlocked ? '#34d399' : '#38bdf8'};" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  <span>Tri thức:</span>
+                  <strong id="hud-questions" class="font-mono-numbers">${questionsAnsweredCount}/${gameState.questionCheckpoints.length}</strong>
+                </div>
+
+                <div class="hud-stat-pill ${isGoalUnlocked ? 'gate-badge-open' : 'gate-badge-locked'}">
+                  <span>${isGoalUnlocked ? '★' : '🔒'}</span>
+                  <span>${isGoalUnlocked ? 'CỔNG MỞ' : `Khóa (${gameState.questionCheckpoints.length - questionsAnsweredCount})`}</span>
+                </div>
+
+                <div class="hud-stat-pill">
+                  <svg class="icon" style="color: #60a5fa;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <strong id="hud-time" class="font-mono-numbers">${formatTime(gameState.timeElapsed)}</strong>
+                </div>
+              </div>
+
+              <!-- HUD Actions -->
+              <div class="hud-actions">
+                <button class="btn btn-icon" onclick="goHome()" title="Về màn hình chính (Đổi chế độ)">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                </button>
+                <button class="btn btn-icon" onclick="toggleMute()" title="${gameState.isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}">
+                  ${gameState.isMuted
+                    ? `<svg class="icon" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`
+                    : `<svg class="icon" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`
+                  }
+                </button>
+                <button class="btn btn-icon" onclick="openHelp()" title="Hướng dẫn chơi">
+                  <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </button>
+                <button class="btn btn-icon" onclick="resetGame()" title="Chơi lại màn">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                </button>
+              </div>
+            </header>
+
+            <!-- Banners -->
+            ${gameState.unlockCelebration ? `
+              <div class="banner-celebration animate-bounce">
+                <span>★ TẤT CẢ TRẠM TRI THỨC ĐÃ GIẢI MÃ! CỔNG ĐÍCH ĐÃ MỞ! ★</span>
+              </div>
+            ` : ''}
+
+            ${gameState.lockAlert ? `
+              <div class="banner-lock animate-fadeIn">
+                <svg class="icon" style="color: #f87171;" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <span>${gameState.lockAlert}</span>
+              </div>
+            ` : ''}
+
+            <!-- Canvas Viewport -->
+            <div class="canvas-container">
+              <canvas id="maze-canvas"></canvas>
+            </div>
+
+            <!-- Virtual Controls -->
+            <div class="controls-wrapper">
+              <div class="keyboard-hint">
+                <kbd>W / ↑</kbd>
+                <kbd>A / ←</kbd>
+                <kbd>S / ↓</kbd>
+                <kbd>D / →</kbd>
+                <span>để di chuyển Robot Vina</span>
+              </div>
+
+              <div class="dpad-container">
+                <button class="dpad-btn up" onclick="moveCharacter('up')" aria-label="Up">
+                  <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                </button>
+                <button class="dpad-btn down" onclick="moveCharacter('down')" aria-label="Down">
+                  <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                </button>
+                <button class="dpad-btn left" onclick="moveCharacter('left')" aria-label="Left">
+                  <svg class="icon" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                </button>
+                <button class="dpad-btn right" onclick="moveCharacter('right')" aria-label="Right">
+                  <svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </button>
+                <div class="dpad-center">
+                  <div class="dpad-center-dot"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Modals
+      if (gameState.activeCheckpoint) {
+        html += renderQuestionModalHTML(gameState.activeCheckpoint);
+      } else if (gameState.status === 'completed') {
+        html += renderVictoryModalHTML(questionsCorrectCount);
+      } else if (gameState.showHelp) {
+        html += renderHelpModalHTML();
+      }
+
+      // Footer
+      html += `
+        <footer class="app-footer">
+          <div class="footer-links">
+            <span>Giáo viên: <strong style="color: #f1f5f9;">Tăng Thị Xuân Tuyền</strong></span>
+            <span style="color: #475569;">|</span>
+            <span>SĐT: <a href="tel:0964022270">0964022270</a></span>
+            <span style="color: #475569;">|</span>
+            <span>Email: <a href="mailto:xuantuyen96@gmail.com">xuantuyen96@gmail.com</a></span>
+          </div>
+          <div class="footer-brand">Vina - Eduverse • HTML5 Standalone Edition</div>
+        </footer>
+      `;
+
+      root.innerHTML = html;
+    }
+
+    function selectMode(m) {
+      gameState.questionMode = m;
+      renderApp();
+    }
+
+    function openHelp() {
+      gameState.showHelp = true;
+      renderApp();
+    }
+
+    function closeHelp() {
+      gameState.showHelp = false;
+      renderApp();
+    }
+
+    /* ============================================================= */
+    /* 9. MODALS RENDERING (Question, Victory, Help)                 */
+    /* ============================================================= */
+    let questionModalState = {
+      selectedIndex: null,
+      isAnswered: false,
+      isCorrect: false,
+      shake: false,
+    };
+
+    function renderQuestionModalHTML(cp) {
+      const q = cp.question;
+      const optionLabels = ['A', 'B', 'C', 'D'];
+      const isAns = questionModalState.isAnswered;
+      const isCorr = questionModalState.isCorrect;
+
+      let cardClass = '';
+      let accentClass = '';
+      if (isAns) {
+        cardClass = isCorr ? 'correct' : 'incorrect';
+        accentClass = isCorr ? 'correct' : 'incorrect';
+      }
+      if (questionModalState.shake) {
+        cardClass += ' animate-shake';
+      }
+
+      return `
+        <div class="modal-overlay">
+          <div class="modal-card ${cardClass}" role="dialog" aria-modal="true">
+            <div class="modal-top-accent ${accentClass}"></div>
+
+            ${isAns ? (
+              isCorr ? `
+                <div class="hero-banner correct animate-fadeIn">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="hero-icon-box">
+                      <svg class="icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </div>
+                    <div>
+                      <div class="font-display" style="font-weight: 800; color: #34d399; font-size: 16px; text-transform: uppercase;">CHÍNH XÁC! XUẤT SẮC!</div>
+                      <div style="font-size: 12px; color: #a7f3d0; margin-top: 2px;">Robot Vina đã nạp năng lượng tri thức thành công.</div>
+                    </div>
+                  </div>
+                  <div class="font-mono-numbers" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 13px;">
+                    +${q.points} ĐIỂM
+                  </div>
+                </div>
+              ` : `
+                <div class="hero-banner incorrect animate-fadeIn">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="hero-icon-box">
+                      <svg class="icon" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </div>
+                    <div>
+                      <div class="font-display" style="font-weight: 800; color: #fb7185; font-size: 16px; text-transform: uppercase;">RẤT TIẾC, CHƯA ĐÚNG RỒI!</div>
+                      <div style="font-size: 12px; color: #fecdd3; margin-top: 2px;">Đừng nản lòng! Hãy quan sát giải thích bên dưới để ghi nhớ nhé.</div>
+                    </div>
+                  </div>
+                  <div class="font-mono-numbers" style="background: rgba(244, 63, 94, 0.2); border: 1px solid rgba(244, 63, 94, 0.4); color: #fda4af; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 12px;">
+                    0 ĐIỂM
+                  </div>
+                </div>
+              `
+            ) : ''}
+
+            <!-- Header -->
+            <div class="qm-header">
+              <div class="qm-title-group">
+                <div class="qm-icon-tag">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                </div>
+                <div>
+                  <div class="qm-subtag">Trạm Tri Thức EDUVERSE</div>
+                  <div class="qm-subject font-display">${q.subject}</div>
+                </div>
+              </div>
+              ${!isAns ? `
+                <div class="qm-points-badge font-mono-numbers">
+                  <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+                  <span>+${q.points} điểm</span>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Visual diagram -->
+            <div class="qm-visual-box">
+              ${renderQuestionVisualSVG(q.visualType)}
+            </div>
+
+            <!-- Question Prompt -->
+            <div class="qm-prompt">${q.question}</div>
+
+            <!-- Options List -->
+            <div class="qm-options-list">
+              ${q.options.map((opt, idx) => {
+                let btnState = '';
+                let feedbackTag = '';
+
+                if (isAns) {
+                  if (idx === q.correctIndex) {
+                    btnState = 'correct';
+                    feedbackTag = `<span style="font-weight: 700; font-size: 12px; color: #34d399; display: flex; align-items: center; gap: 4px;">✓ Đáp án đúng</span>`;
+                  } else if (idx === questionModalState.selectedIndex) {
+                    btnState = 'wrong-chosen';
+                    feedbackTag = `<span style="font-weight: 700; font-size: 12px; color: #fb7185; display: flex; align-items: center; gap: 4px;">✕ Bạn đã chọn (Sai)</span>`;
+                  } else {
+                    btnState = 'dimmed';
+                  }
+                }
+
+                return `
+                  <button
+                    class="qm-opt-btn ${btnState}"
+                    onclick="handleSelectAnswer(${idx})"
+                    ${isAns ? 'disabled' : ''}
+                  >
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                      <span class="qm-opt-label">${optionLabels[idx]}</span>
+                      <span>${opt}</span>
+                    </div>
+                    ${feedbackTag}
+                  </button>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- Explanation Box -->
+            ${isAns ? (
+              isCorr ? `
+                <div class="qm-expl-box correct animate-fadeIn">
+                  <strong style="color: #6ee7b7; display: block; margin-bottom: 4px;">💡 Giải thích chi tiết:</strong>
+                  <span style="color: #e2e8f0;">${q.explanation}</span>
+                </div>
+              ` : `
+                <div class="qm-expl-box incorrect animate-fadeIn">
+                  <div style="margin-bottom: 8px;">
+                    <strong style="color: #fde68a; display: block; margin-bottom: 4px;">💡 Kiến thức cần ghi nhớ:</strong>
+                    <span style="color: #e2e8f0;">${q.explanation}</span>
+                  </div>
+                  <div style="padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                    <span style="color: #fda4af;">Lựa chọn của bạn: ${optionLabels[questionModalState.selectedIndex]}</span>
+                    <span style="color: #34d399; font-weight: 700;">Đáp án đúng: ${optionLabels[q.correctIndex]} (${q.options[q.correctIndex]})</span>
+                  </div>
+                </div>
+              `
+            ) : ''}
+
+            <!-- Footer Actions -->
+            <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between;">
+              ${!isAns ? `
+                <span style="font-size: 12px; color: #94a3b8; font-style: italic;">Chọn đáp án bạn cho là chính xác nhất</span>
+              ` : (
+                isCorr ? `
+                  <div style="width: 100%; display: flex; justify-content: flex-end;">
+                    <button
+                      class="btn"
+                      style="background: linear-gradient(135deg, #10b981, #0d9488); color: #022c22; font-weight: 800; padding: 10px 22px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);"
+                      onclick="closeQuestionModal()"
+                    >
+                      <span>Tiếp tục khám phá mê cung</span>
+                      <svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </button>
+                  </div>
+                ` : `
+                  <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                    <button
+                      class="btn btn-icon"
+                      style="padding: 10px 16px; font-size: 13px; color: #cbd5e1;"
+                      onclick="retryQuestionModal()"
+                    >
+                      <svg class="icon" style="color: #38bdf8;" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                      <span>Thử chọn lại câu này</span>
+                    </button>
+                    <button
+                      class="btn"
+                      style="background: linear-gradient(135deg, #e11d48, #ea580c); color: #ffffff; padding: 10px 18px; font-size: 13px; box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);"
+                      onclick="closeQuestionModal()"
+                    >
+                      <span>Đã hiểu, tiếp tục đi</span>
+                      <svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </button>
+                  </div>
+                `
+              )}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function handleSelectAnswer(idx) {
+      if (questionModalState.isAnswered) return;
+      const cp = gameState.activeCheckpoint;
+      if (!cp) return;
+
+      const correct = idx === cp.question.correctIndex;
+      questionModalState.selectedIndex = idx;
+      questionModalState.isAnswered = true;
+      questionModalState.isCorrect = correct;
+
+      if (correct) {
+        soundManager.playCorrect();
+        cp.isAnswered = true;
+        cp.isCorrect = true;
+        cp.scoreAwarded = cp.question.points;
+        gameState.score += cp.question.points;
+
+        // Check if this unlocked the goal
+        const allAnswered = gameState.questionCheckpoints.every(c => c.isAnswered);
+        if (allAnswered) {
+          soundManager.playUnlockGate();
+          gameState.unlockCelebration = true;
+          setTimeout(() => {
+            gameState.unlockCelebration = false;
+            renderApp();
+          }, 4500);
+        }
+      } else {
+        soundManager.playIncorrect();
+        questionModalState.shake = true;
+        setTimeout(() => {
+          questionModalState.shake = false;
+          renderApp();
+        }, 500);
+        cp.isAnswered = true;
+        cp.isCorrect = false;
+        cp.scoreAwarded = 0;
+      }
+
+      renderApp();
+    }
+
+    function retryQuestionModal() {
+      questionModalState.selectedIndex = null;
+      questionModalState.isAnswered = false;
+      questionModalState.isCorrect = false;
+      renderApp();
+    }
+
+    function closeQuestionModal() {
+      questionModalState = {
+        selectedIndex: null,
+        isAnswered: false,
+        isCorrect: false,
+        shake: false,
+      };
+      gameState.activeCheckpoint = null;
+      gameState.status = 'playing';
+      renderApp();
+    }
+
+    function renderVictoryModalHTML(correctCount) {
+      let stars = 1;
+      const totalQ = gameState.questionCheckpoints.length;
+      const itemsCount = gameState.goldItems.filter(i => i.isCollected).length;
+      const totalItems = gameState.goldItems.length;
+
+      if (correctCount >= Math.ceil(totalQ * 0.75) && itemsCount >= totalItems * 0.7) {
+        stars = 3;
+      } else if (correctCount >= 1) {
+        stars = 2;
+      }
+
+      return `
+        <div class="modal-overlay">
+          <div class="modal-card" style="max-width: 440px; text-align: center; border-color: rgba(245, 158, 11, 0.4); box-shadow: 0 0 60px rgba(245, 158, 11, 0.25);">
+            <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 20px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; margin-bottom: 16px;">
+              <svg class="icon" style="width: 32px; height: 32px;" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+            </div>
+
+            <h2 class="font-display" style="font-size: 26px; font-weight: 800; color: #ffffff; margin-bottom: 4px;">HOÀN THÀNH MÊ CUNG!</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Robot Vina đã hoàn thành xuất sắc nhiệm vụ giải mã tri thức</p>
+
+            <!-- Star rating -->
+            <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
+              ${[1, 2, 3].map(s => `
+                <div style="padding: 8px; border-radius: 12px; transition: all 0.2s; ${
+                  s <= stars
+                    ? 'color: #fbbf24; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); transform: scale(1.1);'
+                    : 'color: #475569; background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(51, 65, 85, 0.4);'
+                }">
+                  <svg class="icon" style="width: 30px; height: 30px; fill: currentColor;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+              `).join('')}
+            </div>
+
+            <!-- Stats Card -->
+            <div style="background: rgba(3, 7, 18, 0.6); border-radius: 14px; padding: 14px; border: 1px solid #1e293b; margin-bottom: 20px; text-align: left; display: flex; flex-direction: column; gap: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                <span style="color: #94a3b8;">Tổng điểm đạt được:</span>
+                <strong class="font-mono-numbers" style="color: #fbbf24; font-size: 18px;">${gameState.score}</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                <span style="color: #94a3b8;">Thời gian hoàn thành:</span>
+                <span class="font-mono-numbers" style="color: #e2e8f0; font-weight: 600;">${formatTime(gameState.timeElapsed)}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                <span style="color: #94a3b8;">Câu hỏi trả lời đúng:</span>
+                <span class="font-mono-numbers" style="color: #34d399; font-weight: 600;">${correctCount}/${totalQ}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                <span style="color: #94a3b8;">Kim cương thu thập:</span>
+                <span class="font-mono-numbers" style="color: #fde68a; font-weight: 600;">${itemsCount}/${totalItems}</span>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div style="display: flex; gap: 10px;">
+              <button
+                class="btn font-display"
+                style="flex: 1; padding: 12px; background: linear-gradient(135deg, #f59e0b, #ea580c); color: #020617; font-weight: 800; font-size: 14px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);"
+                onclick="resetGame()"
+              >
+                <svg class="icon" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                <span>Chơi Lại</span>
+              </button>
+              <button
+                class="btn"
+                style="flex: 1; padding: 12px; background: #1e293b; border-color: #334155; color: #e2e8f0; font-weight: 600; font-size: 13px;"
+                onclick="goHome()"
+              >
+                <svg class="icon" style="color: #38bdf8;" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Đổi Chế Độ</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderHelpModalHTML() {
+      return `
+        <div class="modal-overlay">
+          <div class="modal-card" style="max-width: 520px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+              <h3 class="font-display" style="font-size: 18px; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+                <svg class="icon" style="color: #38bdf8;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span>Hướng Dẫn Khám Phá Mê Cung</span>
+              </h3>
+              <button class="btn btn-icon" style="padding: 6px;" onclick="closeHelp()">
+                <svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px; color: #cbd5e1; line-height: 1.5;">
+              <div style="padding: 10px 12px; border-radius: 10px; background: rgba(3, 7, 18, 0.5); border: 1px solid #1e293b;">
+                <strong style="color: #ffffff; display: block; margin-bottom: 2px;">Di chuyển Robot Vina:</strong>
+                Sử dụng các phím mũi tên <kbd>↑ ↓ ← →</kbd> hoặc <kbd>W A S D</kbd> (hoặc cụm phím D-pad trên điện thoại). Robot không thể đi xuyên qua các bức tường neon.
+              </div>
+
+              <div style="padding: 10px 12px; border-radius: 10px; background: rgba(3, 7, 18, 0.5); border: 1px solid #1e293b;">
+                <strong style="color: #ffffff; display: block; margin-bottom: 2px;">Thu thập kim cương năng lượng vàng:</strong>
+                Mỗi viên kim cương xuất hiện ngẫu nhiên trên đường đi sẽ giúp bạn tích lũy thêm <strong style="color: #fbbf24;">+50 điểm</strong>.
+              </div>
+
+              <div style="padding: 10px 12px; border-radius: 10px; background: rgba(3, 7, 18, 0.5); border: 1px solid #1e293b;">
+                <strong style="color: #ffffff; display: block; margin-bottom: 2px;">Giải mã Hộp Tri Thức ngẫu nhiên:</strong>
+                Chạm vào các khối lập phương phát sáng <span style="font-weight: 700; color: #38bdf8;">[?]</span> để mở câu hỏi trực quan bằng hình vẽ sinh động. Trả lời đúng nhận thêm <strong style="color: #38bdf8;">+100 điểm</strong>!
+              </div>
+
+              <div style="padding: 10px 12px; border-radius: 10px; background: rgba(3, 7, 18, 0.5); border: 1px solid #1e293b;">
+                <strong style="color: #ffffff; display: block; margin-bottom: 2px;">Cổng về đích:</strong>
+                Dẫn lối Robot Vina đến cổng vinh quang ở góc dưới bên phải để hoàn tất mê cung và nhận đánh giá xếp hạng sao!
+              </div>
+            </div>
+
+            <button
+              class="btn"
+              style="width: 100%; margin-top: 20px; padding: 12px; background: #0891b2; color: #ffffff; font-weight: 700; font-size: 14px;"
+              onclick="closeHelp()"
+            >
+              Đã hiểu, tiếp tục chơi!
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function downloadThisGameHTML() {
+      const htmlDoc = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      const blob = new Blob([htmlDoc], { type: 'text/html;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'EDUVERSE_Me_Cung_Tri_Thuc_2D.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // Initialize App
+    renderApp();
+  </script>
+</body>
+</html>

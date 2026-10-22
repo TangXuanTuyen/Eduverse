@@ -12,7 +12,7 @@ export type AssignmentRow = {
   max_retries: number;
   show_explanation_after_submit: boolean;
   results_published: boolean;
-  assignment_type: 'quiz' | 'lesson' | 'experiment' | 'model3d' | 'stem';
+  assignment_type: 'quiz' | 'lesson' | 'experiment' | 'model3d' | 'stem' | 'game';
   resource_id: string | null;
   resource_title: string | null;
   created_by: string;
@@ -38,6 +38,7 @@ export type CreateAssignmentData = {
   max_retries?: number;
   show_explanation_after_submit?: boolean;
   question_ids: string[];
+  assignment_type?: 'quiz' | 'game';
 };
 
 export async function getTeacherAssignments(teacherId: string, roomId?: string) {
@@ -109,6 +110,7 @@ export async function createAssignment(teacherId: string, data: CreateAssignment
       late_policy: data.late_policy ?? 'hard_lock',
       max_retries: data.max_retries ?? 0,
       show_explanation_after_submit: data.show_explanation_after_submit ?? true,
+      assignment_type: data.assignment_type ?? 'quiz',
       created_by: teacherId,
     })
     .select('id')

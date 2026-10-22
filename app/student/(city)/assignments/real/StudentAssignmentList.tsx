@@ -42,15 +42,18 @@ export function StudentAssignmentList({ assignments }: { assignments: Assignment
             assignments.map((a) => {
               const overdue = a.due_at && new Date(a.due_at) < new Date();
               const isTask = a.assignment_type === 'lesson' || a.assignment_type === 'experiment' || a.assignment_type === 'model3d' || a.assignment_type === 'stem';
+              const isGame = a.assignment_type === 'game';
               const taskRoute = a.assignment_type === 'lesson' ? '/student/library'
                 : a.assignment_type === 'model3d' ? '/student/world-3d'
                 : a.assignment_type === 'stem' ? '/student/stem'
                 : '/student/virtual-lab';
-              const typeIcon = a.assignment_type === 'lesson' ? '📖' : a.assignment_type === 'experiment' ? '🔬' : a.assignment_type === 'model3d' ? '🌐' : a.assignment_type === 'stem' ? '🧪' : '📝';
+              const typeIcon = a.assignment_type === 'lesson' ? '📖' : a.assignment_type === 'experiment' ? '🔬' : a.assignment_type === 'model3d' ? '🌐' : a.assignment_type === 'stem' ? '🧪' : isGame ? '🎮' : '📝';
+              const href = isTask ? taskRoute : isGame ? `/games/me-cung/?assignmentId=${a.id}` : `/student/arcade?assignment=${a.id}`;
               return (
                 <Link
                   key={a.id}
-                  href={isTask ? taskRoute : `/student/arcade?assignment=${a.id}`}
+                  href={href}
+                  target={isGame ? '_blank' : undefined}
                   className="block bg-slate-800 hover:bg-slate-700 rounded-xl p-3 transition"
                 >
                   <div className="font-medium text-sm text-white">{typeIcon} {a.title}</div>

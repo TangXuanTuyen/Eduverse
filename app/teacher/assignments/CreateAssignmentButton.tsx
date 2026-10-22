@@ -116,6 +116,14 @@ export function CreateAssignmentButton({ teacherId }: { teacherId: string }) {
           <textarea name="description" rows={2} className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white resize-y" />
         </label>
 
+        <label className="block">
+          <span className="text-xs text-slate-400">Chế độ làm bài</span>
+          <select name="assignment_type" className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white">
+            <option value="quiz">Trả lời thường</option>
+            <option value="game">Trò chơi Mê Cung Tri Thức</option>
+          </select>
+        </label>
+
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
             <span className="text-xs text-slate-400">Hạn nộp</span>

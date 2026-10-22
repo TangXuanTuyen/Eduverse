@@ -15,6 +15,7 @@ const assignmentSchema = z.object({
   late_policy: z.enum(['hard_lock', 'marked_late']).default('hard_lock'),
   max_retries: z.coerce.number().int().min(0).max(10).default(0),
   show_explanation_after_submit: z.coerce.boolean().default(true),
+  assignment_type: z.enum(['quiz', 'game']).default('quiz'),
 });
 
 export type AssignmentActionState = { error?: string; success?: string };
@@ -35,6 +36,7 @@ export async function createAssignmentAction(
     late_policy: formData.get('late_policy') || 'hard_lock',
     max_retries: formData.get('max_retries') || 0,
     show_explanation_after_submit: formData.get('show_explanation') !== 'false',
+    assignment_type: formData.get('assignment_type') || 'quiz',
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Dữ liệu không hợp lệ' };
 
@@ -44,10 +46,12 @@ export async function createAssignmentAction(
     const questionIds = await getSetQuestionIds(set_id);
     if (questionIds.length === 0) return { error: 'Bộ đề trống, không có câu hỏi' };
 
+    const { assignment_type, ...restData } = rest;
     await createAssignment(profile.id, {
-      ...rest,
+      ...restData,
       due_at: due_at || null,
       question_ids: questionIds,
+      assignment_type,
     });
     revalidatePath('/teacher/assignments');
     return { success: 'Đã giao bài thành công!' };
