@@ -47,6 +47,12 @@ export function AoDaiCompanion() {
         <CompanionChat onClose={() => setOpen(false)} onOpenFullPage={handleOpenFull} />
       )}
 
+      {!open && (
+        <div className="bg-slate-800/90 border border-amber-500/40 rounded-xl px-3 py-2 text-sm text-amber-200 shadow-lg max-w-[200px] animate-fade-in">
+          Chào bạn! Vina AI sẵn sàng hỗ trợ bạn 🌟
+        </div>
+      )}
+
       <div className="flex items-center gap-1">
         <button
           onClick={() => setHidden(true)}
