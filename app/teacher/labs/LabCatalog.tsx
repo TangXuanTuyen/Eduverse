@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FlaskConical, Clock, Send } from 'lucide-react';
+import { FlaskConical, Clock, Send, Play, ExternalLink, X } from 'lucide-react';
 import type { ExperimentRow } from '@/services/experiments';
 import { assignExperimentAction } from './actions';
 
@@ -27,6 +27,7 @@ export function LabCatalog({ experiments }: { experiments: ExperimentRow[] }) {
   const [selectedRoom, setSelectedRoom] = useState('');
   const [assigning, setAssigning] = useState(false);
   const [message, setMessage] = useState('');
+  const [previewExp, setPreviewExp] = useState<ExperimentRow | null>(null);
 
   useEffect(() => {
     fetch('/api/teacher/rooms')
@@ -55,6 +56,41 @@ export function LabCatalog({ experiments }: { experiments: ExperimentRow[] }) {
   }
 
   return (
+    <>
+    {previewExp && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div className="relative w-full max-w-4xl h-[85vh] rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 bg-slate-900">
+            <div>
+              <h2 className="text-white font-bold">{previewExp.title}</h2>
+              <p className="text-xs text-slate-400">{SUBJECT_LABELS[previewExp.subject]} · Lớp {previewExp.grade_level}</p>
+            </div>
+            <button
+              onClick={() => setPreviewExp(null)}
+              className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Đóng"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          {previewExp.embed_url ? (
+            <iframe
+              src={previewExp.embed_url}
+              className="flex-1 w-full border-0"
+              title={previewExp.title}
+              sandbox="allow-scripts allow-same-origin"
+            />
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-slate-500">
+              <div className="text-center">
+                <FlaskConical className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>Thí nghiệm này đang được phát triển</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )}
     <div className="space-y-4">
       <div className="flex gap-2 flex-wrap">
         {[
@@ -147,12 +183,22 @@ export function LabCatalog({ experiments }: { experiments: ExperimentRow[] }) {
                     {message && <p className="text-xs text-green-400">{message}</p>}
                   </div>
                 ) : (
-                  <button
-                    onClick={() => setAssigningId(exp.id)}
-                    className="w-full rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-xs text-white flex items-center justify-center gap-1.5 min-h-[44px]"
-                  >
-                    <Send size={12} /> Giao cho lớp
-                  </button>
+                  <div className="flex gap-2">
+                    {exp.embed_url && (
+                      <button
+                        onClick={() => setPreviewExp(exp)}
+                        className="flex-1 rounded-lg bg-cyan-700 hover:bg-cyan-600 px-3 py-2 text-xs text-white flex items-center justify-center gap-1.5 min-h-[44px]"
+                      >
+                        <Play size={12} /> Mở dạy
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setAssigningId(exp.id)}
+                      className="flex-1 rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-xs text-white flex items-center justify-center gap-1.5 min-h-[44px]"
+                    >
+                      <Send size={12} /> Giao cho lớp
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -160,5 +206,6 @@ export function LabCatalog({ experiments }: { experiments: ExperimentRow[] }) {
         </div>
       )}
     </div>
+    </>
   );
 }
