@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+THÔNG TIN TÀI NGUYÊN GIÁO DỤC SỐ - PHÒNG THÍ NGHIỆM ẢO (VINA-EDUVERSE)
+- Tên mô hình 3D: Tế bào nhân sơ
+- Khối lớp: Khối 6 - Bài 19: Cấu tạo và chức năng các thành phần của tế bào
+- Môn học: Khoa học tự nhiên (Phần Sinh học tế bào)
+- Loại tài nguyên: Mô hình 3D tương tác WebGL (Three.js inline)
+- Tác giả: Tăng Thị Xuân Tuyền | SĐT: 0964022270 | Email: xuantuyen96@gmail.com
+- Yêu cầu kỹ thuật: Single-file HTML/CSS/JS, nền dark #0f172a, touch target >= 44px, no alert/confirm
+================================================================================
+-->
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="model-name" content="Tế bào nhân sơ">
+    <meta name="curriculum-grade" content="Khối 6">
+    <meta name="curriculum-lesson" content="Bài 19: Cấu tạo và chức năng các thành phần của tế bào">
+    <meta name="curriculum-subject" content="Khoa học tự nhiên">
+    <meta name="asset-type" content="3D Interactive Simulation">
+    <title>Tế bào nhân sơ - Khối 6 Bài 19: Cấu tạo và chức năng các thành phần của tế bào</title>
+    
+    <!-- Three.js CDN và OrbitControls chuẩn bản r128 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: rgba(30, 41, 59, 0.88);
+            --bg-hover: rgba(51, 65, 85, 0.95);
+            --border-color: rgba(56, 189, 248, 0.28);
+            --cyan-accent: #38bdf8;
+            --teal-accent: #14b8a6;
+            --amber-accent: #f59e0b;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-light);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Thanh tiêu đề phía trên */
+        header {
+            width: 100%;
+            height: 58px;
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 30;
+            flex-shrink: 0;
+        }
+
+        .header-title-box {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-main-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--cyan-accent);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .curriculum-badge {
+            background: rgba(14, 165, 233, 0.18);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            color: #7dd3fc;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .header-sub-title {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Nút tương tác đạt chuẩn vùng chạm tối thiểu 44px */
+        .btn-touch {
+            min-height: 44px;
+            min-width: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 14px;
+            background: rgba(30, 41, 59, 0.9);
+            color: var(--text-light);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            gap: 6px;
+        }
+
+        .btn-touch:hover {
+            background: var(--bg-hover);
+            border-color: var(--cyan-accent);
+            color: #fff;
+        }
+
+        .btn-touch:active {
+            transform: scale(0.96);
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, #0284c7, #0d9488);
+            border: 1px solid rgba(56, 189, 248, 0.5);
+            color: #fff;
+        }
+
+        .btn-challenge {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            border: 1px solid rgba(245, 158, 11, 0.6);
+            color: #fff;
+        }
+
+        /* Khu vực hiển thị chính */
+        main {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            height: calc(100vh - 58px - 32px);
+            display: flex;
+            overflow: hidden;
+        }
+
+        #viewport-3d-wrapper {
+            position: relative;
+            flex: 1;
+            height: 100%;
+            background-color: var(--bg-main);
+            overflow: hidden;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            cursor: grab;
+        }
+
+        #canvas-container:active {
+            cursor: grabbing;
+        }
+
+        /* Lớp vẽ SVG mũi tên chỉ dẫn */
+        #leader-lines-svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Nhãn chú thích 3D ngoài mô hình (đạt chiều cao >= 44px) */
+        #labels-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .callout-label {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            min-height: 44px;
+            padding: 8px 14px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1.5px solid var(--cyan-accent);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            pointer-events: auto;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .callout-label:hover {
+            transform: translate(-50%, -50%) scale(1.08);
+            border-color: #38bdf8 !important;
+            z-index: 35;
+        }
+
+        .callout-label.active {
+            box-shadow: 0 0 18px rgba(56, 189, 248, 0.85);
+            border-color: #38bdf8 !important;
+            transform: translate(-50%, -50%) scale(1.1);
+            z-index: 40;
+        }
+
+        .color-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Thanh công cụ tương tác dưới đáy */
+        .floating-toolbar {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.94);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 6px 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 25;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+            max-width: 95vw;
+            overflow-x: auto;
+        }
+
+        .floating-toolbar .btn-touch {
+            min-height: 44px;
+            min-width: 44px;
+            padding: 8px 12px;
+            font-size: 11px;
+        }
+
+        /* Bảng thông tin chi tiết (Desktop: 32%, Mobile: Drawer kéo ra) */
+        #infoPanel {
+            width: 380px;
+            max-width: 92vw;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.98);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            z-index: 30;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .panel-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 52px;
+        }
+
+        .panel-content {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .info-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: 12px;
+            line-height: 1.55;
+        }
+
+        .info-card h4 {
+            color: var(--cyan-accent);
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Toast thông báo */
+        #toastMessage {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: rgba(15, 23, 42, 0.96);
+            border: 1px solid var(--cyan-accent);
+            padding: 10px 18px;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 500;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #toastMessage.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Thanh nhiệm vụ Thử thách 3D nổi */
+        #challengeFloatingBar {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.95);
+            border: 1.5px solid var(--amber-accent);
+            border-radius: 14px;
+            padding: 8px 14px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            z-index: 30;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+            max-width: 90vw;
+        }
+
+        /* Modal Dialog */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.82);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 16px;
+        }
+
+        .modal-card {
+            background: #0f172a;
+            border: 1.5px solid var(--border-color);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-body {
+            padding: 18px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Chân trang tác giả */
+        footer {
+            height: 32px;
+            width: 100%;
+            background: #090e1a;
+            border-top: 1px solid rgba(148, 163, 184, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            font-size: 11px;
+            color: var(--text-muted);
+            z-index: 30;
+            flex-shrink: 0;
+        }
+
+        /* Icon SVG inline siêu nhẹ không dùng CDN */
+        .svg-icon {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            flex-shrink: 0;
+        }
+
+        /* Thanh trượt điều chỉnh bóc tách */
+        .explode-box {
+            padding: 12px;
+            background: rgba(15, 23, 42, 0.9);
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 12px;
+        }
+
+        .slider-custom {
+            width: 100%;
+            height: 6px;
+            accent-color: var(--cyan-accent);
+            cursor: pointer;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1024px) {
+            #infoPanel {
+                position: absolute;
+                right: 0;
+                top: 0;
+                bottom: 0;
+                transform: translateX(100%);
+            }
+            #infoPanel.open {
+                transform: translateX(0);
+            }
+            .mobile-hide {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- KHU VỰC A: THANH TIÊU ĐỀ NỀN TẢNG GIÁO DỤC -->
+    <header>
+        <div class="header-title-box">
+            <div class="header-main-title">
+                <span>Tế Bào Nhân Sơ</span>
+                <span class="curriculum-badge">Khối 6 - Bài 19</span>
+            </div>
+            <span class="header-sub-title">Cấu tạo và chức năng các thành phần của tế bào • Mô hình 3D</span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <button id="btnChallengeMode" class="btn-touch btn-challenge" title="Thử thách tìm kiếm bộ phận">
+                <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+                <span>Thử Thách 3D</span>
+            </button>
+            <button id="btnToggleSidePanel" class="btn-touch mobile-hide" title="Mở / Thu gọn bảng kiến thức">
+                <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M15 3v18"></path></svg>
+                <span id="txtSidePanelBtn">Bảng thông tin</span>
+            </button>
+            <button id="btnHelp" class="btn-touch" title="Hướng dẫn thao tác">
+                <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            </button>
+            <button id="btnOpenMobilePanel" class="btn-touch" style="display: none;" title="Xem chi tiết">
+                <svg class="svg-icon" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- KHU VỰC B & C: KHÔNG GIAN 3D VÀ BẢNG THÔNG TIN -->
+    <main>
+        <!-- KHÔNG GIAN 3D WEBGL -->
+        <div id="viewport-3d-wrapper">
+            <div id="canvas-container">
+                <!-- SVG Layer vẽ các đường chỉ dẫn mũi tên bám sát tọa độ 3D -->
+                <svg id="leader-lines-svg">
+                    <defs>
+                        <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8" />
+                        </marker>
+                    </defs>
+                </svg>
+                <!-- Nhãn chú thích 3D động với diện tích chạm >= 44px -->
+                <div id="labels-overlay"></div>
+            </div>
+
+            <!-- Thanh nhiệm vụ Thử thách 3D nổi -->
+            <div id="challengeFloatingBar">
+                <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(245, 158, 11, 0.2); display: flex; align-items: center; justify-content: center; color: #f59e0b;">
+                    ★
+                </div>
+                <div>
+                    <div style="font-size: 10px; text-transform: uppercase; color: #f59e0b; font-weight: 700;">Nhiệm vụ nhận diện:</div>
+                    <div id="floatingChallengePrompt" style="font-size: 12px; font-weight: 600;">Chạm vào bộ phận...</div>
+                </div>
+                <button id="btnExitChallenge" class="btn-touch" style="min-height: 36px; min-width: 36px; padding: 4px; margin-left: 8px;">✕</button>
+            </div>
+
+            <!-- Toast thông báo thân thiện thay cho alert() -->
+            <div id="toastMessage">
+                <span id="toastIcon">ℹ</span>
+                <span id="toastText">Thông báo hệ thống</span>
+            </div>
+
+            <!-- THANH CÔNG CỤ TƯƠNG TÁC NHANH DƯỚI ĐÁY CANVAS (Touch Targets >= 44px) -->
+            <div class="floating-toolbar">
+                <button id="btnResetView" class="btn-touch" title="Đặt lại góc nhìn">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                    <span>Đặt Lại</span>
+                </button>
+                <button id="btnCutView" class="btn-touch" title="Bật/Tắt chế độ bổ đôi nhìn bên trong">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
+                    <span id="txtCutView">Cắt Lớp</span>
+                </button>
+                <button id="btnExplode" class="btn-touch" title="Bóc tách các lớp vỏ">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                    <span id="txtExplode">Tách Lớp</span>
+                </button>
+                <button id="btnToggleAnim" class="btn-touch" title="Bật/Tạm dừng sóng roi">
+                    <svg class="svg-icon" id="iconAnimPlay" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <span>Roi Vẫy</span>
+                </button>
+                <button id="btnZoomIn" class="btn-touch" title="Phóng to">＋</button>
+                <button id="btnZoomOut" class="btn-touch" title="Thu nhỏ">－</button>
+            </div>
+        </div>
+
+        <!-- KHU VỰC C: BẢNG KIẾN THỨC CẤU TẠO TẾ BÀO -->
+        <aside id="infoPanel">
+            <div class="panel-header">
+                <span style="font-size: 13px; font-weight: 700; color: #7dd3fc; text-transform: uppercase;">Chi Tiết Cấu Tạo</span>
+                <button id="btnClosePanel" class="btn-touch" style="min-height: 38px; min-width: 38px; padding: 6px;" title="Đóng bảng">✕</button>
+            </div>
+
+            <div class="panel-content">
+                <!-- Trạng thái mặc định -->
+                <div id="emptyState" style="text-align: center; padding: 20px 8px; color: var(--text-muted);">
+                    <div style="font-size: 32px; margin-bottom: 12px;">🔬</div>
+                    <h3 style="color: #fff; font-size: 14px; margin-bottom: 6px;">Chưa chọn bộ phận nào</h3>
+                    <p style="font-size: 12px; line-height: 1.5;">Chạm trực tiếp vào mô hình 3D hoặc nhấp chọn một thành phần dưới đây để học tập:</p>
+                    <div id="quickOrganelleList" style="margin-top: 16px; display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
+
+                <!-- Trạng thái hiển thị thông tin thành phần được chọn -->
+                <div id="activeDetails" style="display: none; flex-direction: column; gap: 12px;">
+                    <div>
+                        <div style="font-size: 11px; text-transform: uppercase; color: var(--cyan-accent); font-weight: 700;" id="detailCategory">Bộ phận tế bào</div>
+                        <h2 style="font-size: 18px; font-weight: 800; color: #fff; margin-top: 2px;" id="detailName">Tên bộ phận</h2>
+                    </div>
+
+                    <div class="info-card">
+                        <h4>1. Đặc điểm cấu tạo</h4>
+                        <p id="detailStructure">Mô tả đặc điểm cấu tạo...</p>
+                    </div>
+
+                    <div class="info-card">
+                        <h4>2. Chức năng chính</h4>
+                        <p id="detailFunction">Mô tả chức năng chính...</p>
+                    </div>
+
+                    <div class="info-card">
+                        <h4>3. Em có biết?</h4>
+                        <p id="detailFunFact">Thông tin thú vị...</p>
+                    </div>
+
+                    <div class="info-card" style="border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.08);">
+                        <h4 style="color: #f59e0b;">★ Ghi nhớ chuẩn Khối 6 - Bài 19</h4>
+                        <p id="detailNote" style="color: #fde68a;">Ghi chú trọng tâm...</p>
+                    </div>
+
+                    <button id="btnFocusOrganelle" class="btn-touch btn-accent" style="width: 100%; margin-top: 6px;">
+                        Phóng to góc nhìn cấu trúc này
+                    </button>
+                </div>
+            </div>
+
+            <!-- Thanh trượt mức độ bóc tách khi bật chế độ tách lớp -->
+            <div id="explodeControls" class="explode-box">
+                <div style="display: flex; justify-content: space-between; font-weight: 600;">
+                    <span>Mức độ bóc tách:</span>
+                    <span id="explodeValue" style="color: var(--cyan-accent);">50%</span>
+                </div>
+                <input id="sliderExplode" type="range" min="0" max="100" value="50" class="slider-custom">
+                <button id="btnRestoreExplode" class="btn-touch" style="width: 100%; margin-top: 6px;">Khôi phục vị trí</button>
+            </div>
+        </aside>
+    </main>
+
+    <!-- MODAL: HƯỚNG DẪN THAO TÁC 3D -->
+    <div id="helpModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span style="font-weight: 700; color: #fff;">Hướng Dẫn Thao Tác 3D</span>
+                <button id="btnCloseHelp" class="btn-touch" style="min-height: 38px; min-width: 38px; padding: 4px;">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 10px;"><strong>Xoay mô hình:</strong> Kéo chuột trái hoặc dùng 1 ngón tay vuốt trên màn hình cảm ứng.</p>
+                <p style="margin-bottom: 10px;"><strong>Thu phóng (Zoom):</strong> Cuộn chuột hoặc chụm/tách 2 ngón tay trên điện thoại.</p>
+                <p style="margin-bottom: 10px;"><strong>Chọn cấu trúc:</strong> Chạm trực tiếp vào bất kỳ bộ phận nào trên mô hình 3D hoặc nhấp vào nhãn chú thích bên ngoài.</p>
+                <p style="margin-bottom: 10px;"><strong>Cắt lớp / Tách lớp:</strong> Dùng thanh công cụ để bổ đôi tế bào hoặc bóc tách từng lớp vỏ.</p>
+                <button id="btnGotHelp" class="btn-touch btn-accent" style="width: 100%; margin-top: 14px;">Đã hiểu, bắt đầu học!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: THỬ THÁCH NHÀ KHOA HỌC (QUIZ TRẮC NGHIỆM KHTN 6) -->
+    <div id="challengeModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span style="font-weight: 700; color: #fff;">Thử Thách Nhà Khoa Học: Tế Bào Nhân Sơ</span>
+                <button id="btnCloseChallenge" class="btn-touch" style="min-height: 38px; min-width: 38px; padding: 4px;">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="quizContainer">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
+                        <span id="quizIndex">Câu hỏi 1/5</span>
+                        <span id="quizScoreText" style="color: #f59e0b; font-weight: 700;">Điểm: 0</span>
+                    </div>
+                    <h4 id="quizQuestion" style="font-size: 14px; color: #fff; margin-bottom: 14px; font-weight: 600;">Nội dung câu hỏi...</h4>
+                    <div id="quizOptions" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                    <div id="quizFeedback" style="display: none; margin-top: 12px; padding: 12px; border-radius: 10px; font-size: 12px;"></div>
+                </div>
+                <div id="quizFinished" style="display: none; text-align: center; padding: 20px 0;">
+                    <div style="font-size: 36px; margin-bottom: 10px;">🏆</div>
+                    <h3 style="color: #fff; font-size: 16px; font-weight: 700; margin-bottom: 6px;">Hoàn Thành Bài Kiểm Tra!</h3>
+                    <p id="quizFinalScore" style="color: var(--text-muted); margin-bottom: 16px;">Bạn đã trả lời đúng 5/5 câu hỏi.</p>
+                    <button id="btnRestartQuiz" class="btn-touch btn-accent" style="width: 100%;">Làm lại bài tập</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KHU VỰC CHÂN TRANG: BẢN QUYỀN & TÁC GIẢ -->
+    <footer>
+        <div>Mô hình 3D: Tế bào nhân sơ • Khối 6 - Bài 19 KHTN</div>
+        <div>Tác giả: <strong>Tăng Thị Xuân Tuyền</strong> | SĐT: 0964022270 | Email: xuantuyen96@gmail.com</div>
+    </footer>
+
+    <script>
+        /* =========================================================================
+           DỮ LIỆU KHOA HỌC CHUẨN: KHỐI 6 - BÀI 19 (6 THÀNH PHẦN CỐT LÕI)
+           1. Vùng nhân (ADN)
+           2. Màng tế bào (Màng sinh chất)
+           3. Tế bào chất
+           4. Lông (Lông nhung / Pili)
+           5. Thành tế bào
+           6. Roi (Tiên mao)
+           ========================================================================= */
+        const ORGANELLE_DATA = {
+            pili: {
+                id: 'pili',
+                name: 'Lông (Lông nhung)',
+                latin: 'Pili / Fimbriae',
+                category: 'Phụ quan bề mặt',
+                color: '#34d399',
+                structure: 'Các sợi protein ngắn, mảnh mọc nhô ra trên khắp bề mặt tế bào vi khuẩn.',
+                function: 'Giúp tế bào vi khuẩn bám dính chắc chắn vào bề mặt tế bào vật chủ hoặc giá thể xung quanh.',
+                funFact: 'Nhờ có lông nhung bám dính, vi khuẩn có thể bám trụ trong đường tiêu hóa mà không bị cuốn trôi.',
+                caution: 'Phân biệt: Lông ngắn dùng để bám dính, khác với roi dài dùng để bơi lội di chuyển.',
+                cameraPos: { x: -2.0, y: 3.2, z: 9.0 },
+                localTargetPos: new THREE.Vector3(-1.8, 2.1, 0.4),
+                screenDir: new THREE.Vector2(-1.2, -0.9)
+            },
+            cellWall: {
+                id: 'cellWall',
+                name: 'Thành tế bào',
+                latin: 'Cell Wall',
+                category: 'Khung bảo vệ cơ học',
+                color: '#38bdf8',
+                structure: 'Lớp vỏ peptidoglycan dày, bền chắc bao bọc ngay bên ngoài màng tế bào.',
+                function: 'Quy định và duy trì hình dạng ổn định của tế bào (que, cầu, xoắn), bảo vệ tế bào không bị vỡ do áp suất thẩm thấu.',
+                funFact: 'Nhiều loại kháng sinh tiêu diệt vi khuẩn bằng cách phá hủy hoặc ngăn cản quá trình tạo thành tế bào.',
+                caution: 'Thành tế bào chỉ đóng vai trò cơ học, KHÔNG kiểm soát chọn lọc các chất như màng tế bào.',
+                cameraPos: { x: 0.5, y: 2.8, z: 8.5 },
+                localTargetPos: new THREE.Vector3(-0.4, 1.54, 0.0),
+                screenDir: new THREE.Vector2(-0.2, -1.3)
+            },
+            cellMembrane: {
+                id: 'cellMembrane',
+                name: 'Màng tế bào',
+                latin: 'Plasma Membrane',
+                category: 'Màng sinh chất',
+                color: '#818cf8',
+                structure: 'Lớp màng kép phospholipid khảm protein linh hoạt nằm sát phía trong thành tế bào.',
+                function: 'Bao bọc tế bào chất, kiểm soát có chọn lọc các chất đi vào và đi ra khỏi tế bào vi khuẩn.',
+                funFact: 'Màng tế bào là cấu trúc bắt buộc phải có ở TẤT CẢ mọi dạng tế bào sống trên Trái Đất.',
+                caution: 'Không nhầm lẫn: Màng tế bào kiểm soát trao đổi chất, còn thành tế bào chỉ bảo vệ cơ học.',
+                cameraPos: { x: 1.4, y: 2.5, z: 8.2 },
+                localTargetPos: new THREE.Vector3(1.2, 1.43, 0.0),
+                screenDir: new THREE.Vector2(0.9, -1.1)
+            },
+            flagellum: {
+                id: 'flagellum',
+                name: 'Roi (Tiên mao)',
+                latin: 'Flagellum',
+                category: 'Cơ quan di chuyển',
+                color: '#22c55e',
+                structure: 'Sợi protein flagellin dài xoắn uốn lượn, xuất phát từ động cơ quay ở đuôi tế bào.',
+                function: 'Xoay tròn như chân vịt giúp vi khuẩn bơi và di chuyển nhanh chóng trong môi trường lỏng.',
+                funFact: 'Động cơ nano ở gốc roi có thể quay tới hơn 20.000 vòng/phút!',
+                caution: 'Roi giúp vi khuẩn chủ động bơi về phía có nguồn dinh dưỡng hoặc tránh xa chất độc.',
+                cameraPos: { x: 5.5, y: -0.2, z: 9.0 },
+                localTargetPos: new THREE.Vector3(4.8, -0.1, 0.2),
+                screenDir: new THREE.Vector2(1.3, 0.5)
+            },
+            cytoplasm: {
+                id: 'cytoplasm',
+                name: 'Tế bào chất',
+                latin: 'Cytoplasm',
+                category: 'Môi trường nội bào',
+                color: '#eab308',
+                structure: 'Khối chất keo bán lỏng chứa chủ yếu là nước cùng các hợp chất hữu cơ và vô cơ.',
+                function: 'Môi trường chứa vùng nhân và là nơi diễn ra mọi phản ứng chuyển hóa trao đổi chất duy trì sự sống.',
+                funFact: 'Tế bào chất của vi khuẩn nhân sơ chưa có các bào quan có màng như ti thể hay lục lạp.',
+                caution: 'Tế bào chất là trung tâm chuyển hóa của toàn bộ hoạt động sống trong tế bào.',
+                cameraPos: { x: -2.8, y: -1.2, z: 8.5 },
+                localTargetPos: new THREE.Vector3(-1.6, -0.3, 0.3),
+                screenDir: new THREE.Vector2(-1.2, 1.0)
+            },
+            nucleoid: {
+                id: 'nucleoid',
+                name: 'Vùng nhân (ADN)',
+                latin: 'Nucleoid (DNA)',
+                category: 'Vật chất di truyền',
+                color: '#c084fc',
+                structure: 'Phân tử ADN dạng vòng kép cuộn xoắn tập trung ở giữa tế bào, không có màng nhân bao bọc.',
+                function: 'Lưu giữ toàn bộ thông tin di truyền, điều khiển mọi hoạt động sống và sự sinh sản phân đôi của vi khuẩn.',
+                funFact: 'Nếu kéo duỗi thẳng, sợi ADN dài gấp hàng nghìn lần chiều dài của chính tế bào vi khuẩn!',
+                caution: 'Đặc điểm cốt lõi KHTN 6: Vi khuẩn là tế bào NHÂN SƠ vì CHƯA CÓ màng nhân bao bọc vật chất di truyền.',
+                cameraPos: { x: 0, y: -1.2, z: 7.5 },
+                localTargetPos: new THREE.Vector3(0.0, 0.15, 0.35),
+                screenDir: new THREE.Vector2(0.1, 1.3)
+            }
+        };
+
+        const QUIZ_QUESTIONS = [
+            {
+                q: "Vì sao vi khuẩn được gọi là tế bào nhân sơ?",
+                options: [
+                    "Vì vi khuẩn không có vật chất di truyền ADN.",
+                    "Vì vùng nhân chứa ADN chưa có màng nhân bao bọc.",
+                    "Vì vi khuẩn không có thành tế bào bảo vệ.",
+                    "Vì vi khuẩn chỉ sống được ở nhiệt độ rất cao."
+                ],
+                correct: 1,
+                explain: "Tế bào nhân sơ có đặc điểm cốt lõi là vật chất di truyền (ADN) tập trung ở vùng nhân và chưa có màng nhân ngăn cách với tế bào chất."
+            },
+            {
+                q: "Thành phần nào quy định hình dạng tế bào và bảo vệ tế bào vi khuẩn khỏi bị vỡ?",
+                options: ["Thành tế bào", "Màng tế bào", "Vùng nhân", "Roi"],
+                correct: 0,
+                explain: "Thành tế bào đóng vai trò như bộ khung vững chắc tạo nên hình dạng tế bào và chống lại áp suất thẩm thấu."
+            },
+            {
+                q: "Cấu trúc nào kiểm soát có chọn lọc các chất đi vào và đi ra khỏi tế bào vi khuẩn?",
+                options: ["Thành tế bào", "Màng tế bào (màng sinh chất)", "Lông nhung", "Vùng nhân"],
+                correct: 1,
+                explain: "Màng tế bào có tính thấm chọn lọc giúp điều hòa trao đổi chất giữa tế bào và môi trường ngoài."
+            },
+            {
+                q: "Bộ phận nào giúp vi khuẩn bơi và di chuyển trong môi trường lỏng?",
+                options: ["Lông bám", "Thành tế bào", "Roi (tiên mao)", "Màng tế bào"],
+                correct: 2,
+                explain: "Roi dài xoay tròn giúp đẩy vi khuẩn bơi nhanh về nguồn dinh dưỡng."
+            },
+            {
+                q: "Sự khác biệt chính giữa Lông và Roi của vi khuẩn là gì?",
+                options: [
+                    "Lông giúp di chuyển, roi giúp bám dính.",
+                    "Lông ngắn giúp bám dính, roi dài giúp di chuyển.",
+                    "Lông ở trong tế bào, roi ở ngoài tế bào.",
+                    "Lông chứa ADN, roi chứa lipid."
+                ],
+                correct: 1,
+                explain: "Lông (pili) số lượng nhiều và ngắn giúp bám dính giá thể, còn roi dài dùng để bơi di chuyển."
+            }
+        ];
+
+        /* =========================================================================
+           KHỞI TẠO THREE.JS VÀ SCENE 3D
+           ========================================================================= */
+        const container = document.getElementById('canvas-container');
+        const labelsOverlay = document.getElementById('labels-overlay');
+        let scene, camera, renderer, controls;
+        let raycaster, mouse;
+        let bacteriumGroup;
+        const organelleMeshes = {};
+        const labelPins = [];
+        let hoveredOrganelleId = null;
+        let selectedOrganelleId = null;
+
+        let cutViewActive = true;
+        let explodedViewActive = false;
+        let animFlagellaActive = true;
+
+        let flagellumPoints = [];
+        let flagellumSplineMesh = null;
+        let flagellumCurve = null;
+
+        // Challenge State
+        let isFloatingChallengeActive = false;
+        let currentTargetIndex = 0;
+        const TARGET_KEYS = ['nucleoid', 'cellWall', 'cellMembrane', 'flagellum', 'pili', 'cytoplasm'];
+
+        function initScene() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0f172a); // Màu tối chuẩn yêu cầu kỹ thuật
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+            camera.position.set(0, 2.5, 11);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.06;
+            controls.maxDistance = 24;
+            controls.minDistance = 2.5;
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            // Ánh sáng phòng lab
+            const ambient = new THREE.AmbientLight(0xffffff, 0.85);
+            scene.add(ambient);
+            const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            mainLight.position.set(8, 12, 10);
+            scene.add(mainLight);
+            const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.9);
+            rimLight.position.set(-10, -4, -8);
+            scene.add(rimLight);
+
+            if (typeof THREE.OrbitControls === 'function') {
+                controls = new THREE.OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.06;
+                controls.maxDistance = 24;
+                controls.minDistance = 2.5;
+            } else {
+                // Fallback OrbitControls nội bộ nếu script CDN bị chặn
+                controls = createFallbackOrbitControls(camera, renderer.domElement);
+            }
+
+            buildBacterialCell();
+            buildInteractiveLabels();
+            setupEvents();
+            return true;
+        }
+
+        function createFallbackOrbitControls(cam, dom) {
+            let isDragging = false;
+            let prevX = 0, prevY = 0;
+            let spherical = { radius: 11, theta: 0, phi: Math.PI / 2.3 };
+
+            function updateCam() {
+                spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+                spherical.radius = Math.max(2.5, Math.min(24, spherical.radius));
+                cam.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
+                cam.position.y = spherical.radius * Math.cos(spherical.phi);
+                cam.position.z = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+                cam.lookAt(0, 0, 0);
+            }
+
+            dom.addEventListener('pointerdown', (e) => {
+                isDragging = true;
+                prevX = e.clientX;
+                prevY = e.clientY;
+            });
+            window.addEventListener('pointerup', () => { isDragging = false; });
+            window.addEventListener('pointermove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - prevX;
+                const dy = e.clientY - prevY;
+                prevX = e.clientX;
+                prevY = e.clientY;
+                spherical.theta -= dx * 0.008;
+                spherical.phi -= dy * 0.008;
+                updateCam();
+            });
+            dom.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                spherical.radius += e.deltaY * 0.01;
+                updateCam();
+            }, { passive: false });
+
+            return {
+                target: new THREE.Vector3(0, 0, 0),
+                update: () => {},
+                state: -1
+            };
+        }
+
+        function createRodMesh(radius, length, material, cutOpen = true) {
+            const rodGroup = new THREE.Group();
+            const theta = cutOpen ? Math.PI * 1.38 : Math.PI * 2;
+            const segments = 36;
+
+            const cylGeom = new THREE.CylinderGeometry(radius, radius, length, segments, 4, false, 0, theta);
+            cylGeom.rotateZ(Math.PI / 2);
+            rodGroup.add(new THREE.Mesh(cylGeom, material));
+
+            const capGeom1 = new THREE.SphereGeometry(radius, segments, 18, 0, theta, 0, Math.PI);
+            capGeom1.rotateZ(Math.PI / 2);
+            capGeom1.rotateY(-Math.PI / 2);
+            const cap1 = new THREE.Mesh(capGeom1, material);
+            cap1.position.x = -length / 2;
+            rodGroup.add(cap1);
+
+            const capGeom2 = new THREE.SphereGeometry(radius, segments, 18, 0, theta, 0, Math.PI);
+            capGeom2.rotateZ(-Math.PI / 2);
+            capGeom2.rotateY(Math.PI / 2);
+            const cap2 = new THREE.Mesh(capGeom2, material);
+            cap2.position.x = length / 2;
+            rodGroup.add(cap2);
+
+            return rodGroup;
+        }
+
+        function buildBacterialCell() {
+            bacteriumGroup = new THREE.Group();
+            scene.add(bacteriumGroup);
+            const rodLength = 4.3;
+
+            // 1. THÀNH TẾ BÀO
+            const matWall = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.45, side: THREE.DoubleSide });
+            const wallFull = createRodMesh(1.52, rodLength, matWall, false);
+            const wallCut = createRodMesh(1.52, rodLength, matWall, true);
+            const wallGroup = new THREE.Group();
+            wallGroup.userData = { id: 'cellWall' };
+            wallGroup.add(wallCut);
+            bacteriumGroup.add(wallGroup);
+            organelleMeshes['cellWall'] = { group: wallGroup, meshCut: wallCut, meshFull: wallFull, material: matWall };
+
+            // 2. MÀNG TẾ BÀO
+            const matMem = new THREE.MeshStandardMaterial({ color: 0x6366f1, roughness: 0.4, side: THREE.DoubleSide });
+            const memFull = createRodMesh(1.42, rodLength, matMem, false);
+            const memCut = createRodMesh(1.42, rodLength, matMem, true);
+            const memGroup = new THREE.Group();
+            memGroup.userData = { id: 'cellMembrane' };
+            memGroup.add(memCut);
+            bacteriumGroup.add(memGroup);
+            organelleMeshes['cellMembrane'] = { group: memGroup, meshCut: memCut, meshFull: memFull, material: matMem };
+
+            // 3. TẾ BÀO CHẤT
+            const matCyto = new THREE.MeshPhysicalMaterial({ color: 0xfde047, transparent: true, opacity: 0.32, roughness: 0.3, transmission: 0.65, depthWrite: false });
+            const cytoGroup = new THREE.Group();
+            cytoGroup.userData = { id: 'cytoplasm' };
+            const cytoMesh = createRodMesh(1.36, rodLength, matCyto, false);
+            cytoGroup.add(cytoMesh);
+            bacteriumGroup.add(cytoGroup);
+            organelleMeshes['cytoplasm'] = { group: cytoGroup, meshCut: cytoMesh, meshFull: cytoMesh, material: matCyto };
+
+            // 4. VÙNG NHÂN (ADN)
+            const nucGroup = new THREE.Group();
+            nucGroup.userData = { id: 'nucleoid' };
+            const dnaPoints = [];
+            for (let i = 0; i < 110; i++) {
+                const u = (i / 110) * Math.PI * 2;
+                dnaPoints.push(new THREE.Vector3(
+                    Math.sin(u * 2) * 1.5 + Math.cos(u * 5) * 0.3,
+                    Math.cos(u * 3) * 0.45 + Math.sin(u * 4) * 0.2,
+                    Math.sin(u * 4) * 0.55 + Math.cos(u * 2) * 0.25
+                ));
+            }
+            const dnaCurve = new THREE.CatmullRomCurve3(dnaPoints, true);
+            const dnaMat = new THREE.MeshStandardMaterial({ color: 0xc084fc, emissive: 0x9333ea, emissiveIntensity: 0.4 });
+            nucGroup.add(new THREE.Mesh(new THREE.TubeGeometry(dnaCurve, 160, 0.07, 8, true), dnaMat));
+            bacteriumGroup.add(nucGroup);
+            organelleMeshes['nucleoid'] = { group: nucGroup, material: dnaMat };
+
+            // 5. ROI
+            const flagGroup = new THREE.Group();
+            flagGroup.userData = { id: 'flagellum' };
+            const flagSteps = 50;
+            const flagLen = 6.0;
+            flagellumPoints = [];
+            for (let i = 0; i <= flagSteps; i++) {
+                const t = i / flagSteps;
+                flagellumPoints.push(new THREE.Vector3(rodLength / 2 + 1.6 + t * flagLen, Math.sin(t * Math.PI * 4) * 0.45, Math.cos(t * Math.PI * 4) * 0.45));
+            }
+            flagellumCurve = new THREE.CatmullRomCurve3(flagellumPoints);
+            const flagMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, emissive: 0x15803d, emissiveIntensity: 0.35 });
+            flagellumSplineMesh = new THREE.Mesh(new THREE.TubeGeometry(flagellumCurve, 70, 0.075, 8, false), flagMat);
+            flagGroup.add(flagellumSplineMesh);
+            bacteriumGroup.add(flagGroup);
+            organelleMeshes['flagellum'] = { group: flagGroup, material: flagMat };
+
+            // 6. LÔNG NHUNG
+            const piliGroup = new THREE.Group();
+            piliGroup.userData = { id: 'pili' };
+            const pilusGeom = new THREE.CylinderGeometry(0.02, 0.03, 0.75, 6);
+            pilusGeom.translate(0, 0.37, 0);
+            const piliMat = new THREE.MeshStandardMaterial({ color: 0x34d399, emissive: 0x059669, emissiveIntensity: 0.3 });
+
+            const targetPilus = new THREE.Mesh(pilusGeom, piliMat);
+            targetPilus.position.set(-1.8, 1.52, 0.3);
+            const norm = new THREE.Vector3(0, 1.52, 0.3).normalize();
+            targetPilus.lookAt(new THREE.Vector3().addVectors(targetPilus.position, norm));
+            targetPilus.rotateX(Math.PI / 2);
+            piliGroup.add(targetPilus);
+
+            for (let i = 0; i < 45; i++) {
+                const px = (Math.random() - 0.5) * (rodLength + 2.0);
+                const angle = Math.random() * Math.PI * 2;
+                const py = Math.cos(angle) * 1.52;
+                const pz = Math.sin(angle) * 1.52;
+                const p = new THREE.Mesh(pilusGeom, piliMat);
+                p.position.set(px, py, pz);
+                p.lookAt(new THREE.Vector3(px, py * 1.5, pz * 1.5));
+                p.rotateX(Math.PI / 2);
+                piliGroup.add(p);
+            }
+            bacteriumGroup.add(piliGroup);
+            organelleMeshes['pili'] = { group: piliGroup, material: piliMat };
+
+            bacteriumGroup.rotation.y = -Math.PI / 4.8;
+            bacteriumGroup.rotation.x = Math.PI / 11;
+        }
+
+        function buildInteractiveLabels() {
+            labelsOverlay.innerHTML = '';
+            labelPins.length = 0;
+            const svg = document.getElementById('leader-lines-svg');
+            const defs = svg.querySelector('defs');
+            svg.innerHTML = '';
+            if (defs) svg.appendChild(defs);
+
+            const quickList = document.getElementById('quickOrganelleList');
+            quickList.innerHTML = '';
+
+            Object.keys(ORGANELLE_DATA).forEach(key => {
+                const data = ORGANELLE_DATA[key];
+                const info = organelleMeshes[key];
+                if (!info) return;
+
+                // Mỏ neo 3D gắn trực tiếp vào Group
+                const anchorObj = new THREE.Object3D();
+                anchorObj.position.copy(data.localTargetPos);
+                info.group.add(anchorObj);
+
+                // Nhãn HTML với vùng chạm >= 44px
+                const pin = document.createElement('div');
+                pin.className = 'callout-label';
+                pin.style.borderColor = data.color;
+                pin.innerHTML = `
+                    <span class="color-dot" style="background-color: ${data.color}"></span>
+                    <span>${data.name}</span>
+                `;
+                pin.onclick = (e) => { e.stopPropagation(); selectOrganelle(key); };
+                labelsOverlay.appendChild(pin);
+
+                // Đường SVG
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.id = `leader-group-${key}`;
+                const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                polyline.setAttribute('stroke', data.color);
+                polyline.setAttribute('stroke-width', '1.8');
+                polyline.setAttribute('fill', 'none');
+                g.appendChild(polyline);
+
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('r', '4');
+                circle.setAttribute('fill', data.color);
+                circle.setAttribute('stroke', '#ffffff');
+                circle.setAttribute('stroke-width', '1.5');
+                g.appendChild(circle);
+                svg.appendChild(g);
+
+                labelPins.push({ element: pin, anchorObj, screenDir: data.screenDir, organelleId: key, color: data.color });
+
+                // Nút chọn nhanh bên phải
+                const btn = document.createElement('button');
+                btn.className = 'btn-touch';
+                btn.style.width = '100%';
+                btn.style.justifyContent = 'flex-start';
+                btn.innerHTML = `<span class="color-dot" style="background-color: ${data.color}"></span> ${data.name}`;
+                btn.onclick = () => selectOrganelle(key);
+                quickList.appendChild(btn);
+            });
+        }
+
+        function update3DLabels() {
+            const svg = document.getElementById('leader-lines-svg');
+            const targetWorld = new THREE.Vector3();
+            const projected = new THREE.Vector3();
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+
+            labelPins.forEach(item => {
+                item.anchorObj.getWorldPosition(targetWorld);
+                projected.copy(targetWorld).project(camera);
+                const g = svg.querySelector(`#leader-group-${item.organelleId}`);
+
+                if (projected.z > 1) {
+                    item.element.style.display = 'none';
+                    if (g) g.style.display = 'none';
+                    return;
+                }
+                item.element.style.display = 'flex';
+                if (g) g.style.display = 'block';
+
+                const targetX = (projected.x * w / 2) + w / 2;
+                const targetY = -(projected.y * h / 2) + h / 2;
+
+                const dist = Math.min(w, h) * 0.18 + 50;
+                let labelX = Math.max(65, Math.min(w - 95, targetX + item.screenDir.x * dist));
+                let labelY = Math.max(40, Math.min(h - 60, targetY + item.screenDir.y * dist));
+
+                item.element.style.left = `${labelX}px`;
+                item.element.style.top = `${labelY}px`;
+
+                if (g) {
+                    const poly = g.querySelector('polyline');
+                    const dot = g.querySelector('circle');
+                    if (dot) { dot.setAttribute('cx', targetX); dot.setAttribute('cy', targetY); }
+                    if (poly) {
+                        const midX = (targetX + labelX) / 2;
+                        poly.setAttribute('points', `${targetX},${targetY} ${midX},${targetY} ${labelX},${labelY}`);
+                    }
+                }
+            });
+        }
+
+        function selectOrganelle(id) {
+            const organelle = ORGANELLE_DATA[id];
+            if (!organelle) return;
+            selectedOrganelleId = id;
+
+            labelPins.forEach(p => {
+                if (p.organelleId === id) p.element.classList.add('active');
+                else p.element.classList.remove('active');
+            });
+
+            document.getElementById('emptyState').style.display = 'none';
+            const details = document.getElementById('activeDetails');
+            details.style.display = 'flex';
+
+            document.getElementById('detailCategory').innerText = organelle.category;
+            document.getElementById('detailName').innerText = organelle.name;
+            document.getElementById('detailStructure').innerText = organelle.structure;
+            document.getElementById('detailFunction').innerText = organelle.function;
+            document.getElementById('detailFunFact').innerText = organelle.funFact;
+            document.getElementById('detailNote').innerText = organelle.caution;
+
+            if (isFloatingChallengeActive) {
+                checkFloatingChallengeAnswer(id);
+            }
+
+            // Mở bảng drawer trên mobile
+            const panel = document.getElementById('infoPanel');
+            if (window.innerWidth <= 1024) panel.classList.add('open');
+        }
+
+        function getPointerPos(e) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            let cx = e.clientX, cy = e.clientY;
+            if (e.touches && e.touches.length > 0) {
+                cx = e.touches[0].clientX;
+                cy = e.touches[0].clientY;
+            }
+            return {
+                x: ((cx - rect.left) / rect.width) * 2 - 1,
+                y: -((cy - rect.top) / rect.height) * 2 + 1
+            };
+        }
+
+        function onPointerDown(e) {
+            const pos = getPointerPos(e);
+            mouse.x = pos.x;
+            mouse.y = pos.y;
+            raycaster.setFromCamera(mouse, camera);
+
+            const interactables = [];
+            bacteriumGroup.traverse(child => { if (child.isMesh && child.visible) interactables.push(child); });
+            const hits = raycaster.intersectObjects(interactables, true);
+
+            if (hits.length > 0) {
+                let curr = hits[0].object;
+                while (curr && curr !== bacteriumGroup) {
+                    if (curr.userData && curr.userData.id) {
+                        selectOrganelle(curr.userData.id);
+                        break;
+                    }
+                    curr = curr.parent;
+                }
+            }
+        }
+
+        function showToast(text, icon = "ℹ") {
+            const t = document.getElementById('toastMessage');
+            document.getElementById('toastText').innerText = text;
+            document.getElementById('toastIcon').innerText = icon;
+            t.classList.add('show');
+            if (window.toastTimer) clearTimeout(window.toastTimer);
+            window.toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function setupEvents() {
+            window.addEventListener('resize', () => {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            });
+
+            container.addEventListener('pointerdown', onPointerDown);
+
+            // Nút đặt lại góc nhìn
+            document.getElementById('btnResetView').onclick = () => {
+                camera.position.set(0, 2.5, 11);
+                if (controls && controls.target) controls.target.set(0, 0, 0);
+                bacteriumGroup.rotation.set(Math.PI / 11, -Math.PI / 4.8, 0);
+                showToast("Đã đặt lại góc nhìn 3D ban đầu", "↺");
+            };
+
+            // Phóng to / Thu nhỏ
+            document.getElementById('btnZoomIn').onclick = () => {
+                camera.position.multiplyScalar(0.85);
+            };
+            document.getElementById('btnZoomOut').onclick = () => {
+                camera.position.multiplyScalar(1.15);
+            };
+
+            // Bật/Tắt cắt lớp
+            document.getElementById('btnCutView').onclick = () => {
+                cutViewActive = !cutViewActive;
+                ['cellWall', 'cellMembrane'].forEach(key => {
+                    const item = organelleMeshes[key];
+                    if (item && item.meshCut && item.meshFull) {
+                        item.group.remove(cutViewActive ? item.meshFull : item.meshCut);
+                        item.group.add(cutViewActive ? item.meshCut : item.meshFull);
+                    }
+                });
+                document.getElementById('txtCutView').innerText = cutViewActive ? "Cắt Lớp" : "Toàn Vẹn";
+                showToast(cutViewActive ? "Đã bật chế độ mặt cắt nhìn rõ bên trong" : "Đã chuyển sang chế độ nhìn toàn diện", "✂");
+            };
+
+            // Tách lớp vỏ
+            document.getElementById('btnExplode').onclick = () => {
+                explodedViewActive = !explodedViewActive;
+                const controlsBox = document.getElementById('explodeControls');
+                if (explodedViewActive) {
+                    controlsBox.style.display = 'flex';
+                    document.getElementById('txtExplode').innerText = "Thu Lớp";
+                    applyExplode(0.5);
+                    showToast("Chế độ tách lớp: Thành tế bào và Màng tế bào đã được bóc tách", "☵");
+                } else {
+                    controlsBox.style.display = 'none';
+                    document.getElementById('txtExplode').innerText = "Tách Lớp";
+                    applyExplode(0);
+                    showToast("Đã đưa các lớp vỏ về vị trí ban đầu", "↺");
+                }
+            };
+
+            document.getElementById('sliderExplode').oninput = (e) => {
+                const val = e.target.value / 100;
+                document.getElementById('explodeValue').innerText = `${e.target.value}%`;
+                applyExplode(val);
+            };
+            document.getElementById('btnRestoreExplode').onclick = () => {
+                document.getElementById('sliderExplode').value = 50;
+                document.getElementById('explodeValue').innerText = '50%';
+                applyExplode(0.5);
+            };
+
+            // Bật / Dừng sóng roi
+            document.getElementById('btnToggleAnim').onclick = () => {
+                animFlagellaActive = !animFlagellaActive;
+                showToast(animFlagellaActive ? "Đang bật chuyển động sóng roi" : "Đã tạm dừng chuyển động sóng roi", "▶");
+            };
+
+            // Nút thu gọn / mở bảng
+            let panelVisible = true;
+            document.getElementById('btnToggleSidePanel').onclick = () => {
+                panelVisible = !panelVisible;
+                const p = document.getElementById('infoPanel');
+                p.style.display = panelVisible ? 'flex' : 'none';
+                document.getElementById('txtSidePanelBtn').innerText = panelVisible ? "Bảng thông tin" : "Mở bảng tin";
+                setTimeout(() => {
+                    camera.aspect = container.clientWidth / container.clientHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(container.clientWidth, container.clientHeight);
+                }, 50);
+            };
+
+            // Mobile Drawer
+            document.getElementById('btnOpenMobilePanel').onclick = () => document.getElementById('infoPanel').classList.add('open');
+            document.getElementById('btnClosePanel').onclick = () => document.getElementById('infoPanel').classList.remove('open');
+
+            // Help Modal
+            document.getElementById('btnHelp').onclick = () => document.getElementById('helpModal').style.display = 'flex';
+            document.getElementById('btnCloseHelp').onclick = () => document.getElementById('helpModal').style.display = 'none';
+            document.getElementById('btnGotHelp').onclick = () => document.getElementById('helpModal').style.display = 'none';
+
+            // Challenge Mode
+            document.getElementById('btnChallengeMode').onclick = () => {
+                document.getElementById('challengeModal').style.display = 'flex';
+                loadQuizQuestion(0);
+            };
+            document.getElementById('btnCloseChallenge').onclick = () => document.getElementById('challengeModal').style.display = 'none';
+            document.getElementById('btnExitChallenge').onclick = () => {
+                isFloatingChallengeActive = false;
+                document.getElementById('challengeFloatingBar').style.display = 'none';
+                showToast("Đã thoát chế độ thử thách 3D", "✕");
+            };
+
+            // Kiểm tra mobile
+            if (window.innerWidth <= 1024) {
+                document.getElementById('btnOpenMobilePanel').style.display = 'inline-flex';
+            }
+        }
+
+        function applyExplode(factor) {
+            const wallOffset = 1.1 * factor;
+            const memOffset = 0.55 * factor;
+            if (organelleMeshes['cellWall']) organelleMeshes['cellWall'].group.position.set(0, wallOffset, wallOffset * 0.35);
+            if (organelleMeshes['cellMembrane']) organelleMeshes['cellMembrane'].group.position.set(0, memOffset, memOffset * 0.25);
+            if (organelleMeshes['pili']) organelleMeshes['pili'].group.position.set(0, wallOffset, wallOffset * 0.35);
+        }
+
+        function checkFloatingChallengeAnswer(id) {
+            const targetKey = TARGET_KEYS[currentTargetIndex];
+            if (id === targetKey) {
+                showToast(`Chính xác! Bạn đã xác định đúng ${ORGANELLE_DATA[id].name}.`, "✓");
+                currentTargetIndex = (currentTargetIndex + 1) % TARGET_KEYS.length;
+                document.getElementById('floatingChallengePrompt').innerText = `Chạm vào: ${ORGANELLE_DATA[TARGET_KEYS[currentTargetIndex]].name}`;
+            } else {
+                showToast(`Chưa đúng! Đây là ${ORGANELLE_DATA[id].name}. Hãy thử lại nhé!`, "✕");
+            }
+        }
+
+        let currentQuizIndex = 0;
+        let quizScore = 0;
+
+        function loadQuizQuestion(index) {
+            currentQuizIndex = index;
+            const item = QUIZ_QUESTIONS[index];
+            document.getElementById('quizIndex').innerText = `Câu hỏi ${index + 1}/${QUIZ_QUESTIONS.length}`;
+            document.getElementById('quizScoreText').innerText = `Điểm: ${quizScore}`;
+            document.getElementById('quizQuestion').innerText = item.q;
+
+            const opts = document.getElementById('quizOptions');
+            opts.innerHTML = '';
+            const feedback = document.getElementById('quizFeedback');
+            feedback.style.display = 'none';
+
+            item.options.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-touch';
+                btn.style.width = '100%';
+                btn.style.justifyContent = 'flex-start';
+                btn.style.textAlign = 'left';
+                btn.innerHTML = `<span style="width:20px; font-weight:700; color:var(--cyan-accent);">${String.fromCharCode(65 + i)}.</span> ${opt}`;
+                btn.onclick = () => {
+                    opts.querySelectorAll('button').forEach(b => b.disabled = true);
+                    if (i === item.correct) {
+                        quizScore++;
+                        btn.style.borderColor = '#10b981';
+                        btn.style.backgroundColor = 'rgba(16, 185, 129, 0.2)';
+                        feedback.style.display = 'block';
+                        feedback.style.backgroundColor = 'rgba(16, 185, 129, 0.15)';
+                        feedback.style.border = '1px solid #10b981';
+                        feedback.innerHTML = `<strong>Chính xác!</strong> ${item.explain}`;
+                    } else {
+                        btn.style.borderColor = '#ef4444';
+                        btn.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+                        feedback.style.display = 'block';
+                        feedback.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+                        feedback.style.border = '1px solid #ef4444';
+                        feedback.innerHTML = `<strong>Chưa đúng!</strong> ${item.explain}`;
+                    }
+
+                    const nextBtn = document.createElement('button');
+                    nextBtn.className = 'btn-touch btn-accent';
+                    nextBtn.style.width = '100%';
+                    nextBtn.style.marginTop = '10px';
+                    nextBtn.innerText = currentQuizIndex < QUIZ_QUESTIONS.length - 1 ? "Câu tiếp theo" : "Xem kết quả bài kiểm tra";
+                    nextBtn.onclick = () => {
+                        if (currentQuizIndex < QUIZ_QUESTIONS.length - 1) loadQuizQuestion(currentQuizIndex + 1);
+                        else {
+                            document.getElementById('quizContainer').style.display = 'none';
+                            document.getElementById('quizFinished').style.display = 'block';
+                            document.getElementById('quizFinalScore').innerText = `Bạn đã trả lời đúng ${quizScore}/${QUIZ_QUESTIONS.length} câu hỏi.`;
+                        }
+                    };
+                    feedback.appendChild(nextBtn);
+                };
+                opts.appendChild(btn);
+            });
+        }
+
+        document.getElementById('btnRestartQuiz').onclick = () => {
+            quizScore = 0;
+            document.getElementById('quizContainer').style.display = 'block';
+            document.getElementById('quizFinished').style.display = 'none';
+            loadQuizQuestion(0);
+        };
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            if (animFlagellaActive && flagellumPoints.length && flagellumSplineMesh) {
+                const time = performance.now() * 0.003;
+                const steps = flagellumPoints.length - 1;
+                for (let i = 0; i <= steps; i++) {
+                    const t = i / steps;
+                    const fx = 4.3 / 2 + 1.6 + t * 6.0;
+                    const phase = time * 3.5 - t * Math.PI * 4;
+                    const radius = 0.45 * (0.3 + t * 0.85);
+                    flagellumPoints[i].set(fx, Math.sin(phase) * radius, Math.cos(phase) * radius);
+                }
+                flagellumCurve.points = flagellumPoints;
+                flagellumSplineMesh.geometry.dispose();
+                flagellumSplineMesh.geometry = new THREE.TubeGeometry(flagellumCurve, 70, 0.075, 8, false);
+            }
+
+            if (!controls.state || controls.state === -1) {
+                bacteriumGroup.rotation.y += 0.0006;
+            }
+
+            update3DLabels();
+            renderer.render(scene, camera);
+        }
+
+        window.onload = function() {
+            if (initScene()) {
+                animate();
+                setTimeout(() => {
+                    selectOrganelle('cellWall');
+                    showToast("Chào mừng đến với Mô Phỏng Tế Bào Nhân Sơ 3D (Khối 6 - Bài 19)", "🔬");
+                }, 400);
+            }
+        };
+    </script>
+</body>
+</html>

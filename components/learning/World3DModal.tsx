@@ -88,7 +88,9 @@ export function World3DModal({ onClose }: World3DModalProps) {
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
-          setModels(data);
+          const dbIds = new Set(data.map((m: Model3D) => m.id));
+          const remaining = DEMO_MODELS.filter((d) => !dbIds.has(d.id));
+          setModels([...data, ...remaining]);
         }
       })
       .catch(() => {})
