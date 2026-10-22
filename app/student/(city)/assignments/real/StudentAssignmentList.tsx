@@ -48,7 +48,7 @@ export function StudentAssignmentList({ assignments }: { assignments: Assignment
                 : a.assignment_type === 'stem' ? '/student/stem'
                 : '/student/virtual-lab';
               const typeIcon = a.assignment_type === 'lesson' ? '📖' : a.assignment_type === 'experiment' ? '🔬' : a.assignment_type === 'model3d' ? '🌐' : a.assignment_type === 'stem' ? '🧪' : isGame ? '🎮' : '📝';
-              const href = isTask ? taskRoute : isGame ? `/games/me-cung/?assignmentId=${a.id}` : `/student/arcade?assignment=${a.id}`;
+              const href = isTask ? taskRoute : isGame ? `/games/me-cung/index.html?assignmentId=${a.id}` : `/student/arcade?assignment=${a.id}`;
               return (
                 <Link
                   key={a.id}
