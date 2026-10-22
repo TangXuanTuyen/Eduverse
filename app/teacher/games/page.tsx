@@ -3,6 +3,7 @@ import { getTeacherGames } from '@/services/games';
 import { redirect } from 'next/navigation';
 import { GameList } from './GameList';
 import { CreateGameButton } from './CreateGameButton';
+import { MeCungCard } from './MeCungCard';
 
 export default async function TeacherGamesPage() {
   const profile = await getCurrentProfile();
@@ -19,7 +20,16 @@ export default async function TeacherGamesPage() {
         </div>
         <CreateGameButton />
       </div>
-      <GameList games={games} />
+
+      <div>
+        <h2 className="text-sm font-medium text-slate-400 mb-3">Trò chơi đặc biệt</h2>
+        <MeCungCard />
+      </div>
+
+      <div>
+        <h2 className="text-sm font-medium text-slate-400 mb-3">Trò chơi đã tạo</h2>
+        <GameList games={games} />
+      </div>
     </div>
   );
 }

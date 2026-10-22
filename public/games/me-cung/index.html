@@ -1129,6 +1129,7 @@
     let QUESTION_BANK = [];
     const _EDUVERSE_PARAMS = new URLSearchParams(window.location.search);
     const _EDUVERSE_ASSIGNMENT_ID = _EDUVERSE_PARAMS.get('assignmentId');
+    const _EDUVERSE_SET_ID = _EDUVERSE_PARAMS.get('setId');
 
     const _DEFAULT_QUESTION_BANK = [
       {
@@ -1266,9 +1267,12 @@
     QUESTION_BANK = _DEFAULT_QUESTION_BANK;
 
     async function _loadAssignmentQuestions() {
-      if (!_EDUVERSE_ASSIGNMENT_ID) return;
+      if (!_EDUVERSE_ASSIGNMENT_ID && !_EDUVERSE_SET_ID) return;
+      const url = _EDUVERSE_ASSIGNMENT_ID
+        ? `/api/game/questions?assignmentId=${encodeURIComponent(_EDUVERSE_ASSIGNMENT_ID)}`
+        : `/api/game/questions?setId=${encodeURIComponent(_EDUVERSE_SET_ID)}`;
       try {
-        const res = await fetch(`/api/game/questions?assignmentId=${encodeURIComponent(_EDUVERSE_ASSIGNMENT_ID)}`, {
+        const res = await fetch(url, {
           credentials: 'include',
         });
         if (!res.ok) return;
