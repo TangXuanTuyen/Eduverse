@@ -4,7 +4,8 @@ import { updateSession } from '@/lib/supabase/proxy';
 export async function proxy(request: NextRequest) {
   const response = await updateSession(request);
 
-  if (request.nextUrl.pathname.startsWith('/experiments/')) {
+  const path = request.nextUrl.pathname;
+  if (path.startsWith('/experiments/') || path.startsWith('/models-3d/')) {
     response.headers.set('X-Frame-Options', 'SAMEORIGIN');
   } else {
     response.headers.set('X-Frame-Options', 'DENY');
