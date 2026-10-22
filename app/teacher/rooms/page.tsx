@@ -16,7 +16,7 @@ export default async function TeacherRoomsPage() {
   const roomsWithCount = await Promise.all(
     rooms.map(async (r) => ({
       ...r,
-      memberCount: await getRoomMemberCount(r.id),
+      memberCount: await getRoomMemberCount(r.id, profile.id),
     }))
   );
 

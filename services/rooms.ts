@@ -92,12 +92,14 @@ export async function deleteRoom(roomId: string, ownerId: string) {
   if (error) throw new Error(error.message);
 }
 
-export async function getRoomMemberCount(roomId: string) {
+export async function getRoomMemberCount(roomId: string, excludeOwnerId?: string) {
   const admin = createAdminClient();
-  const { count } = await admin
+  let query = admin
     .from('room_members')
     .select('*', { count: 'exact', head: true })
     .eq('room_id', roomId)
     .eq('is_active', true);
+  if (excludeOwnerId) query = query.neq('user_id', excludeOwnerId);
+  const { count } = await query;
   return count ?? 0;
 }
