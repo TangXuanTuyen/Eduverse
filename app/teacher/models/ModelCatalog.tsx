@@ -22,7 +22,6 @@ export function ModelCatalog({ models }: { models: Model3DRow[] }) {
   const [selectedRoom, setSelectedRoom] = useState('');
   const [assigning, setAssigning] = useState(false);
   const [message, setMessage] = useState('');
-  const [previewId, setPreviewId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/teacher/rooms')
@@ -50,7 +49,6 @@ export function ModelCatalog({ models }: { models: Model3DRow[] }) {
     }
   }
 
-  const previewModel = previewId ? models.find((m) => m.id === previewId) : null;
 
   return (
     <div className="space-y-4">
@@ -75,28 +73,7 @@ export function ModelCatalog({ models }: { models: Model3DRow[] }) {
         ))}
       </div>
 
-      {/* 3D Preview overlay */}
-      {previewModel && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-slate-950">
-          <div className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800">
-            <h2 className="text-white font-bold text-sm">{previewModel.title}</h2>
-            <button
-              onClick={() => setPreviewId(null)}
-              className="min-h-[44px] px-4 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm text-white"
-            >
-              Đóng
-            </button>
-          </div>
-          <div className="flex-1">
-            <iframe
-              src={previewModel.embed_url}
-              className="w-full h-full border-0"
-              sandbox="allow-scripts allow-same-origin allow-popups"
-              title={previewModel.title}
-            />
-          </div>
-        </div>
-      )}
+      {/* Preview removed — now opens in new tab */}
 
       {filtered.length === 0 ? (
         <div className="text-center py-12 text-slate-500">
@@ -111,7 +88,7 @@ export function ModelCatalog({ models }: { models: Model3DRow[] }) {
               className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-slate-700 transition"
             >
               <button
-                onClick={() => setPreviewId(m.id)}
+                onClick={() => window.open(m.embed_url, '_blank')}
                 className="w-full text-left"
               >
                 {m.thumbnail_url ? (
@@ -171,7 +148,7 @@ export function ModelCatalog({ models }: { models: Model3DRow[] }) {
                 ) : (
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setPreviewId(m.id)}
+                      onClick={() => window.open(m.embed_url, '_blank')}
                       className="flex-1 rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-xs text-white flex items-center justify-center gap-1.5 min-h-[44px]"
                     >
                       <Box size={12} /> Xem 3D
