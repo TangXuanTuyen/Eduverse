@@ -2603,13 +2603,27 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
 
     // Fluttering Vietnam National Flag (Red with Yellow Star)
     const wave = Math.sin(time * 0.007) * 3;
-    ctx.fillStyle = '#DC2626'; // Deep Red
-    ctx.fillRect(fx + 1, fy - 46 + wave * 0.3, 24, 16);
+    const flagX = fx + 1;
+    const flagY = fy - 46 + wave * 0.3;
+    const flagW = 24;
+    const flagH = 16;
+    ctx.fillStyle = '#DA251D';
+    ctx.fillRect(flagX, flagY, flagW, flagH);
 
-    // Golden Star in center
-    ctx.fillStyle = '#FDE047';
+    // 5-pointed golden star
+    const cx = flagX + flagW / 2;
+    const cy = flagY + flagH / 2;
+    const outerR = 5;
+    const innerR = 2;
+    ctx.fillStyle = '#FFFF00';
     ctx.beginPath();
-    ctx.arc(fx + 13, fy - 38 + wave * 0.3, 3.5, 0, Math.PI * 2);
+    for (let i = 0; i < 5; i++) {
+      const outerA = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+      const innerA = outerA + Math.PI / 5;
+      ctx.lineTo(cx + Math.cos(outerA) * outerR, cy + Math.sin(outerA) * outerR);
+      ctx.lineTo(cx + Math.cos(innerA) * innerR, cy + Math.sin(innerA) * innerR);
+    }
+    ctx.closePath();
     ctx.fill();
   };
 
