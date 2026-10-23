@@ -262,7 +262,7 @@ export async function getSubmissionStats(assignmentId: string) {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from('submissions')
-    .select('id, student_id, status, total_score, max_score, submitted_at, profiles!inner(display_name)')
+    .select('id, student_id, status, total_score, max_score, submitted_at, student:profiles!student_id(display_name)')
     .eq('assignment_id', assignmentId);
   if (error) throw new Error(error.message);
   return data as unknown as Array<{
@@ -272,7 +272,7 @@ export async function getSubmissionStats(assignmentId: string) {
     total_score: number | null;
     max_score: number | null;
     submitted_at: string | null;
-    profiles: { display_name: string };
+    student: { display_name: string };
   }>;
 }
 

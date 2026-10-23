@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
 
   for (const s of stats) {
     sheet.addRow({
-      name: s.profiles.display_name,
+      name: s.student.display_name,
       status: statusMap[s.status] ?? s.status,
       score: s.total_score ?? '',
       max: s.max_score ?? '',

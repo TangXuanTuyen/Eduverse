@@ -75,7 +75,7 @@ export default async function AssignmentDetailPage({ params }: Props) {
               <tbody>
                 {stats.map((s) => (
                   <tr key={s.id} className="border-b border-slate-800/50">
-                    <td className="px-4 py-2 text-white">{s.profiles.display_name}</td>
+                    <td className="px-4 py-2 text-white">{s.student.display_name}</td>
                     <td className="px-4 py-2">
                       <StatusBadge status={s.status} />
                     </td>
