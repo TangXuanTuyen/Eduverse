@@ -48,6 +48,8 @@ class GeminiProvider implements AIProvider {
 
     contents.push({ role: 'user', parts: [{ text: userMessage }] });
 
+    const requestedTokens = opts.maxTokens ?? 1024;
+
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
         const response = await Promise.race([
@@ -56,17 +58,24 @@ class GeminiProvider implements AIProvider {
             contents,
             config: {
               systemInstruction: opts.systemPrompt,
-              maxOutputTokens: opts.maxTokens ?? 1024,
+              maxOutputTokens: requestedTokens + 8192,
               temperature: opts.temperature ?? 0.7,
+              thinkingConfig: { thinkingBudget: 8192 },
             },
           }),
           new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('AI timeout')), opts.timeoutMs ?? 30000),
+            setTimeout(() => reject(new Error('AI timeout')), opts.timeoutMs ?? 60000),
           ),
         ]);
 
         const text = response.text ?? '';
         const tokensUsed = response.usageMetadata?.totalTokenCount ?? 0;
+
+        if (!text) {
+          const reason = response.candidates?.[0]?.finishReason;
+          if (reason === 'MAX_TOKENS') throw new Error('AI hết token trả lời, thử giảm số câu hỏi');
+          throw new Error('AI trả về rỗng');
+        }
 
         return { text, tokensUsed };
       } catch (err: unknown) {
