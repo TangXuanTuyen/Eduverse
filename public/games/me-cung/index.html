@@ -891,6 +891,7 @@
   <div id="app-root">
     <!-- Content injected via JS -->
   </div>
+  <canvas id="maze-canvas" style="display:none;"></canvas>
 
   <!-- Audio Context Synthesizer & Game Logic Script -->
   <script>
@@ -2794,9 +2795,7 @@
             ` : ''}
 
             <!-- Canvas Viewport -->
-            <div class="canvas-container">
-              <canvas id="maze-canvas"></canvas>
-            </div>
+            <div class="canvas-container" id="canvas-slot"></div>
 
             <!-- Virtual Controls -->
             <div class="controls-wrapper">
@@ -2853,10 +2852,17 @@
         </footer>
       `;
 
+      const canvas = document.getElementById('maze-canvas');
+      if (canvas && canvas.parentElement !== document.body) {
+        document.body.appendChild(canvas);
+      }
       root.innerHTML = html;
-
-      if (gameState.status === 'playing' || gameState.status === 'question' || gameState.status === 'completed') {
-        startCanvasLoop();
+      const slot = document.getElementById('canvas-slot');
+      if (slot && canvas) {
+        canvas.style.display = '';
+        slot.appendChild(canvas);
+      } else if (canvas) {
+        canvas.style.display = 'none';
       }
     }
 
@@ -2959,10 +2965,7 @@
               ` : ''}
             </div>
 
-            <!-- Visual diagram -->
-            ${q.visualType ? `<div class="qm-visual-box">
-              ${renderQuestionVisualSVG(q.visualType)}
-            </div>` : ''}
+            <!-- Visual diagram removed: API questions don't have matching visuals -->
 
             <!-- Question Prompt -->
             <div class="qm-prompt">${renderLatex(q.question)}</div>
