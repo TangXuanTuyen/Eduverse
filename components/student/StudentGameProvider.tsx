@@ -29,7 +29,7 @@ const storageKeys = (userId: string) => ({
   firstTime: `eduverse_first_time_v3:${userId}`,
 });
 
-export type StudentIdentity = { userId: string; displayName: string; className: string };
+export type StudentIdentity = { userId: string; displayName: string; className: string; roomId?: string | null };
 
 const DEFAULT_CHARACTER: CharacterConfig = {
   id: '',
@@ -73,6 +73,7 @@ interface StudentGameContextValue {
   isFirstTime: boolean;
   isEditingCharacter: boolean;
   isGuest: boolean;
+  roomId: string | null;
   playerRef: React.MutableRefObject<CityPlayerHandle | null>;
 
   setEditingCharacter: (editing: boolean) => void;
@@ -105,10 +106,12 @@ export function StudentGameProvider({
   identity,
   children,
   guest = false,
+  roomId = null,
 }: {
   identity: StudentIdentity;
   children: React.ReactNode;
   guest?: boolean;
+  roomId?: string | null;
 }) {
   const router = useRouter();
   const keys = useMemo(() => storageKeys(identity.userId), [identity.userId]);
@@ -343,6 +346,7 @@ export function StudentGameProvider({
       isFirstTime,
       isEditingCharacter,
       isGuest: guest,
+      roomId,
       playerRef,
       setEditingCharacter,
       confirmCharacter,
@@ -366,6 +370,7 @@ export function StudentGameProvider({
       isFirstTime,
       isEditingCharacter,
       guest,
+      roomId,
       confirmCharacter,
       updatePosition,
       enterBuilding,

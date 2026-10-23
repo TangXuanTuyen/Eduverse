@@ -1,18 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import type { BuildingInfo } from '@/types/game';
 import { CityHUD } from '@/components/city/CityHUD';
 import { CityListView } from '@/components/city/CityListView';
 import { PlayerController } from '@/components/city/PlayerController';
+import { EmoteBar } from '@/components/city/EmoteBar';
 import { CharacterSelection } from '@/components/character/CharacterSelection';
 import { useStudentGame } from '@/components/student/StudentGameProvider';
+import { usePresence } from '@/lib/hooks/usePresence';
 import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
 import { useListMode } from '@/lib/hooks/useListMode';
 import { useBuildingNotifications } from '@/lib/hooks/useBuildingNotifications';
 import { STUDENT_HOME, GUEST_HOME } from '@/lib/student-routes';
+import { PRESENCE_BROADCAST_INTERVAL_MS } from '@/game/config/town-map';
 import Link from 'next/link';
 import { BreakReminder } from '@/components/ui/BreakReminder';
 
@@ -52,6 +55,59 @@ export function CityShell({ children }: { children: React.ReactNode }) {
   const placeOpen = pathname !== homeUrl;
   const paused = placeOpen || game.isFirstTime || game.isEditingCharacter;
 
+  // Multiplayer presence
+  const { peers, broadcast, broadcastLeave } = usePresence(
+    game.isGuest ? null : game.roomId,
+    game.isGuest ? null : game.character.id || null,
+    false,
+  );
+
+  // Broadcast vị trí định kỳ
+  const broadcastRef = useRef(broadcast);
+  broadcastRef.current = broadcast;
+  const lastBroadcastRef = useRef(0);
+
+  const handlePositionChange = useCallback(
+    (pos: { x: number; y: number }, facing: string) => {
+      game.updatePosition(pos, facing as 'up' | 'down' | 'left' | 'right');
+      const now = Date.now();
+      if (now - lastBroadcastRef.current < PRESENCE_BROADCAST_INTERVAL_MS) return;
+      lastBroadcastRef.current = now;
+      const c = game.character;
+      broadcastRef.current({
+        userId: c.id,
+        displayName: c.name,
+        x: pos.x,
+        y: pos.y,
+        facing,
+        outfit: c.outfit,
+        skinTone: c.skinTone,
+        hairStyle: c.hairStyle,
+        hairColor: c.hairColor,
+      });
+    },
+    [game],
+  );
+
+  // Broadcast leave khi unmount
+  useEffect(() => () => broadcastLeave(), [broadcastLeave]);
+
+  // Emote: hiện nổi trên đầu nhân vật (tự mình), sẽ mở rộng broadcast sau
+  const handleEmote = useCallback(
+    (emote: string) => {
+      // TODO: broadcast emote to peers via channel
+      void emote;
+    },
+    [],
+  );
+
+  const handlePhrase = useCallback(
+    (phrase: string) => {
+      void phrase;
+    },
+    [],
+  );
+
   return (
     <main className="relative w-full h-dvh overflow-hidden bg-slate-950 font-sans">
       {!game.hydrated ? (
@@ -71,14 +127,24 @@ export function CityShell({ children }: { children: React.ReactNode }) {
                 <CityMapCanvas
                   character={game.character}
                   progress={game.progress}
+                  peers={peers}
                   onEnterBuilding={game.enterBuilding}
-                  onPositionChange={game.updatePosition}
+                  onPositionChange={handlePositionChange}
                   onRequestEditCharacter={() => game.setEditingCharacter(true)}
                   onNearbyBuildingChange={setNearbyBuilding}
                   paused={paused}
                   reducedMotion={reducedMotion}
                   playerRefExternal={game.playerRef}
                 />
+
+                {!game.isGuest && !paused && (
+                  <EmoteBar
+                    onEmote={handleEmote}
+                    onPhrase={handlePhrase}
+                    onReport={() => {}}
+                    disabled={paused}
+                  />
+                )}
 
                 <PlayerController
                   onMoveInput={(dx, dy) => game.playerRef.current?.moveByInput(dx, dy)}

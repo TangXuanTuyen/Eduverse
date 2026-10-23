@@ -10,9 +10,10 @@ export default async function StudentCityLayout({ children }: { children: React.
   if (rooms.length === 0) redirect('/student/join-room');
 
   const roomName = rooms[0]?.name ?? '';
+  const roomId = rooms[0]?.id ?? null;
 
   return (
-    <StudentGameProvider identity={{ userId: profile.id, displayName: profile.displayName, className: roomName }}>
+    <StudentGameProvider identity={{ userId: profile.id, displayName: profile.displayName, className: roomName }} roomId={roomId}>
       <CityShell>{children}</CityShell>
     </StudentGameProvider>
   );

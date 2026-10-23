@@ -26,17 +26,27 @@ import { PathfindingSystem } from '@/game/engine/pathfinding';
 import { ProgressionSystem } from '@/game/engine/progression';
 import { sound } from '@/lib/audio';
 import { X, ArrowRight, Sparkles, Lock } from 'lucide-react';
+export interface PeerForCanvas {
+  userId: string;
+  displayName: string;
+  x: number;
+  y: number;
+  facing: string;
+  outfit: string;
+  skinTone: string;
+  hairStyle: string;
+  hairColor: string;
+}
 
 interface CityMapCanvasProps {
   character: CharacterConfig;
   progress: PlayerProgress;
+  peers?: PeerForCanvas[];
   onEnterBuilding: (building: BuildingInfo) => void;
   onPositionChange?: (pos: { x: number; y: number }, facing: Direction) => void;
   onRequestEditCharacter: () => void;
   onNearbyBuildingChange?: (building: BuildingInfo | null) => void;
-  /** Khi đang mở một địa điểm (modal), dừng cập nhật/vẽ và bỏ qua phím di chuyển. */
   paused?: boolean;
-  /** Tắt lá bay, bụi bước chân và camera trượt (prefers-reduced-motion). */
   reducedMotion?: boolean;
   playerRefExternal?: React.MutableRefObject<CityPlayerHandle | null>;
 }
@@ -72,6 +82,7 @@ interface DriftingLeaf {
 export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
   character,
   progress,
+  peers = [],
   onEnterBuilding,
   onPositionChange,
   onRequestEditCharacter: _onRequestEditCharacter,
@@ -86,6 +97,8 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
   const groundCacheRef = useRef<HTMLCanvasElement | null>(null);
   const onEnterBuildingRef = useRef(onEnterBuilding);
   onEnterBuildingRef.current = onEnterBuilding;
+  const peersRef = useRef(peers);
+  peersRef.current = peers;
 
   useEffect(() => {
     pausedRef.current = paused;
@@ -2438,6 +2451,14 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
       render: () => drawPlayer(ctx, stateRef.current.player, time),
     });
 
+    // 1b. Peer avatars (bạn cùng lớp)
+    for (const peer of peersRef.current) {
+      entities.push({
+        yBase: peer.y * TILE_SIZE + 18,
+        render: () => drawPeer(ctx, peer, time),
+      });
+    }
+
     // 2. Vietnam Flagpole in front of School
     entities.push({
       yBase: 7.2 * TILE_SIZE,
@@ -2962,6 +2983,105 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
     ctx.textBaseline = 'middle';
     ctx.fillText(nameText, 0, tagY + tagHeight / 2);
 
+    ctx.restore();
+  };
+
+  const drawPeer = (
+    ctx: CanvasRenderingContext2D,
+    peer: PeerForCanvas,
+    time: number,
+  ) => {
+    const px = peer.x * TILE_SIZE;
+    const py = peer.y * TILE_SIZE;
+    const facing = peer.facing as Direction;
+
+    // Shadow
+    ctx.fillStyle = '#0000002A';
+    ctx.beginPath();
+    ctx.ellipse(px, py + 23, 14, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    const skin = peer.skinTone || '#FCD34D';
+    const hair = peer.hairColor || '#1E293B';
+    const outfitColor = peer.outfit === 'thcs_uniform' ? '#FFFFFF' : '#3B82F6';
+
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.scale(1.1, 1.1);
+    // Slight transparency to distinguish from player
+    ctx.globalAlpha = 0.85;
+
+    // Legs
+    ctx.fillStyle = '#1E293B';
+    ctx.fillRect(-7, 8, 5, 8);
+    ctx.fillRect(2, 8, 5, 8);
+    ctx.fillStyle = '#0F172A';
+    ctx.fillRect(-8, 15, 7, 4);
+    ctx.fillRect(1, 15, 7, 4);
+
+    // Torso
+    ctx.fillStyle = outfitColor;
+    ctx.fillRect(-10, -6, 20, 15);
+    if (peer.outfit === 'thcs_uniform' && facing === 'down') {
+      ctx.fillStyle = '#DC2626';
+      ctx.beginPath();
+      ctx.moveTo(0, -6);
+      ctx.lineTo(-5, 1);
+      ctx.lineTo(5, 1);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Arms
+    ctx.fillStyle = skin;
+    ctx.fillRect(-13, -4, 4, 10);
+    ctx.fillRect(9, -4, 4, 10);
+
+    // Head
+    ctx.fillStyle = skin;
+    ctx.beginPath();
+    ctx.arc(0, -13, 9, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Hair
+    ctx.fillStyle = hair;
+    if (facing === 'down' || facing === 'left' || facing === 'right') {
+      ctx.fillRect(-9, -22, 18, 6);
+      ctx.fillRect(-10, -20, 20, 4);
+    } else {
+      ctx.fillRect(-9, -22, 18, 8);
+    }
+
+    // Eyes (front only)
+    if (facing === 'down') {
+      ctx.fillStyle = '#0F172A';
+      ctx.fillRect(-5, -14, 3, 3);
+      ctx.fillRect(2, -14, 3, 3);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(-4, -14, 1, 1);
+      ctx.fillRect(3, -14, 1, 1);
+    }
+
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    // Name tag
+    ctx.save();
+    ctx.translate(px, py);
+    const nameText = peer.displayName.length > 8
+      ? peer.displayName.slice(0, 7) + '…'
+      : peer.displayName;
+    ctx.font = `bold 9px ${uiFontFamily}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const tagY = -34;
+    const tw = ctx.measureText(nameText).width + 8;
+    ctx.fillStyle = '#0F172ACC';
+    ctx.beginPath();
+    ctx.roundRect(-tw / 2, tagY - 6, tw, 12, 4);
+    ctx.fill();
+    ctx.fillStyle = '#E2E8F0';
+    ctx.fillText(nameText, 0, tagY);
     ctx.restore();
   };
 
