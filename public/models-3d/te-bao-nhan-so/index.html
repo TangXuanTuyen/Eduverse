@@ -1450,6 +1450,16 @@ THÔNG TIN TÀI NGUYÊN GIÁO DỤC SỐ - PHÒNG THÍ NGHIỆM ẢO (VINA-EDUVE
         window.onload = function() {
             if (initScene()) {
                 animate();
+                new ResizeObserver(() => {
+                    if (!renderer || !camera || !container) return;
+                    const w = container.clientWidth;
+                    const h = container.clientHeight;
+                    if (w > 0 && h > 0) {
+                        camera.aspect = w / h;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(w, h);
+                    }
+                }).observe(container);
                 setTimeout(() => {
                     selectOrganelle('cellWall');
                     showToast("Chào mừng đến với Mô Phỏng Tế Bào Nhân Sơ 3D (Khối 6 - Bài 19)", "🔬");

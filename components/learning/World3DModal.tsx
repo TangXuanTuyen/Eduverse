@@ -180,8 +180,8 @@ export function World3DModal({ onClose }: World3DModalProps) {
                 src={activeModel.embed_url}
                 className="w-full h-[60vh] rounded-xl border border-cyan-800/30"
                 title={activeModel.title}
-                sandbox="allow-scripts allow-same-origin"
-                loading="lazy"
+                allow="webgl; webgl2"
+                loading="eager"
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-64 text-center gap-4">

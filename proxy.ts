@@ -16,7 +16,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Bỏ qua file tĩnh, ảnh tối ưu, favicon và các tệp ảnh
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|js|css|json|glb|gltf|woff2?)$).*)',
   ],
 };
