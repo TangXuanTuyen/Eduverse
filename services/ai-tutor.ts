@@ -101,11 +101,14 @@ export async function handleTutorMessage(req: TutorRequest): Promise<TutorRespon
     content: m.content,
   }));
 
+  const thinkingBudget = req.mode === 'companion' ? 1024 : 2048;
+
   const response = await provider.generateText(sanitizeForAI(req.message), {
     systemPrompt,
     history: aiHistory,
     maxTokens: 512,
     temperature: 0.7,
+    thinkingBudget,
   });
 
   const filteredReply = filterOutput(response.text);
@@ -123,6 +126,95 @@ export async function handleTutorMessage(req: TutorRequest): Promise<TutorRespon
   const remaining = await getRemainingQuota(sb, req.studentId, req.roomId);
 
   return { reply: filteredReply, conversationId, remainingQuota: remaining };
+}
+
+export type TutorStreamResult = {
+  stream: AsyncGenerator<string>;
+  conversationId: string;
+  remainingQuota: number;
+};
+
+export async function handleTutorStream(req: TutorRequest): Promise<TutorStreamResult> {
+  const sb = createAdminClient();
+
+  const inputCheck: SafetyResult = filterInput(req.message);
+  if (!inputCheck.safe) {
+    throw new TutorError(
+      inputCheck.reason === 'too_long'
+        ? 'Tin nhắn quá dài (tối đa 500 ký tự).'
+        : inputCheck.reason === 'empty_input'
+          ? 'Vui lòng nhập nội dung.'
+          : 'Tin nhắn không hợp lệ.',
+      'INVALID_INPUT'
+    );
+  }
+
+  const crisisCheck: CrisisResult = detectCrisis(req.message);
+  if (crisisCheck.detected) {
+    const convId = req.conversationId ?? (await createConversation(sb, req));
+    await saveMessage(sb, convId, 'user', req.message, 0, true, `crisis:${crisisCheck.keyword}`);
+    await saveMessage(sb, convId, 'assistant', CRISIS_RESPONSE, 0, true, 'crisis_response');
+    await logCrisis(sb, req.studentId, convId, crisisCheck.keyword);
+    const remaining = await getRemainingQuota(sb, req.studentId, req.roomId);
+    async function* crisisStream() {
+      yield CRISIS_RESPONSE;
+      return { text: CRISIS_RESPONSE, tokensUsed: 0 };
+    }
+    return { stream: crisisStream(), conversationId: convId, remainingQuota: remaining };
+  }
+
+  const dailyLimit = await getDailyLimit(sb, req.roomId);
+  if (dailyLimit === 0) {
+    throw new TutorError('AI chưa được bật cho phòng học này.', 'AI_DISABLED');
+  }
+
+  const { data: allowed } = await sb.rpc('increment_ai_usage', {
+    p_student_id: req.studentId,
+    p_daily_limit: dailyLimit,
+  });
+  if (!allowed) {
+    throw new TutorError(
+      `Hôm nay em đã dùng hết ${dailyLimit} lượt hỏi AI. Quay lại ngày mai nhé!`,
+      'RATE_LIMITED'
+    );
+  }
+
+  const conversationId = req.conversationId ?? (await createConversation(sb, req));
+  const history: { role: string; content: string }[] = await getHistory(sb, conversationId);
+  const context = req.contextId ? await loadContext(sb, req.contextType, req.contextId) : undefined;
+  const systemPrompt = getSystemPrompt(req.mode, context);
+
+  const provider = getAIProvider();
+  const aiHistory: AIMessage[] = history.map((m) => ({
+    role: m.role as 'user' | 'assistant',
+    content: m.content,
+  }));
+
+  const thinkingBudget = req.mode === 'companion' ? 1024 : 2048;
+
+  const innerStream = provider.generateStream(sanitizeForAI(req.message), {
+    systemPrompt,
+    history: aiHistory,
+    maxTokens: 512,
+    temperature: 0.7,
+    thinkingBudget,
+  });
+
+  await saveMessage(sb, conversationId, 'user', req.message, 0);
+
+  async function* wrappedStream() {
+    const result: { text: string; tokensUsed: number } = yield* innerStream;
+    const filteredReply = filterOutput(result.text);
+    await saveMessage(sb, conversationId, 'assistant', filteredReply, result.tokensUsed);
+    await sb
+      .from('ai_conversations')
+      .update({ message_count: history.length + 2 })
+      .eq('id', conversationId);
+    return result;
+  }
+
+  const remaining = await getRemainingQuota(sb, req.studentId, req.roomId);
+  return { stream: wrappedStream(), conversationId, remainingQuota: remaining };
 }
 
 // --- helpers ---

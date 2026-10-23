@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentProfile } from '@/lib/auth/session';
 import { handleTutorMessage, TutorError } from '@/services/ai-tutor';
+import { AIOverloadError } from '@/lib/ai/provider';
 
 const bodySchema = z.object({
   message: z.string().min(1).max(500),
@@ -45,6 +46,9 @@ export async function POST(req: NextRequest) {
         : err.code === 'AI_DISABLED' ? 403
         : 400;
       return NextResponse.json({ error: err.message, code: err.code }, { status });
+    }
+    if (err instanceof AIOverloadError) {
+      return NextResponse.json({ error: err.message, code: 'AI_OVERLOADED' }, { status: 503 });
     }
     console.error('[tutor] Unexpected error:', err);
     return NextResponse.json({ error: 'Lỗi hệ thống. Thử lại sau.' }, { status: 500 });

@@ -41,7 +41,7 @@ export function CompanionChat({
     setLoading(true);
 
     try {
-      const res = await fetch('/api/tutor', {
+      const res = await fetch('/api/tutor/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -51,14 +51,54 @@ export function CompanionChat({
           source: 'companion',
         }),
       });
-      const data = await res.json();
+
       if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
         setError(data.error ?? 'Lỗi khi gửi tin nhắn.');
         return;
       }
-      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
-      if (data.conversationId) setConversationId(data.conversationId);
-      if (data.remainingQuota != null) setRemaining(data.remainingQuota);
+
+      const reader = res.body?.getReader();
+      if (!reader) { setError('Trình duyệt không hỗ trợ streaming.'); return; }
+
+      const decoder = new TextDecoder();
+      let assistantIdx: number | null = null;
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const evt = JSON.parse(line.slice(6));
+            if (evt.type === 'meta') {
+              if (evt.conversationId) setConversationId(evt.conversationId);
+              if (evt.remainingQuota != null) setRemaining(evt.remainingQuota);
+            } else if (evt.type === 'text') {
+              setMessages((prev) => {
+                if (assistantIdx === null) {
+                  assistantIdx = prev.length;
+                  return [...prev, { role: 'assistant', content: evt.text }];
+                }
+                const updated = [...prev];
+                updated[assistantIdx] = {
+                  ...updated[assistantIdx],
+                  content: updated[assistantIdx].content + evt.text,
+                };
+                return updated;
+              });
+            } else if (evt.type === 'error') {
+              setError(evt.error);
+            }
+          } catch { /* skip malformed SSE */ }
+        }
+      }
     } catch {
       setError('Không thể kết nối. Thử lại sau.');
     } finally {

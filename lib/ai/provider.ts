@@ -10,6 +10,7 @@ export type AIRequestOptions = {
   maxTokens?: number;
   temperature?: number;
   timeoutMs?: number;
+  thinkingBudget?: number;
 };
 
 export type AIResponse = {
@@ -19,10 +20,19 @@ export type AIResponse = {
 
 export interface AIProvider {
   generateText(userMessage: string, opts: AIRequestOptions): Promise<AIResponse>;
+  generateStream(userMessage: string, opts: AIRequestOptions): AsyncGenerator<string, AIResponse>;
 }
 
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 2;
 const BASE_DELAY_MS = 1000;
+const FALLBACK_MODEL = 'gemini-3.5-flash';
+
+export class AIOverloadError extends Error {
+  constructor() {
+    super('AI đang bận, vui lòng thử lại sau ít phút.');
+    this.name = 'AIOverloadError';
+  }
+}
 
 class GeminiProvider implements AIProvider {
   private ai: GoogleGenAI;
@@ -49,46 +59,117 @@ class GeminiProvider implements AIProvider {
     contents.push({ role: 'user', parts: [{ text: userMessage }] });
 
     const requestedTokens = opts.maxTokens ?? 1024;
+    const thinkingBudget = opts.thinkingBudget ?? 2048;
 
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const modelsToTry = [this.model, FALLBACK_MODEL];
+
+    for (const model of modelsToTry) {
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          const response = await Promise.race([
+            this.ai.models.generateContent({
+              model,
+              contents,
+              config: {
+                systemInstruction: opts.systemPrompt,
+                maxOutputTokens: requestedTokens + thinkingBudget,
+                temperature: opts.temperature ?? 0.7,
+                thinkingConfig: { thinkingBudget },
+              },
+            }),
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error('AI timeout')), opts.timeoutMs ?? 30000),
+            ),
+          ]);
+
+          const text = response.text ?? '';
+          const tokensUsed = response.usageMetadata?.totalTokenCount ?? 0;
+
+          if (!text) {
+            const reason = response.candidates?.[0]?.finishReason;
+            if (reason === 'MAX_TOKENS') throw new Error('AI hết token trả lời, thử giảm số câu hỏi');
+            throw new Error('AI trả về rỗng');
+          }
+
+          return { text, tokensUsed };
+        } catch (err: unknown) {
+          const status = (err as { status?: number }).status;
+          if ((status === 429 || status === 503) && attempt < MAX_RETRIES) {
+            await new Promise((r) => setTimeout(r, BASE_DELAY_MS * 2 ** attempt));
+            continue;
+          }
+          if (status === 503 || status === 429) break; // try fallback model
+          throw err;
+        }
+      }
+    }
+
+    throw new AIOverloadError();
+  }
+
+  async *generateStream(
+    userMessage: string,
+    opts: AIRequestOptions,
+  ): AsyncGenerator<string, AIResponse> {
+    const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
+
+    if (opts.history) {
+      for (const msg of opts.history) {
+        if (msg.role === 'system') continue;
+        contents.push({
+          role: msg.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: msg.content }],
+        });
+      }
+    }
+
+    contents.push({ role: 'user', parts: [{ text: userMessage }] });
+
+    const requestedTokens = opts.maxTokens ?? 1024;
+    const thinkingBudget = opts.thinkingBudget ?? 2048;
+
+    const modelsToTry = [this.model, FALLBACK_MODEL];
+    let lastErr: unknown;
+
+    for (const model of modelsToTry) {
       try {
-        const response = await Promise.race([
-          this.ai.models.generateContent({
-            model: this.model,
-            contents,
-            config: {
-              systemInstruction: opts.systemPrompt,
-              maxOutputTokens: requestedTokens + 8192,
-              temperature: opts.temperature ?? 0.7,
-              thinkingConfig: { thinkingBudget: 8192 },
-            },
-          }),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('AI timeout')), opts.timeoutMs ?? 60000),
-          ),
-        ]);
+        const stream = await this.ai.models.generateContentStream({
+          model,
+          contents,
+          config: {
+            systemInstruction: opts.systemPrompt,
+            maxOutputTokens: requestedTokens + thinkingBudget,
+            temperature: opts.temperature ?? 0.7,
+            thinkingConfig: { thinkingBudget },
+          },
+        });
 
-        const text = response.text ?? '';
-        const tokensUsed = response.usageMetadata?.totalTokenCount ?? 0;
+        let fullText = '';
+        let tokensUsed = 0;
 
-        if (!text) {
-          const reason = response.candidates?.[0]?.finishReason;
-          if (reason === 'MAX_TOKENS') throw new Error('AI hết token trả lời, thử giảm số câu hỏi');
-          throw new Error('AI trả về rỗng');
+        for await (const chunk of stream) {
+          const text = chunk.text ?? '';
+          if (text) {
+            fullText += text;
+            yield text;
+          }
+          if (chunk.usageMetadata?.totalTokenCount) {
+            tokensUsed = chunk.usageMetadata.totalTokenCount;
+          }
         }
 
-        return { text, tokensUsed };
+        if (!fullText) throw new Error('AI trả về rỗng');
+
+        return { text: fullText, tokensUsed };
       } catch (err: unknown) {
+        lastErr = err;
         const status = (err as { status?: number }).status;
-        if ((status === 429 || status === 503) && attempt < MAX_RETRIES) {
-          await new Promise((r) => setTimeout(r, BASE_DELAY_MS * 2 ** attempt));
-          continue;
-        }
+        if (status === 503 || status === 429) continue;
         throw err;
       }
     }
 
-    throw new Error('AI request failed after retries');
+    throw lastErr instanceof Error ? lastErr : new AIOverloadError();
   }
 }
 
