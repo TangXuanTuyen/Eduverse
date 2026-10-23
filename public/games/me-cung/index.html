@@ -1286,7 +1286,7 @@
             correctIndex: q.correct_index,
             explanation: q.explanation || '',
             points: 100,
-            visualType: 'geometry',
+            visualType: q.visual_type || null,
           }));
         }
       } catch {}
@@ -1363,6 +1363,47 @@
     /* ============================================================= */
     /* 3. SVG VISUAL DIAGRAM GENERATOR                               */
     /* ============================================================= */
+    function renderLatex(text) {
+      if (!text || typeof text !== 'string') return text || '';
+      return text
+        .replace(/\$([^$]+)\$/g, (_, expr) => {
+          let h = expr
+            .replace(/\\text\{([^}]*)\}/g, '$1')
+            .replace(/\\textbf\{([^}]*)\}/g, '<b>$1</b>')
+            .replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, '<sup>$1</sup>&frasl;<sub>$2</sub>')
+            .replace(/\{,\}/g, ',')
+            .replace(/\\times/g, '×')
+            .replace(/\\div/g, '÷')
+            .replace(/\\pm/g, '±')
+            .replace(/\\leq/g, '≤')
+            .replace(/\\geq/g, '≥')
+            .replace(/\\neq/g, '≠')
+            .replace(/\\approx/g, '≈')
+            .replace(/\\infty/g, '∞')
+            .replace(/\\pi/g, 'π')
+            .replace(/\\alpha/g, 'α')
+            .replace(/\\beta/g, 'β')
+            .replace(/\\gamma/g, 'γ')
+            .replace(/\\delta/g, 'δ')
+            .replace(/\\theta/g, 'θ')
+            .replace(/\\lambda/g, 'λ')
+            .replace(/\\mu/g, 'μ')
+            .replace(/\\Omega/g, 'Ω')
+            .replace(/\\omega/g, 'ω')
+            .replace(/\\degree/g, '°')
+            .replace(/\\circ/g, '°')
+            .replace(/\\rightarrow/g, '→')
+            .replace(/\\leftarrow/g, '←')
+            .replace(/\\cdot/g, '·')
+            .replace(/\^{([^}]*)}/g, '<sup>$1</sup>')
+            .replace(/\^(\w)/g, '<sup>$1</sup>')
+            .replace(/_{([^}]*)}/g, '<sub>$1</sub>')
+            .replace(/_(\w)/g, '<sub>$1</sub>')
+            .replace(/[{}]/g, '');
+          return `<span style="font-style:italic;font-family:serif;">${h}</span>`;
+        });
+    }
+
     function renderQuestionVisualSVG(type) {
       switch (type) {
         case 'geometry':
@@ -2813,6 +2854,10 @@
       `;
 
       root.innerHTML = html;
+
+      if (gameState.status === 'playing' || gameState.status === 'question' || gameState.status === 'completed') {
+        startCanvasLoop();
+      }
     }
 
     function selectMode(m) {
@@ -2915,12 +2960,12 @@
             </div>
 
             <!-- Visual diagram -->
-            <div class="qm-visual-box">
+            ${q.visualType ? `<div class="qm-visual-box">
               ${renderQuestionVisualSVG(q.visualType)}
-            </div>
+            </div>` : ''}
 
             <!-- Question Prompt -->
-            <div class="qm-prompt">${q.question}</div>
+            <div class="qm-prompt">${renderLatex(q.question)}</div>
 
             <!-- Options List -->
             <div class="qm-options-list">
@@ -2948,7 +2993,7 @@
                   >
                     <div style="display: flex; align-items: center; gap: 12px;">
                       <span class="qm-opt-label">${optionLabels[idx]}</span>
-                      <span>${opt}</span>
+                      <span>${renderLatex(opt)}</span>
                     </div>
                     ${feedbackTag}
                   </button>
@@ -2961,17 +3006,17 @@
               isCorr ? `
                 <div class="qm-expl-box correct animate-fadeIn">
                   <strong style="color: #6ee7b7; display: block; margin-bottom: 4px;">💡 Giải thích chi tiết:</strong>
-                  <span style="color: #e2e8f0;">${q.explanation}</span>
+                  <span style="color: #e2e8f0;">${renderLatex(q.explanation)}</span>
                 </div>
               ` : `
                 <div class="qm-expl-box incorrect animate-fadeIn">
                   <div style="margin-bottom: 8px;">
                     <strong style="color: #fde68a; display: block; margin-bottom: 4px;">💡 Kiến thức cần ghi nhớ:</strong>
-                    <span style="color: #e2e8f0;">${q.explanation}</span>
+                    <span style="color: #e2e8f0;">${renderLatex(q.explanation)}</span>
                   </div>
                   <div style="padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
                     <span style="color: #fda4af;">Lựa chọn của bạn: ${optionLabels[questionModalState.selectedIndex]}</span>
-                    <span style="color: #34d399; font-weight: 700;">Đáp án đúng: ${optionLabels[q.correctIndex]} (${q.options[q.correctIndex]})</span>
+                    <span style="color: #34d399; font-weight: 700;">Đáp án đúng: ${optionLabels[q.correctIndex]} (${renderLatex(q.options[q.correctIndex])})</span>
                   </div>
                 </div>
               `
