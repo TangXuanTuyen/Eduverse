@@ -891,6 +891,7 @@
   <div id="app-root">
     <!-- Content injected via JS -->
   </div>
+  <div id="overlay-root"></div>
   <canvas id="maze-canvas" style="display:none;"></canvas>
 
   <!-- Audio Context Synthesizer & Game Logic Script -->
@@ -2575,7 +2576,13 @@
     function toggleMute() {
       gameState.isMuted = !gameState.isMuted;
       soundManager.enabled = !gameState.isMuted;
-      renderApp();
+      const btn = document.getElementById('mute-btn');
+      if (btn) {
+        btn.title = gameState.isMuted ? 'Bật âm thanh' : 'Tắt âm thanh';
+        btn.innerHTML = gameState.isMuted
+          ? `<svg class="icon" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`
+          : `<svg class="icon" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`;
+      }
     }
 
     function formatTime(secs) {
@@ -2602,14 +2609,53 @@
     /* ============================================================= */
     /* 8. HTML UI RENDERING                                          */
     /* ============================================================= */
+    let _lastRenderedScreen = null;
+
     function renderApp() {
       const root = document.getElementById('app-root');
+      const overlayRoot = document.getElementById('overlay-root');
       if (!root) return;
 
       const itemsCollectedCount = gameState.goldItems.filter(i => i.isCollected).length;
       const questionsAnsweredCount = gameState.questionCheckpoints.filter(c => c.isAnswered).length;
       const questionsCorrectCount = gameState.questionCheckpoints.filter(c => c.isCorrect).length;
       const isGoalUnlocked = gameState.questionCheckpoints.length > 0 && questionsAnsweredCount >= gameState.questionCheckpoints.length;
+
+      const currentScreen = gameState.status === 'intro' ? 'intro' : 'game';
+
+      if (_lastRenderedScreen === 'game' && currentScreen === 'game') {
+        updateHUDStats();
+        const bannerArea = document.getElementById('banner-area');
+        if (bannerArea) {
+          let bannerHtml = '';
+          if (gameState.unlockCelebration) {
+            bannerHtml += `<div class="banner-celebration animate-bounce"><span>★ TẤT CẢ TRẠM TRI THỨC ĐÃ GIẢI MÃ! CỔNG ĐÍCH ĐÃ MỞ! ★</span></div>`;
+          }
+          if (gameState.lockAlert) {
+            bannerHtml += `<div class="banner-lock animate-fadeIn"><svg class="icon" style="color: #f87171;" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>${gameState.lockAlert}</span></div>`;
+          }
+          bannerArea.innerHTML = bannerHtml;
+        }
+        const gateEl = document.getElementById('gate-badge');
+        if (gateEl) {
+          gateEl.className = isGoalUnlocked ? 'hud-stat-pill gate-badge-open' : 'hud-stat-pill gate-badge-locked';
+          gateEl.innerHTML = `<span>${isGoalUnlocked ? '★' : '🔒'}</span><span>${isGoalUnlocked ? 'CỔNG MỞ' : `Khóa (${gameState.questionCheckpoints.length - questionsAnsweredCount})`}</span>`;
+        }
+
+        let modalHtml = '';
+        if (gameState.activeCheckpoint) {
+          modalHtml = renderQuestionModalHTML(gameState.activeCheckpoint);
+        } else if (gameState.status === 'completed') {
+          modalHtml = renderVictoryModalHTML(questionsCorrectCount);
+        } else if (gameState.showHelp) {
+          modalHtml = renderHelpModalHTML();
+        }
+        if (overlayRoot) overlayRoot.innerHTML = modalHtml;
+        return;
+      }
+
+      _lastRenderedScreen = currentScreen;
+      if (overlayRoot) overlayRoot.innerHTML = '';
 
       let html = '';
 
@@ -2749,7 +2795,7 @@
                   <strong id="hud-questions" class="font-mono-numbers">${questionsAnsweredCount}/${gameState.questionCheckpoints.length}</strong>
                 </div>
 
-                <div class="hud-stat-pill ${isGoalUnlocked ? 'gate-badge-open' : 'gate-badge-locked'}">
+                <div id="gate-badge" class="hud-stat-pill ${isGoalUnlocked ? 'gate-badge-open' : 'gate-badge-locked'}">
                   <span>${isGoalUnlocked ? '★' : '🔒'}</span>
                   <span>${isGoalUnlocked ? 'CỔNG MỞ' : `Khóa (${gameState.questionCheckpoints.length - questionsAnsweredCount})`}</span>
                 </div>
@@ -2765,7 +2811,7 @@
                 <button class="btn btn-icon" onclick="goHome()" title="Về màn hình chính (Đổi chế độ)">
                   <svg class="icon" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 </button>
-                <button class="btn btn-icon" onclick="toggleMute()" title="${gameState.isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}">
+                <button id="mute-btn" class="btn btn-icon" onclick="toggleMute()" title="${gameState.isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}">
                   ${gameState.isMuted
                     ? `<svg class="icon" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`
                     : `<svg class="icon" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`
@@ -2781,18 +2827,7 @@
             </header>
 
             <!-- Banners -->
-            ${gameState.unlockCelebration ? `
-              <div class="banner-celebration animate-bounce">
-                <span>★ TẤT CẢ TRẠM TRI THỨC ĐÃ GIẢI MÃ! CỔNG ĐÍCH ĐÃ MỞ! ★</span>
-              </div>
-            ` : ''}
-
-            ${gameState.lockAlert ? `
-              <div class="banner-lock animate-fadeIn">
-                <svg class="icon" style="color: #f87171;" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                <span>${gameState.lockAlert}</span>
-              </div>
-            ` : ''}
+            <div id="banner-area"></div>
 
             <!-- Canvas Viewport -->
             <div class="canvas-container" id="canvas-slot"></div>
@@ -2827,15 +2862,6 @@
             </div>
           </div>
         `;
-      }
-
-      // Modals
-      if (gameState.activeCheckpoint) {
-        html += renderQuestionModalHTML(gameState.activeCheckpoint);
-      } else if (gameState.status === 'completed') {
-        html += renderVictoryModalHTML(questionsCorrectCount);
-      } else if (gameState.showHelp) {
-        html += renderHelpModalHTML();
       }
 
       // Footer
