@@ -7,10 +7,30 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { sound } from '@/lib/audio';
-import { FlaskConical, Zap, Eye, CheckCircle2, X, Sparkles, Award, ArrowLeft, Clock, Box } from 'lucide-react';
+import { FlaskConical, Zap, Eye, CheckCircle2, X, Sparkles, Award, ArrowLeft, Clock, Box, Wrench } from 'lucide-react';
 import { RoomInteriorScene } from './RoomInteriorScene';
 import { DialogFrame } from '@/components/ui/DialogFrame';
 import { ExperimentViewer } from './ExperimentViewer';
+
+type StemProject = {
+  id: string;
+  title: string;
+  description: string;
+  grade: number;
+  url: string;
+  icon: string;
+};
+
+const STEM_PROJECTS: StemProject[] = [
+  {
+    id: 'pin-volta',
+    title: 'Lắp ráp pin Volta (Zn-Cu)',
+    description: 'Mô phỏng thí nghiệm lắp ráp pin điện hóa Volta, khám phá phản ứng oxi hóa - khử, đo điện áp và dòng điện.',
+    grade: 9,
+    url: '/stem/pin-volta/index.html',
+    icon: '🔋',
+  },
+];
 
 type DynamicExperiment = {
   id: string;
@@ -40,6 +60,8 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
   const [models3d, setModels3d] = useState<{ id: string; title: string; embed_url: string; thumbnail_url: string | null }[]>([]);
   const [viewing3dModelId, setViewing3dModelId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<{ id: string; resource_id: string; title: string; completed?: boolean }[]>([]);
+  const [stemGrade, setStemGrade] = useState(9);
+  const [viewingStemProject, setViewingStemProject] = useState<string | null>(null);
   const [completingTask, setCompletingTask] = useState<string | null>(null);
 
   useEffect(() => {
@@ -270,6 +292,91 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
             </div>
           </div>
         )}
+
+        {/* STEM MAKER — Grade tabs */}
+        <div className="px-6 py-3 bg-slate-950/40 border-b border-slate-800">
+          <h3 className="text-xs font-bold text-amber-400 mb-2 flex items-center gap-1.5">
+            <Wrench size={14} /> STEM Maker
+          </h3>
+          <div className="flex gap-1.5 mb-2">
+            {[6, 7, 8, 9].map((g) => (
+              <button
+                key={g}
+                onClick={() => { sound.playClick(); setStemGrade(g); }}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition min-h-[36px] ${
+                  stemGrade === g
+                    ? 'bg-amber-600/30 border border-amber-500/50 text-amber-200'
+                    : 'bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Khối {g}
+              </button>
+            ))}
+          </div>
+          {(() => {
+            const projects = STEM_PROJECTS.filter((p) => p.grade === stemGrade);
+            if (projects.length === 0) {
+              return (
+                <p className="text-[11px] text-slate-500 py-2">
+                  Chưa có dự án STEM Maker cho khối {stemGrade}. Sắp ra mắt!
+                </p>
+              );
+            }
+            return (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {projects.map((p) => {
+                  const task = tasks.find((t) => t.resource_id === p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => { sound.playClick(); setViewingStemProject(p.id); }}
+                      className="shrink-0 w-48 bg-slate-800/80 border border-slate-700 rounded-lg p-2.5 text-left hover:border-amber-500/30 transition min-h-[44px]"
+                    >
+                      <p className="text-xs font-medium text-white flex items-center gap-1.5">
+                        <span>{p.icon}</span> {p.title}
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">{p.description}</p>
+                      {task && (
+                        <span className={`inline-block mt-1 text-[9px] px-1.5 py-0.5 rounded font-bold ${task.completed ? 'bg-green-900 text-green-300' : 'bg-blue-900 text-blue-300'}`}>
+                          {task.completed ? '✓ Hoàn thành' : '📋 Nhiệm vụ GV'}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* STEM Maker fullscreen viewer */}
+        {viewingStemProject && (() => {
+          const project = STEM_PROJECTS.find((p) => p.id === viewingStemProject);
+          if (!project) return null;
+          return (
+            <div className="fixed inset-0 z-50 flex flex-col bg-slate-950">
+              <div className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 shrink-0">
+                <h2 className="text-white font-bold text-sm flex items-center gap-2">
+                  <span>{project.icon}</span> {project.title}
+                </h2>
+                <button
+                  onClick={() => setViewingStemProject(null)}
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex-1">
+                <iframe
+                  src={project.url}
+                  className="w-full h-full border-0"
+                  sandbox="allow-scripts allow-same-origin allow-popups"
+                  title={project.title}
+                />
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Experiment Viewer overlay */}
         {viewingExperimentId && (

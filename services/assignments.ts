@@ -243,7 +243,8 @@ export async function createTaskAssignment(teacherId: string, data: CreateTaskAs
     .map((m) => m.user_id);
 
   if (studentIds.length > 0) {
-    const typeLabel = data.assignment_type === 'lesson' ? 'Đọc lý thuyết' : 'Xem thí nghiệm';
+    const typeLabels: Record<string, string> = { lesson: 'Đọc lý thuyết', experiment: 'Xem thí nghiệm', model3d: 'Xem mô hình 3D', stem: 'STEM Maker' };
+    const typeLabel = typeLabels[data.assignment_type] ?? 'Nhiệm vụ';
     const notifications = studentIds.map((uid) => ({
       user_id: uid,
       room_id: data.room_id,
