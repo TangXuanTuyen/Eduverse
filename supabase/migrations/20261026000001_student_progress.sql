@@ -1,7 +1,6 @@
 -- Lưu XP/level học sinh vĩnh viễn thay vì localStorage
 create table public.student_progress (
-  user_id uuid primary key references public.profiles (id) on delete cascade,
-  school_id uuid not null references public.schools (id) on delete cascade,
+  user_id uuid primary key references auth.users (id) on delete cascade,
   level smallint not null default 1 check (level >= 1),
   current_xp int not null default 0 check (current_xp >= 0),
   total_xp int not null default 0 check (total_xp >= 0),
@@ -10,8 +9,6 @@ create table public.student_progress (
   experiments_completed text[] not null default '{}',
   updated_at timestamptz not null default now()
 );
-
-create index student_progress_school_id_idx on public.student_progress (school_id);
 
 alter table public.student_progress enable row level security;
 
@@ -41,7 +38,7 @@ create policy student_progress_teacher_select on public.student_progress
     exists (
       select 1
       from public.rooms r
-      where r.teacher_id = auth.uid()
+      where r.owner_id = auth.uid()
         and exists (
           select 1 from public.room_members m
           where m.room_id = r.id and m.user_id = student_progress.user_id and m.is_active
@@ -100,16 +97,9 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
-declare
-  v_school_id uuid;
 begin
-  select school_id into v_school_id from public.profiles where id = p_user_id;
-  if v_school_id is null then
-    raise exception 'User not found or has no school' using errcode = '22000';
-  end if;
-
-  insert into public.student_progress (user_id, school_id, level, current_xp, total_xp, quizzes_completed, high_score, experiments_completed, updated_at)
-  values (p_user_id, v_school_id, p_level, p_current_xp, p_total_xp, p_quizzes_completed, p_high_score, p_experiments_completed, now())
+  insert into public.student_progress (user_id, level, current_xp, total_xp, quizzes_completed, high_score, experiments_completed, updated_at)
+  values (p_user_id, p_level, p_current_xp, p_total_xp, p_quizzes_completed, p_high_score, p_experiments_completed, now())
   on conflict (user_id) do update set
     level = excluded.level,
     current_xp = excluded.current_xp,
