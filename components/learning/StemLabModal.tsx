@@ -370,7 +370,7 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
                 <iframe
                   src={project.url}
                   className="w-full h-full border-0"
-                  sandbox="allow-scripts allow-same-origin allow-popups"
+                  allow="webgl; webgl2"
                   title={project.title}
                 />
               </div>
@@ -405,7 +405,7 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
                 <iframe
                   src={model.embed_url}
                   className="w-full h-full border-0"
-                  sandbox="allow-scripts allow-same-origin allow-popups"
+                  allow="webgl; webgl2"
                   title={model.title}
                 />
               </div>

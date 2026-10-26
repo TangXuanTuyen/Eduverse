@@ -3,9 +3,10 @@
 /**
  * Trạng thái game của học sinh (nhân vật, tiến độ, điều hướng giữa các địa điểm).
  *
- * TẠM THỜI: dữ liệu vẫn lưu ở localStorage và XP được tính ở trình duyệt, đúng như
- * giao diện gốc từ AI Studio. Bước nối Supabase sẽ thay toàn bộ phần ghi XP/điểm/tiến độ
- * bằng Server Action/RPC (quy tắc bất biến 1, 5, 6). Không thêm logic chấm điểm mới vào đây.
+ * XP/level được đồng bộ với Supabase (bảng student_progress). localStorage dùng làm
+ * cache tạm để UI phản hồi nhanh, nhưng DB là nguồn chính thực — load khi mount,
+ * save debounced khi thay đổi. XP vẫn tính ở trình duyệt (chưa chuyển hết sang server),
+ * nhưng được lưu lại vĩnh viễn qua API /api/progress.
  */
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
@@ -129,7 +130,10 @@ export function StudentGameProvider({
   // true khi địa điểm được mở từ bản đồ trong phiên này → đóng bằng router.back()
   const openedFromCityRef = useRef(false);
 
-  // Đọc localStorage sau khi mount (server không có localStorage → tránh lệch hydration)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dbLoadedRef = useRef(false);
+
+  // Đọc localStorage + DB sau khi mount
   useEffect(() => {
     const savedChar = readJson<CharacterConfig>(keys.char);
     const savedProgress = readJson<PlayerProgress>(keys.progress);
@@ -142,15 +146,59 @@ export function StudentGameProvider({
     } catch {}
     setIsFirstTime(firstTime);
     setHydrated(true);
-  }, [keys]);
+
+    // Load từ DB (nguồn chính thực) — ghi đè localStorage nếu DB có dữ liệu
+    if (!guest) {
+      fetch('/api/progress')
+        .then(r => r.json())
+        .then(data => {
+          if (data.progress) {
+            const db = data.progress;
+            setProgress(prev => ({
+              ...prev,
+              level: db.level ?? prev.level,
+              currentXP: db.current_xp ?? prev.currentXP,
+              nextLevelXP: ProgressionSystem.getXpRequiredForLevel(db.level ?? prev.level),
+              quizzesCompleted: db.quizzes_completed ?? prev.quizzesCompleted,
+              highScore: db.high_score ?? prev.highScore,
+              experimentsCompleted: db.experiments_completed ?? prev.experimentsCompleted,
+            }));
+          }
+          dbLoadedRef.current = true;
+        })
+        .catch(() => { dbLoadedRef.current = true; });
+    }
+  }, [keys, guest]);
 
   useEffect(() => {
     if (hydrated) writeJson(keys.char, characterState);
   }, [characterState, hydrated, keys]);
 
+  // Save progress vào localStorage + debounced save vào DB
   useEffect(() => {
-    if (hydrated) writeJson(keys.progress, progress);
-  }, [progress, hydrated, keys]);
+    if (!hydrated) return;
+    writeJson(keys.progress, progress);
+
+    if (guest) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      const totalXP = (progress.level - 1) * 150 + progress.currentXP;
+      fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          level: progress.level,
+          currentXP: progress.currentXP,
+          totalXP,
+          quizzesCompleted: progress.quizzesCompleted,
+          highScore: progress.highScore,
+          experimentsCompleted: progress.experimentsCompleted,
+        }),
+      }).catch(() => {});
+    }, 2000);
+
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+  }, [progress, hydrated, keys, guest]);
 
   // Đồng bộ trang phục mở khóa theo tiến độ (bản gốc thiếu dependency, đọc character cũ)
   useEffect(() => {

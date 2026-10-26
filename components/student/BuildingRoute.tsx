@@ -60,6 +60,7 @@ export function BuildingRoute({ id, assignmentId }: { id: BuildingId; assignment
           character={game.character}
           onClose={game.closeBuilding}
           onOpenCustomizer={() => game.setEditingCharacter(true)}
+          roomId={game.roomId}
         />
       );
     case 'virtual_lab':

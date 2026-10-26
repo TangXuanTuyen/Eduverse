@@ -16,6 +16,7 @@ interface AchievementPlazaModalProps {
   character: CharacterConfig;
   onClose: () => void;
   onOpenCustomizer: () => void;
+  roomId?: string | null;
 }
 
 type Badge = {
@@ -41,14 +42,24 @@ type XpSummary = {
   longestStreak: number;
 };
 
+type LeaderboardEntry = {
+  user_id: string;
+  display_name: string;
+  level: number;
+  total_xp: number;
+  rank: number;
+};
+
 export const AchievementPlazaModal: React.FC<AchievementPlazaModalProps> = ({
   character,
   onClose,
   onOpenCustomizer,
+  roomId,
 }) => {
   const [loading, setLoading] = useState(true);
   const [badges, setBadges] = useState<Badge[]>([]);
   const [xp, setXp] = useState<XpSummary | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -60,7 +71,14 @@ export const AchievementPlazaModal: React.FC<AchievementPlazaModalProps> = ({
       })
       .catch(() => setError('Không tải được thành tích'))
       .finally(() => setLoading(false));
-  }, []);
+
+    if (roomId) {
+      fetch(`/api/leaderboard?roomId=${encodeURIComponent(roomId)}`)
+        .then((r) => r.json())
+        .then((data) => setLeaderboard(data.leaderboard ?? []))
+        .catch(() => {});
+    }
+  }, [roomId]);
 
   const unlockedCount = badges.filter((b) => b.awarded).length;
   const nextLevelXp = xp ? (xp.level + 1) * 100 : 100;
@@ -181,6 +199,48 @@ export const AchievementPlazaModal: React.FC<AchievementPlazaModalProps> = ({
                       <div className="text-[10px] text-slate-500 mt-0.5">{s.label}</div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* CLASS LEADERBOARD */}
+              {leaderboard.length > 0 && (
+                <div className="space-y-3">
+                  <div className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-yellow-400" />
+                    <span>Bảng vinh danh lớp</span>
+                  </div>
+                  <div className="rounded-xl border border-amber-500/20 overflow-hidden">
+                    {leaderboard.map((entry) => {
+                      const isMe = entry.user_id === character.id;
+                      const medalEmoji = entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : null;
+                      return (
+                        <div
+                          key={entry.user_id}
+                          className={`flex items-center gap-3 px-4 py-2.5 border-b border-slate-800 last:border-b-0 ${
+                            isMe ? 'bg-amber-950/30' : 'bg-slate-900/50'
+                          }`}
+                        >
+                          <div className="w-8 text-center shrink-0">
+                            {medalEmoji ? (
+                              <span className="text-lg">{medalEmoji}</span>
+                            ) : (
+                              <span className="text-xs font-bold text-slate-500">#{entry.rank}</span>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className={`text-sm font-semibold truncate block ${isMe ? 'text-amber-300' : 'text-white'}`}>
+                              {entry.display_name || 'Học sinh'}
+                              {isMe && <span className="text-[10px] text-amber-400 ml-1">(bạn)</span>}
+                            </span>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-xs font-bold text-amber-400">Cấp {entry.level}</div>
+                            <div className="text-[10px] text-slate-400">{entry.total_xp} XP</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
