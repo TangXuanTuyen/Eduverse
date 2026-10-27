@@ -5,7 +5,8 @@ import {
   X, CheckCircle2, XCircle, TrendingUp, Users, BookOpen,
   AlertTriangle, ChevronRight, ArrowLeft, BarChart3, Trophy,
   Clock, Target, Zap, Send, FileSpreadsheet, Filter,
-  GraduationCap, Activity, Award, Mail, Phone,
+  GraduationCap, Activity, Award, Mail, Phone, FlaskConical,
+  BookOpenCheck,
 } from 'lucide-react';
 
 // ── Types ──
@@ -64,6 +65,24 @@ type InactiveRow = {
 type TimeSaved = {
   auto_graded_count: number;
   total_submissions: number;
+};
+
+type StemRow = {
+  assignment_id: string;
+  title: string;
+  assignment_type: 'lesson' | 'experiment';
+  room_name: string;
+  total_students: number;
+  completed_count: number;
+  completion_rate: number;
+};
+
+type ErrorRow = {
+  skill: string;
+  wrong_count: number;
+  total_count: number;
+  error_rate: number;
+  sample_questions: string[];
 };
 
 type TrendRow = {
@@ -243,6 +262,8 @@ export function TeacherReportsView() {
   const [detailStudentId, setDetailStudentId] = useState<string | null>(null);
   const [trends, setTrends] = useState<TrendRow[]>([]);
   const [showInactiveDetail, setShowInactiveDetail] = useState(false);
+  const [stemData, setStemData] = useState<StemRow[]>([]);
+  const [errorData, setErrorData] = useState<ErrorRow[]>([]);
 
   const fetchTab = useCallback(async (t: string, room?: string) => {
     setLoading(true);
@@ -264,6 +285,8 @@ export function TeacherReportsView() {
     fetch('/api/teacher/reports?tab=inactive').then((r) => r.json()).then((d) => setInactive(d));
     fetch('/api/teacher/reports?tab=time-saved').then((r) => r.json()).then((d) => setTimeSaved(d));
     fetch('/api/teacher/reports?tab=trends').then((r) => r.json()).then((d) => setTrends(d));
+    fetch('/api/teacher/reports?tab=stem').then((r) => r.json()).then((d) => setStemData(d));
+    fetch('/api/teacher/reports?tab=errors').then((r) => r.json()).then((d) => setErrorData(d));
   }, []);
 
   // Re-fetch trends when room filter changes
@@ -271,6 +294,12 @@ export function TeacherReportsView() {
     const params = new URLSearchParams({ tab: 'trends' });
     if (roomFilter) params.set('room', roomFilter);
     fetch(`/api/teacher/reports?${params}`).then((r) => r.json()).then((d) => setTrends(d));
+    const stemParams = new URLSearchParams({ tab: 'stem' });
+    if (roomFilter) stemParams.set('room', roomFilter);
+    fetch(`/api/teacher/reports?${stemParams}`).then((r) => r.json()).then((d) => setStemData(d));
+    const errorParams = new URLSearchParams({ tab: 'errors' });
+    if (roomFilter) errorParams.set('room', roomFilter);
+    fetch(`/api/teacher/reports?${errorParams}`).then((r) => r.json()).then((d) => setErrorData(d));
   }, [roomFilter]);
 
   const openRoomDetail = async (room: RoomRow) => {
@@ -452,31 +481,44 @@ export function TeacherReportsView() {
           <h1 className="text-2xl font-bold text-white">
             Báo cáo & Phân tích
           </h1>
-          <p className="text-sm text-slate-400 mt-1">Theo dõi tiến độ học tập của học sinh</p>
+          <p className="text-sm text-slate-300/80 mt-1">Theo dõi tiến độ học tập của học sinh</p>
         </div>
-        <button
-          onClick={handleExport}
-          className="px-4 py-2.5 text-sm bg-slate-800/80 hover:bg-slate-700 border border-slate-700/50 rounded-xl min-h-[44px] flex items-center gap-2 transition-all hover:border-slate-600 shrink-0"
-        >
-          <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-          Xuất Excel
-        </button>
+        <div className="flex gap-2 shrink-0">
+          <button
+            onClick={handleExport}
+            className="px-4 py-2.5 text-sm bg-slate-800/80 hover:bg-slate-700 border border-slate-700/50 rounded-xl min-h-[44px] flex items-center gap-2 transition-all hover:border-slate-600"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+            <span className="hidden sm:inline">Xuất Excel</span>
+          </button>
+          <button
+            onClick={() => {
+              const params = new URLSearchParams({ tab: 'all' });
+              if (roomFilter) params.set('room', roomFilter);
+              window.open(`/api/teacher/reports/export?${params}`, '_blank');
+            }}
+            className="px-3 py-2.5 text-sm bg-emerald-900/30 hover:bg-emerald-800/40 border border-emerald-700/30 rounded-xl min-h-[44px] flex items-center gap-2 transition-all hover:border-emerald-600/40 text-emerald-400"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span className="hidden sm:inline">Tổng hợp</span>
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800/60">
+      <div className="flex gap-1 bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800/60 overflow-x-auto scrollbar-none">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium min-h-[44px] transition-all duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2.5 rounded-xl text-sm font-medium min-h-[44px] min-w-[44px] transition-all duration-200 whitespace-nowrap ${
               tab === t.key
                 ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-lg shadow-indigo-500/20'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
           >
-            <t.icon className="w-4 h-4" />
-            <span className="hidden sm:inline">{t.label}</span>
+            <t.icon className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline text-[13px]">{t.label}</span>
           </button>
         ))}
       </div>
@@ -585,63 +627,100 @@ export function TeacherReportsView() {
             onDetail={setDetailStudentId}
           />
 
-          {/* Rooms overview with click-to-detail */}
+          {/* STEM activity analysis */}
+          {stemData.length > 0 && (
+            <div>
+              <SectionHeader icon={FlaskConical} title="Hoạt động STEM" subtitle={`${stemData.length} nhiệm vụ`} iconColor="text-teal-400" />
+              <div className="grid gap-2 sm:grid-cols-2">
+                {stemData.map((s) => (
+                  <div key={s.assignment_id} className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3.5 flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                      s.assignment_type === 'experiment' ? 'bg-teal-600/15 text-teal-400' : 'bg-violet-600/15 text-violet-400'
+                    }`}>
+                      {s.assignment_type === 'experiment' ? <FlaskConical className="w-4 h-4" /> : <BookOpenCheck className="w-4 h-4" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-white truncate">{s.title}</div>
+                      <div className="text-[11px] text-slate-500">{s.room_name} · {s.completed_count}/{s.total_students} hoàn thành</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className={`text-sm font-bold ${s.completion_rate >= 70 ? 'text-emerald-400' : s.completion_rate >= 40 ? 'text-amber-400' : 'text-red-400'}`}>
+                        {s.completion_rate}%
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Error analysis */}
+          {errorData.length > 0 && (
+            <div>
+              <SectionHeader icon={XCircle} title="Lỗi phổ biến theo kỹ năng" subtitle="Kỹ năng cần ôn tập" iconColor="text-red-400" />
+              <div className="space-y-2">
+                {errorData.slice(0, 8).map((e) => (
+                  <div key={e.skill} className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3.5">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-white">{skillLabel(e.skill)}</span>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${
+                        e.error_rate >= 50 ? 'bg-red-500/15 text-red-400' : 'bg-amber-500/15 text-amber-400'
+                      }`}>
+                        {e.error_rate}% sai
+                      </span>
+                    </div>
+                    <AnimatedBar
+                      value={100 - e.error_rate}
+                      color={e.error_rate >= 50 ? 'bg-red-500' : 'bg-amber-500'}
+                    />
+                    {e.sample_questions.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {e.sample_questions.map((q, i) => (
+                          <p key={i} className="text-[11px] text-slate-500 truncate">• {q}</p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Compact rooms overview */}
           <div>
             <SectionHeader icon={Users} title="Tình hình các lớp" subtitle={`${filteredRooms.length} lớp`} />
-            <div className="space-y-3">
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {filteredRooms.map((r) => (
                 <button
                   key={r.room_id}
                   type="button"
                   onClick={() => openRoomDetail(r)}
-                  className="w-full text-left bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 hover:border-indigo-500/30 hover:bg-slate-900/80 transition-all group cursor-pointer"
+                  className="w-full text-left bg-slate-900/60 border border-slate-800/80 rounded-xl p-3.5 hover:border-indigo-500/30 transition-all group cursor-pointer"
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-indigo-600/15 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-sm">
-                        {r.grade ? `${r.grade}` : <BookOpen className="w-5 h-5" />}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-600/15 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-xs shrink-0">
+                        {r.grade ?? <BookOpen className="w-4 h-4" />}
                       </div>
-                      <div>
-                        <span className="font-bold text-white">{r.room_name}</span>
-                        <p className="text-xs text-slate-500 mt-0.5">{r.member_count} học sinh · {r.assignment_count} bài giao</p>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-white text-sm truncate">{r.room_name}</div>
+                        <div className="text-[10px] text-slate-500">{r.member_count} HS · {r.assignment_count} bài</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <ScoreBadge value={r.avg_accuracy} size="sm" />
-                      <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-indigo-400 transition-colors" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="flex justify-between text-xs text-slate-400 mb-1.5">
-                        <span>Đã chấm / đã nộp</span>
-                        <span className="text-white font-medium">
-                          {r.submissions_total > 0 ? `${r.submissions_graded}/${r.submissions_total}` : '—'}
-                        </span>
-                      </div>
-                      <AnimatedBar
-                        value={r.submissions_total > 0 ? Math.round((r.submissions_graded / r.submissions_total) * 100) : 0}
-                        color="bg-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-xs text-slate-400 mb-1.5">
-                        <span>Điểm TB (điểm/tối đa)</span>
-                        <span className="text-white font-medium">
-                          {r.submissions_graded > 0 ? `${r.avg_accuracy}%` : '—'}
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
                       {r.submissions_graded > 0 ? (
-                        <AnimatedBar
-                          value={r.avg_accuracy}
-                          color={r.avg_accuracy >= 70 ? 'bg-emerald-500' : r.avg_accuracy >= 50 ? 'bg-amber-500' : 'bg-red-500'}
-                          delay={100}
-                        />
+                        <ScoreBadge value={r.avg_accuracy} size="sm" />
                       ) : (
-                        <div className="h-2.5 bg-slate-800/80 rounded-full" />
+                        <span className="text-xs text-slate-500">—</span>
                       )}
+                      <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-indigo-400 transition-colors" />
                     </div>
                   </div>
+                  <AnimatedBar
+                    value={r.submissions_total > 0 ? Math.round((r.submissions_graded / r.submissions_total) * 100) : 0}
+                    color="bg-blue-500"
+                  />
+                  <div className="text-[10px] text-slate-500 text-right mt-1">{r.submissions_graded}/{r.submissions_total} chấm</div>
                 </button>
               ))}
             </div>
@@ -837,46 +916,38 @@ function NeedsAttentionSection({
 function RoomsGrid({ data, onSelect }: { data: RoomRow[]; onSelect: (r: RoomRow) => void }) {
   if (!data || data.length === 0) return <EmptyState message="Chưa có lớp nào." />;
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
       {data.map((r) => (
         <button
           key={r.room_id}
           type="button"
           onClick={() => onSelect(r)}
-          className="text-left bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 hover:border-indigo-500/30 transition-all group cursor-pointer space-y-4"
+          className="text-left bg-slate-900/60 border border-slate-800/80 rounded-xl p-3.5 hover:border-indigo-500/30 transition-all group cursor-pointer"
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="font-bold text-white text-base">{r.room_name}</span>
-              {r.grade && <span className="text-xs text-slate-500 ml-2 bg-slate-800/80 px-1.5 py-0.5 rounded">Khối {r.grade}</span>}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-indigo-600/15 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-xs shrink-0">
+                {r.grade ?? <BookOpen className="w-4 h-4" />}
+              </div>
+              <div className="min-w-0">
+                <div className="font-semibold text-white text-sm truncate">{r.room_name}</div>
+                <div className="text-[10px] text-slate-500">{r.member_count} HS · {r.assignment_count} bài</div>
+              </div>
             </div>
-            <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-indigo-400 transition-colors" />
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-slate-800/40 rounded-xl p-2.5 text-center">
-              <div className="text-lg font-bold text-blue-400">{r.member_count}</div>
-              <div className="text-[10px] text-slate-500">Học sinh</div>
-            </div>
-            <div className="bg-slate-800/40 rounded-xl p-2.5 text-center">
-              <div className="text-lg font-bold text-purple-400">{r.assignment_count}</div>
-              <div className="text-[10px] text-slate-500">Bài giao</div>
-            </div>
-            <div className="bg-slate-800/40 rounded-xl p-2.5 text-center">
+            <div className="flex items-center gap-1.5 shrink-0">
               {r.submissions_graded > 0 ? (
                 <ScoreBadge value={r.avg_accuracy} size="sm" />
               ) : (
-                <div className="text-lg font-bold text-slate-500">—</div>
+                <span className="text-xs text-slate-500">—</span>
               )}
-              <div className="text-[10px] text-slate-500 mt-1">Điểm TB</div>
+              <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-indigo-400 transition-colors" />
             </div>
           </div>
-          <div>
-            <AnimatedBar
-              value={r.submissions_total > 0 ? Math.round((r.submissions_graded / r.submissions_total) * 100) : 0}
-              color="bg-blue-500"
-            />
-            <div className="text-[11px] text-slate-500 text-right mt-1">{r.submissions_graded}/{r.submissions_total} đã chấm</div>
-          </div>
+          <AnimatedBar
+            value={r.submissions_total > 0 ? Math.round((r.submissions_graded / r.submissions_total) * 100) : 0}
+            color="bg-blue-500"
+          />
+          <div className="text-[10px] text-slate-500 text-right mt-1">{r.submissions_graded}/{r.submissions_total} chấm</div>
         </button>
       ))}
     </div>

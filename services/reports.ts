@@ -55,6 +55,24 @@ export type InactiveStudent = {
   pending_assignments: number;
 };
 
+export type StemActivityRow = {
+  assignment_id: string;
+  title: string;
+  assignment_type: 'lesson' | 'experiment';
+  room_name: string;
+  total_students: number;
+  completed_count: number;
+  completion_rate: number;
+};
+
+export type ErrorCluster = {
+  skill: string;
+  wrong_count: number;
+  total_count: number;
+  error_rate: number;
+  sample_questions: string[];
+};
+
 export type TimeSavedStats = {
   auto_graded_count: number;
   total_submissions: number;
@@ -1101,6 +1119,156 @@ export async function sendReportToParent(
   }
 
   return { sent: true, parent_names: parentNames };
+}
+
+// ---------------------------------------------------------------------------
+// Teacher: phân tích hoạt động STEM (lesson/experiment)
+// ---------------------------------------------------------------------------
+
+export async function getStemAnalysis(
+  teacherId: string,
+  roomId?: string
+): Promise<StemActivityRow[]> {
+  const admin = createAdminClient();
+
+  let roomQuery = admin.from('rooms').select('id, name').eq('owner_id', teacherId);
+  if (roomId) roomQuery = roomQuery.eq('id', roomId);
+  const { data: rooms } = await roomQuery;
+  if (!rooms || rooms.length === 0) return [];
+
+  const roomIds = rooms.map((r) => r.id);
+  const roomNameMap = new Map<string, string>();
+  for (const r of rooms) roomNameMap.set(r.id, r.name);
+
+  const { data: assignments } = await admin
+    .from('assignments')
+    .select('id, title, assignment_type, room_id')
+    .in('room_id', roomIds)
+    .in('assignment_type', ['lesson', 'experiment']);
+
+  if (!assignments || assignments.length === 0) return [];
+
+  const { data: members } = await admin
+    .from('room_members')
+    .select('room_id, user_id')
+    .in('room_id', roomIds)
+    .eq('is_active', true);
+
+  const roomMemberCount = new Map<string, number>();
+  for (const m of members ?? []) {
+    roomMemberCount.set(m.room_id, (roomMemberCount.get(m.room_id) ?? 0) + 1);
+  }
+
+  const assignmentIds = assignments.map((a) => a.id);
+  const { data: completions } = await admin
+    .from('task_completions')
+    .select('assignment_id, student_id')
+    .in('assignment_id', assignmentIds);
+
+  const completionCount = new Map<string, number>();
+  for (const c of completions ?? []) {
+    completionCount.set(c.assignment_id, (completionCount.get(c.assignment_id) ?? 0) + 1);
+  }
+
+  return assignments.map((a) => {
+    const total = roomMemberCount.get(a.room_id) ?? 0;
+    const done = completionCount.get(a.id) ?? 0;
+    return {
+      assignment_id: a.id,
+      title: a.title,
+      assignment_type: a.assignment_type as 'lesson' | 'experiment',
+      room_name: roomNameMap.get(a.room_id) ?? '',
+      total_students: total,
+      completed_count: done,
+      completion_rate: total > 0 ? Math.round((done / total) * 100) : 0,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Teacher: phân tích lỗi phổ biến theo kỹ năng
+// ---------------------------------------------------------------------------
+
+export async function getErrorAnalysis(
+  teacherId: string,
+  roomId?: string
+): Promise<ErrorCluster[]> {
+  const admin = createAdminClient();
+
+  let roomQuery = admin.from('rooms').select('id').eq('owner_id', teacherId);
+  if (roomId) roomQuery = roomQuery.eq('id', roomId);
+  const { data: rooms } = await roomQuery;
+  const roomIds = (rooms ?? []).map((r) => r.id);
+  if (roomIds.length === 0) return [];
+
+  const { data: assignments } = await admin
+    .from('assignments')
+    .select('id')
+    .in('room_id', roomIds);
+  const assignmentIds = (assignments ?? []).map((a) => a.id);
+  if (assignmentIds.length === 0) return [];
+
+  const { data: aqs } = await admin
+    .from('assignment_questions')
+    .select('id, content, source_question_id')
+    .in('assignment_id', assignmentIds);
+  if (!aqs || aqs.length === 0) return [];
+
+  const sourceIds = new Set<string>();
+  for (const aq of aqs) {
+    if (aq.source_question_id) sourceIds.add(aq.source_question_id);
+  }
+
+  const questionTagMap = new Map<string, string[]>();
+  if (sourceIds.size > 0) {
+    const { data: questions } = await admin
+      .from('questions')
+      .select('id, skill_tags')
+      .in('id', Array.from(sourceIds));
+    for (const q of questions ?? []) {
+      questionTagMap.set(q.id, q.skill_tags as string[]);
+    }
+  }
+
+  const aqIds = aqs.map((a) => a.id);
+  const aqSourceMap = new Map<string, string>();
+  const aqContentMap = new Map<string, string>();
+  for (const aq of aqs) {
+    if (aq.source_question_id) aqSourceMap.set(aq.id, aq.source_question_id);
+    aqContentMap.set(aq.id, aq.content);
+  }
+
+  const { data: attempts } = await admin
+    .from('question_attempts')
+    .select('assignment_question_id, is_correct')
+    .in('assignment_question_id', aqIds);
+
+  const skillStats = new Map<string, { wrong: number; total: number; samples: Set<string> }>();
+  for (const a of attempts ?? []) {
+    const sourceId = aqSourceMap.get(a.assignment_question_id);
+    const tags = sourceId ? questionTagMap.get(sourceId) ?? [] : [];
+    for (const tag of tags) {
+      const entry = skillStats.get(tag) ?? { wrong: 0, total: 0, samples: new Set() };
+      entry.total++;
+      if (!a.is_correct) {
+        entry.wrong++;
+        const content = aqContentMap.get(a.assignment_question_id);
+        if (content && entry.samples.size < 3) entry.samples.add(content);
+      }
+      skillStats.set(tag, entry);
+    }
+  }
+
+  return Array.from(skillStats.entries())
+    .map(([skill, s]) => ({
+      skill,
+      wrong_count: s.wrong,
+      total_count: s.total,
+      error_rate: s.total > 0 ? Math.round((s.wrong / s.total) * 100) : 0,
+      sample_questions: Array.from(s.samples),
+    }))
+    .filter((e) => e.wrong_count > 0)
+    .sort((a, b) => b.error_rate - a.error_rate);
 }
 
 // ---------------------------------------------------------------------------

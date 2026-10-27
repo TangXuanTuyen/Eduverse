@@ -9,6 +9,8 @@ import {
   getInactiveStudents,
   getTimeSavedStats,
   getWeeklyTrends,
+  getStemAnalysis,
+  getErrorAnalysis,
   createAuditLog,
   sendReportToParent,
 } from '@/services/reports';
@@ -58,6 +60,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(await getTimeSavedStats(profile.id));
     case 'trends':
       return NextResponse.json(await getWeeklyTrends(profile.id, roomId));
+    case 'stem':
+      return NextResponse.json(await getStemAnalysis(profile.id, roomId));
+    case 'errors':
+      return NextResponse.json(await getErrorAnalysis(profile.id, roomId));
     default:
       return NextResponse.json({ error: 'Invalid tab' }, { status: 400 });
   }
