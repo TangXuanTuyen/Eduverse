@@ -694,6 +694,94 @@ export async function getTimeSavedStats(teacherId: string): Promise<TimeSavedSta
 }
 
 // ---------------------------------------------------------------------------
+// Teacher: xu hướng học tập theo tuần (8 tuần gần nhất)
+// ---------------------------------------------------------------------------
+
+export type WeeklyTrendRow = {
+  week_label: string;
+  week_start: string;
+  submissions_count: number;
+  graded_count: number;
+  avg_score: number;
+  completion_rate: number;
+};
+
+export async function getWeeklyTrends(
+  teacherId: string,
+  roomId?: string,
+  weeks = 8
+): Promise<WeeklyTrendRow[]> {
+  const admin = createAdminClient();
+
+  let roomQuery = admin.from('rooms').select('id').eq('owner_id', teacherId);
+  if (roomId) roomQuery = roomQuery.eq('id', roomId);
+  const { data: rooms } = await roomQuery;
+  const roomIds = (rooms ?? []).map((r) => r.id);
+  if (roomIds.length === 0) return [];
+
+  const { data: assignments } = await admin
+    .from('assignments')
+    .select('id, room_id')
+    .in('room_id', roomIds);
+  const assignmentIds = (assignments ?? []).map((a) => a.id);
+  if (assignmentIds.length === 0) return [];
+
+  // Get all non-draft submissions with dates
+  const { data: subs } = await admin
+    .from('submissions')
+    .select('submitted_at, status, total_score, max_score')
+    .in('assignment_id', assignmentIds)
+    .not('submitted_at', 'is', null);
+
+  // Count members for completion rate
+  const { data: members } = await admin
+    .from('room_members')
+    .select('user_id')
+    .in('room_id', roomIds)
+    .eq('is_active', true);
+  const totalStudents = new Set((members ?? []).map((m) => m.user_id)).size;
+
+  // Build week buckets
+  const now = new Date();
+  const result: WeeklyTrendRow[] = [];
+
+  for (let i = weeks - 1; i >= 0; i--) {
+    const monday = new Date(now);
+    monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7) - i * 7);
+    monday.setHours(0, 0, 0, 0);
+    const sunday = new Date(monday);
+    sunday.setDate(sunday.getDate() + 7);
+
+    const weekSubs = (subs ?? []).filter((s) => {
+      const d = new Date(s.submitted_at!);
+      return d >= monday && d < sunday;
+    });
+
+    const graded = weekSubs.filter(
+      (s) => s.status === 'graded' || s.status === 'published'
+    );
+    const scoreSum = graded.reduce((sum, s) => sum + (Number(s.total_score) || 0), 0);
+    const maxSum = graded.reduce((sum, s) => sum + (Number(s.max_score) || 0), 0);
+
+    const dd = monday.getDate();
+    const mm = monday.getMonth() + 1;
+    result.push({
+      week_label: `${dd}/${mm}`,
+      week_start: monday.toISOString().slice(0, 10),
+      submissions_count: weekSubs.length,
+      graded_count: graded.length,
+      avg_score: maxSum > 0 ? Math.round((scoreSum / maxSum) * 100) : -1,
+      completion_rate:
+        totalStudents > 0 && assignmentIds.length > 0
+          ? Math.round((weekSubs.length / totalStudents) * 100)
+          : 0,
+    });
+  }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
 // Teacher: báo cáo chi tiết từng học sinh (câu đúng/sai, bài nộp)
 // ---------------------------------------------------------------------------
 

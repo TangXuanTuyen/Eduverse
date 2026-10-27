@@ -66,6 +66,15 @@ type TimeSaved = {
   total_submissions: number;
 };
 
+type TrendRow = {
+  week_label: string;
+  week_start: string;
+  submissions_count: number;
+  graded_count: number;
+  avg_score: number;
+  completion_rate: number;
+};
+
 type RoomAssignmentDetail = {
   assignment_id: string;
   title: string;
@@ -232,6 +241,8 @@ export function TeacherReportsView() {
   const [roomDetails, setRoomDetails] = useState<RoomAssignmentDetail[]>([]);
   const [roomDetailsLoading, setRoomDetailsLoading] = useState(false);
   const [detailStudentId, setDetailStudentId] = useState<string | null>(null);
+  const [trends, setTrends] = useState<TrendRow[]>([]);
+  const [showInactiveDetail, setShowInactiveDetail] = useState(false);
 
   const fetchTab = useCallback(async (t: string, room?: string) => {
     setLoading(true);
@@ -252,7 +263,15 @@ export function TeacherReportsView() {
     fetch('/api/teacher/reports?tab=rooms').then((r) => r.json()).then((d) => setRooms(d));
     fetch('/api/teacher/reports?tab=inactive').then((r) => r.json()).then((d) => setInactive(d));
     fetch('/api/teacher/reports?tab=time-saved').then((r) => r.json()).then((d) => setTimeSaved(d));
+    fetch('/api/teacher/reports?tab=trends').then((r) => r.json()).then((d) => setTrends(d));
   }, []);
+
+  // Re-fetch trends when room filter changes
+  useEffect(() => {
+    const params = new URLSearchParams({ tab: 'trends' });
+    if (roomFilter) params.set('room', roomFilter);
+    fetch(`/api/teacher/reports?${params}`).then((r) => r.json()).then((d) => setTrends(d));
+  }, [roomFilter]);
 
   const openRoomDetail = async (room: RoomRow) => {
     setSelectedRoom(room);
@@ -269,12 +288,18 @@ export function TeacherReportsView() {
     window.open(`/api/teacher/reports/export?${params}`, '_blank');
   };
 
-  const totalStudents = rooms.reduce((s, r) => s + r.member_count, 0);
-  const totalAssignments = rooms.reduce((s, r) => s + r.assignment_count, 0);
-  const totalGraded = rooms.reduce((s, r) => s + r.submissions_graded, 0);
-  const totalSubmissions = rooms.reduce((s, r) => s + r.submissions_total, 0);
+  const filteredRooms = roomFilter ? rooms.filter((r) => r.room_id === roomFilter) : rooms;
+  const filteredInactive = roomFilter ? inactive.filter((s) => {
+    const room = rooms.find((r) => r.room_name === s.room_name);
+    return room && room.room_id === roomFilter;
+  }) : inactive;
+
+  const totalStudents = filteredRooms.reduce((s, r) => s + r.member_count, 0);
+  const totalAssignments = filteredRooms.reduce((s, r) => s + r.assignment_count, 0);
+  const totalGraded = filteredRooms.reduce((s, r) => s + r.submissions_graded, 0);
+  const totalSubmissions = filteredRooms.reduce((s, r) => s + r.submissions_total, 0);
   // Weighted average: rooms with more graded submissions count more
-  const weightedSum = rooms.reduce((s, r) => s + r.avg_accuracy * r.submissions_graded, 0);
+  const weightedSum = filteredRooms.reduce((s, r) => s + r.avg_accuracy * r.submissions_graded, 0);
   const overallAvg = totalGraded > 0 ? Math.round(weightedSum / totalGraded) : -1;
   const hasGradedData = totalGraded > 0;
 
@@ -456,6 +481,23 @@ export function TeacherReportsView() {
         ))}
       </div>
 
+      {/* Room filter */}
+      {rooms.length > 1 && (
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-slate-500" />
+          <select
+            value={roomFilter}
+            onChange={(e) => setRoomFilter(e.target.value)}
+            className="rounded-xl bg-slate-800/80 border border-slate-700/50 px-3 py-2 text-sm text-white min-h-[44px] focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition-all"
+          >
+            <option value="">Tất cả lớp</option>
+            {rooms.map((r) => (
+              <option key={r.room_id} value={r.room_id}>{r.room_name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Overview Tab */}
       {tab === 'overview' && (
         <div className="space-y-6">
@@ -463,7 +505,7 @@ export function TeacherReportsView() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               icon={Users} value={totalStudents} label="Học sinh đang theo dõi"
-              subtitle={`Trong ${rooms.length} lớp`}
+              subtitle={`Trong ${filteredRooms.length} lớp`}
               gradient="bg-gradient-to-br from-blue-600/15 to-blue-900/10 border border-blue-500/20"
               iconColor="bg-blue-500/20"
             />
@@ -500,12 +542,12 @@ export function TeacherReportsView() {
           </div>
 
           {/* Inactive students alert */}
-          {inactive.length > 0 && (
+          {filteredInactive.length > 0 && (
             <details className="bg-amber-950/15 border border-amber-900/30 rounded-2xl overflow-hidden group">
               <summary className="px-5 py-3.5 text-sm font-semibold cursor-pointer min-h-[44px] flex items-center gap-2.5 text-amber-300 hover:text-amber-200 transition-colors">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 <span className="flex-1">Học sinh không hoạt động ≥7 ngày</span>
-                <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-bold">{inactive.length}</span>
+                <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-bold">{filteredInactive.length}</span>
               </summary>
               <div className="px-5 pb-4">
                 <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 gap-y-0 text-[11px] text-slate-500 border-b border-amber-900/20 pb-2 mb-1">
@@ -513,7 +555,7 @@ export function TeacherReportsView() {
                   <span className="text-right">Bài chưa nộp</span>
                   <span className="text-right w-24">Lần cuối</span>
                 </div>
-                {inactive.map((s) => (
+                {filteredInactive.map((s) => (
                   <div key={s.student_id} className="grid grid-cols-[1fr_auto_auto] gap-x-4 items-center text-sm py-2 border-b border-amber-900/15 last:border-0">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="w-7 h-7 rounded-lg bg-amber-600/20 flex items-center justify-center text-xs font-bold text-amber-400 shrink-0">
@@ -533,11 +575,21 @@ export function TeacherReportsView() {
             </details>
           )}
 
+          {/* Trend chart */}
+          <TrendChart data={trends} />
+
+          {/* Students needing attention */}
+          <NeedsAttentionSection
+            inactive={inactive}
+            rooms={rooms}
+            onDetail={setDetailStudentId}
+          />
+
           {/* Rooms overview with click-to-detail */}
           <div>
-            <SectionHeader icon={Users} title="Tình hình các lớp" subtitle={`${rooms.length} lớp`} />
+            <SectionHeader icon={Users} title="Tình hình các lớp" subtitle={`${filteredRooms.length} lớp`} />
             <div className="space-y-3">
-              {rooms.map((r) => (
+              {filteredRooms.map((r) => (
                 <button
                   key={r.room_id}
                   type="button"
@@ -597,23 +649,6 @@ export function TeacherReportsView() {
         </div>
       )}
 
-      {/* Room filter for non-overview tabs */}
-      {tab !== 'overview' && rooms.length > 0 && (
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-500" />
-          <select
-            value={roomFilter}
-            onChange={(e) => setRoomFilter(e.target.value)}
-            className="rounded-xl bg-slate-800/80 border border-slate-700/50 px-3 py-2 text-sm text-white min-h-[44px] focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition-all"
-          >
-            <option value="">Tất cả lớp</option>
-            {rooms.map((r) => (
-              <option key={r.room_id} value={r.room_id}>{r.room_name}</option>
-            ))}
-          </select>
-        </div>
-      )}
-
       {/* Tab content */}
       {loading && tab !== 'overview' ? (
         <LoadingState />
@@ -631,6 +666,168 @@ export function TeacherReportsView() {
       )}
 
       <AuthorFooter />
+    </div>
+  );
+}
+
+// ── Trend Chart (SVG) ──
+
+function TrendChart({ data }: { data: TrendRow[] }) {
+  if (!data || data.length === 0) return null;
+  const hasScores = data.some((d) => d.avg_score >= 0);
+  const hasSubs = data.some((d) => d.submissions_count > 0);
+  if (!hasScores && !hasSubs) return null;
+
+  const W = 600;
+  const H = 200;
+  const PL = 40;
+  const PR = 16;
+  const PT = 20;
+  const PB = 32;
+  const chartW = W - PL - PR;
+  const chartH = H - PT - PB;
+
+  const maxSubs = Math.max(...data.map((d) => d.submissions_count), 1);
+  const step = chartW / Math.max(data.length - 1, 1);
+
+  const scorePts = data.map((d, i) => ({
+    x: PL + i * step,
+    y: d.avg_score >= 0 ? PT + chartH - (d.avg_score / 100) * chartH : -1,
+  }));
+  const scoreLine = scorePts
+    .filter((p) => p.y >= 0)
+    .map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`)
+    .join(' ');
+
+  return (
+    <div>
+      <SectionHeader icon={TrendingUp} title="Xu hướng học tập" subtitle="8 tuần gần nhất" iconColor="text-cyan-400" />
+      <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 overflow-x-auto">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Biểu đồ xu hướng">
+          {/* Grid lines */}
+          {[0, 25, 50, 75, 100].map((v) => {
+            const y = PT + chartH - (v / 100) * chartH;
+            return (
+              <g key={v}>
+                <line x1={PL} y1={y} x2={W - PR} y2={y} stroke="rgba(148,163,184,0.1)" strokeDasharray="4 4" />
+                <text x={PL - 6} y={y + 4} textAnchor="end" className="fill-slate-500" fontSize={10}>{v}%</text>
+              </g>
+            );
+          })}
+
+          {/* Bar chart: submissions count */}
+          {data.map((d, i) => {
+            const barH = (d.submissions_count / maxSubs) * chartH;
+            const barW = Math.min(step * 0.5, 32);
+            const x = PL + i * step - barW / 2;
+            return (
+              <rect
+                key={`bar-${i}`}
+                x={x}
+                y={PT + chartH - barH}
+                width={barW}
+                height={barH}
+                rx={4}
+                className="fill-blue-500/20"
+              >
+                <title>{d.week_label}: {d.submissions_count} lượt nộp</title>
+              </rect>
+            );
+          })}
+
+          {/* Score line */}
+          {hasScores && scoreLine && (
+            <path d={scoreLine} fill="none" stroke="#10b981" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+          )}
+
+          {/* Score dots */}
+          {scorePts.map((p, i) => p.y >= 0 && (
+            <circle key={`dot-${i}`} cx={p.x} cy={p.y} r={4} className="fill-emerald-500 stroke-slate-900" strokeWidth={2}>
+              <title>{data[i].week_label}: {data[i].avg_score}% TB</title>
+            </circle>
+          ))}
+
+          {/* X axis labels */}
+          {data.map((d, i) => (
+            <text key={`label-${i}`} x={PL + i * step} y={H - 6} textAnchor="middle" className="fill-slate-500" fontSize={10}>
+              {d.week_label}
+            </text>
+          ))}
+        </svg>
+
+        {/* Legend */}
+        <div className="flex gap-5 mt-3 text-[11px] text-slate-400 justify-center">
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" /> Điểm TB
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded bg-blue-500/30 inline-block" /> Lượt nộp
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Needs Attention Section ──
+
+function NeedsAttentionSection({
+  inactive,
+  rooms,
+  onDetail,
+}: {
+  inactive: InactiveRow[];
+  rooms: RoomRow[];
+  onDetail: (id: string) => void;
+}) {
+  // Students needing attention: inactive ≥14 days or have pending assignments
+  const critical = inactive.filter((s) => s.days_inactive >= 14 || s.pending_assignments >= 2);
+  if (critical.length === 0) return null;
+
+  return (
+    <div>
+      <SectionHeader
+        icon={AlertTriangle}
+        title="Học sinh cần hỗ trợ"
+        subtitle={`${critical.length} em cần quan tâm`}
+        iconColor="text-red-400"
+      />
+      <div className="space-y-2">
+        {critical.slice(0, 10).map((s) => (
+          <button
+            key={s.student_id}
+            type="button"
+            onClick={() => onDetail(s.student_id)}
+            className="w-full text-left bg-red-950/10 border border-red-900/20 rounded-xl p-4 hover:border-red-800/40 transition-all cursor-pointer flex items-center gap-3 group"
+          >
+            <div className="w-9 h-9 rounded-xl bg-red-600/15 border border-red-500/20 flex items-center justify-center text-red-400 font-bold text-sm shrink-0">
+              {(s.display_name ?? '?').charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-white text-sm truncate">{s.display_name}</span>
+                <span className="text-[10px] text-slate-500">({s.room_name})</span>
+              </div>
+              <div className="flex gap-3 mt-1 text-[11px] text-slate-500">
+                {s.days_inactive >= 14 && (
+                  <span className="text-amber-400">
+                    {s.days_inactive >= 999 ? 'Chưa từng hoạt động' : `${s.days_inactive} ngày không HĐ`}
+                  </span>
+                )}
+                {s.pending_assignments > 0 && (
+                  <span className="text-red-400">{s.pending_assignments} bài chưa nộp</span>
+                )}
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-red-400 shrink-0 transition-colors" />
+          </button>
+        ))}
+        {critical.length > 10 && (
+          <p className="text-xs text-slate-500 text-center py-2">
+            Và {critical.length - 10} em khác — xem tab &ldquo;Theo học sinh&rdquo; để biết chi tiết.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

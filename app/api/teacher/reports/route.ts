@@ -8,6 +8,7 @@ import {
   getQuestionReports,
   getInactiveStudents,
   getTimeSavedStats,
+  getWeeklyTrends,
   createAuditLog,
   sendReportToParent,
 } from '@/services/reports';
@@ -55,6 +56,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(await getInactiveStudents(profile.id));
     case 'time-saved':
       return NextResponse.json(await getTimeSavedStats(profile.id));
+    case 'trends':
+      return NextResponse.json(await getWeeklyTrends(profile.id, roomId));
     default:
       return NextResponse.json({ error: 'Invalid tab' }, { status: 400 });
   }
