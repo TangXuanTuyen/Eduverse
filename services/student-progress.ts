@@ -43,6 +43,14 @@ export async function saveStudentProgress(
     p_experiments_completed: progress.experimentsCompleted,
   });
   if (error) throw error;
+
+  // Cập nhật last_active_date trong student_stats
+  await supabase
+    .from('student_stats')
+    .upsert(
+      { student_id: userId, last_active_date: new Date().toISOString().slice(0, 10) },
+      { onConflict: 'student_id' }
+    );
 }
 
 export type LeaderboardEntry = {

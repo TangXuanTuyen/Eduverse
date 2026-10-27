@@ -534,6 +534,28 @@ export async function getInactiveStudents(teacherId: string, daysThreshold = 7):
     statsMap.set(s.student_id, s.last_active_date);
   }
 
+  // Fallback: lấy ngày nộp bài gần nhất hoặc ngày cập nhật progress
+  const { data: progressRows } = await admin
+    .from('student_progress')
+    .select('user_id, updated_at')
+    .in('user_id', studentIds);
+  const progressMap = new Map<string, string>();
+  for (const p of progressRows ?? []) {
+    progressMap.set(p.user_id, p.updated_at);
+  }
+
+  const { data: submissionRows } = await admin
+    .from('submissions')
+    .select('student_id, submitted_at')
+    .in('student_id', studentIds)
+    .order('submitted_at', { ascending: false });
+  const lastSubmissionMap = new Map<string, string>();
+  for (const s of submissionRows ?? []) {
+    if (!lastSubmissionMap.has(s.student_id)) {
+      lastSubmissionMap.set(s.student_id, s.submitted_at);
+    }
+  }
+
   const roomMap = new Map<string, string>();
   for (const r of rooms ?? []) {
     roomMap.set(r.id, r.name);
@@ -542,7 +564,15 @@ export async function getInactiveStudents(teacherId: string, daysThreshold = 7):
   const today = new Date();
   const result: InactiveStudent[] = [];
   for (const m of students) {
-    const lastActive = statsMap.get(m.user_id) ?? null;
+    // Dùng dữ liệu mới nhất từ: student_stats, student_progress, submissions
+    const candidates = [
+      statsMap.get(m.user_id),
+      progressMap.get(m.user_id),
+      lastSubmissionMap.get(m.user_id),
+    ].filter(Boolean) as string[];
+    const lastActive = candidates.length > 0
+      ? candidates.reduce((a, b) => (new Date(a) > new Date(b) ? a : b))
+      : null;
     const daysInactive = lastActive
       ? Math.floor((today.getTime() - new Date(lastActive).getTime()) / 86_400_000)
       : 999;
