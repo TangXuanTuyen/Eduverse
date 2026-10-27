@@ -52,6 +52,7 @@ export type InactiveStudent = {
   room_name: string;
   last_active_date: string | null;
   days_inactive: number;
+  pending_assignments: number;
 };
 
 export type TimeSavedStats = {
@@ -561,6 +562,38 @@ export async function getInactiveStudents(teacherId: string, daysThreshold = 7):
     roomMap.set(r.id, r.name);
   }
 
+  // Count pending assignments per student
+  const { data: assignmentRows } = await admin
+    .from('assignments')
+    .select('id, room_id')
+    .in('room_id', roomIds);
+
+  const assignmentIds = (assignmentRows ?? []).map((a) => a.id);
+  const roomAssignCount = new Map<string, number>();
+  for (const a of assignmentRows ?? []) {
+    roomAssignCount.set(a.room_id, (roomAssignCount.get(a.room_id) ?? 0) + 1);
+  }
+
+  const submittedMap = new Map<string, Set<string>>();
+  if (assignmentIds.length > 0) {
+    const { data: subs } = await admin
+      .from('submissions')
+      .select('student_id, assignment_id, status')
+      .in('assignment_id', assignmentIds)
+      .in('student_id', studentIds)
+      .neq('status', 'draft');
+    for (const s of subs ?? []) {
+      if (!submittedMap.has(s.student_id)) submittedMap.set(s.student_id, new Set());
+      submittedMap.get(s.student_id)!.add(s.assignment_id);
+    }
+  }
+
+  // Build student→room map for counting their room's assignments
+  const studentRoomMap = new Map<string, string>();
+  for (const m of students) {
+    studentRoomMap.set(m.user_id, m.room_id);
+  }
+
   const today = new Date();
   const result: InactiveStudent[] = [];
   for (const m of students) {
@@ -577,12 +610,16 @@ export async function getInactiveStudents(teacherId: string, daysThreshold = 7):
       ? Math.floor((today.getTime() - new Date(lastActive).getTime()) / 86_400_000)
       : 999;
     if (daysInactive >= daysThreshold) {
+      const roomId = studentRoomMap.get(m.user_id) ?? m.room_id;
+      const totalInRoom = roomAssignCount.get(roomId) ?? 0;
+      const submitted = submittedMap.get(m.user_id)?.size ?? 0;
       result.push({
         student_id: m.user_id,
         display_name: (m.profiles as unknown as { display_name: string }).display_name,
         room_name: roomMap.get(m.room_id) ?? '',
         last_active_date: lastActive,
         days_inactive: daysInactive,
+        pending_assignments: Math.max(0, totalInRoom - submitted),
       });
     }
   }

@@ -58,6 +58,7 @@ type InactiveRow = {
   room_name: string;
   last_active_date: string | null;
   days_inactive: number;
+  pending_assignments: number;
 };
 
 type TimeSaved = {
@@ -148,10 +149,11 @@ function DistributionBar({ dist }: { dist: { excellent: number; good: number; av
   );
 }
 
-function StatCard({ icon: Icon, value, label, gradient, iconColor }: {
+function StatCard({ icon: Icon, value, label, subtitle, gradient, iconColor }: {
   icon: React.ComponentType<{ className?: string }>;
   value: string | number;
   label: string;
+  subtitle?: string;
   gradient: string;
   iconColor: string;
 }) {
@@ -164,6 +166,7 @@ function StatCard({ icon: Icon, value, label, gradient, iconColor }: {
       </div>
       <div className="text-2xl font-bold text-white">{value}</div>
       <div className="text-xs text-slate-300 mt-0.5">{label}</div>
+      {subtitle && <div className="text-[10px] text-slate-500 mt-0.5">{subtitle}</div>}
     </div>
   );
 }
@@ -268,7 +271,12 @@ export function TeacherReportsView() {
 
   const totalStudents = rooms.reduce((s, r) => s + r.member_count, 0);
   const totalAssignments = rooms.reduce((s, r) => s + r.assignment_count, 0);
-  const overallAvg = rooms.length > 0 ? Math.round(rooms.reduce((s, r) => s + r.avg_accuracy, 0) / rooms.length) : 0;
+  const totalGraded = rooms.reduce((s, r) => s + r.submissions_graded, 0);
+  const totalSubmissions = rooms.reduce((s, r) => s + r.submissions_total, 0);
+  // Weighted average: rooms with more graded submissions count more
+  const weightedSum = rooms.reduce((s, r) => s + r.avg_accuracy * r.submissions_graded, 0);
+  const overallAvg = totalGraded > 0 ? Math.round(weightedSum / totalGraded) : -1;
+  const hasGradedData = totalGraded > 0;
 
   // ── Room Detail View ──
   if (selectedRoom) {
@@ -292,13 +300,23 @@ export function TeacherReportsView() {
         {/* Room overview cards */}
         <div className="grid grid-cols-3 gap-4">
           <StatCard
-            icon={CheckCircle2} value={`${selectedRoom.submissions_graded}/${selectedRoom.submissions_total}`}
-            label="Đã chấm" gradient="bg-gradient-to-br from-blue-600/15 to-blue-900/10 border border-blue-500/20"
+            icon={CheckCircle2}
+            value={selectedRoom.submissions_total > 0 ? `${selectedRoom.submissions_graded}/${selectedRoom.submissions_total}` : '—'}
+            label="Đã chấm / đã nộp"
+            subtitle={selectedRoom.submissions_total === 0 ? 'Chưa có bài nộp' : undefined}
+            gradient="bg-gradient-to-br from-blue-600/15 to-blue-900/10 border border-blue-500/20"
             iconColor="bg-blue-500/20"
           />
           <div className="bg-gradient-to-br from-emerald-600/15 to-emerald-900/10 border border-emerald-500/20 rounded-2xl p-4 text-center flex flex-col items-center justify-center">
-            <ScoreBadge value={selectedRoom.avg_accuracy} size="lg" />
+            {selectedRoom.submissions_graded > 0 ? (
+              <ScoreBadge value={selectedRoom.avg_accuracy} size="lg" />
+            ) : (
+              <div className="text-2xl font-bold text-slate-500">—</div>
+            )}
             <div className="text-xs text-emerald-300 mt-2">Điểm trung bình</div>
+            {selectedRoom.submissions_graded === 0 && (
+              <div className="text-[10px] text-slate-500 mt-0.5">Chưa có bài được chấm</div>
+            )}
           </div>
           <StatCard
             icon={Users} value={selectedRoom.member_count}
@@ -444,31 +462,41 @@ export function TeacherReportsView() {
           {/* Summary Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
-              icon={Users} value={totalStudents} label="Tổng số học sinh"
+              icon={Users} value={totalStudents} label="Học sinh đang theo dõi"
+              subtitle={`Trong ${rooms.length} lớp`}
               gradient="bg-gradient-to-br from-blue-600/15 to-blue-900/10 border border-blue-500/20"
               iconColor="bg-blue-500/20"
             />
             <StatCard
-              icon={BookOpen} value={totalAssignments} label="Bài giao"
+              icon={BookOpen} value={totalAssignments} label="Bài đã giao"
+              subtitle="Tất cả các lớp"
               gradient="bg-gradient-to-br from-purple-600/15 to-purple-900/10 border border-purple-500/20"
               iconColor="bg-purple-500/20"
             />
             <StatCard
-              icon={CheckCircle2} value={timeSaved?.total_submissions ?? 0} label="Bài đã nộp"
+              icon={CheckCircle2}
+              value={totalSubmissions > 0 ? totalSubmissions : '—'}
+              label="Lượt nộp bài"
+              subtitle={totalSubmissions > 0 ? `${totalGraded} đã chấm` : 'Chưa có bài nộp'}
               gradient="bg-gradient-to-br from-emerald-600/15 to-emerald-900/10 border border-emerald-500/20"
               iconColor="bg-emerald-500/20"
             />
-            {rooms.length > 0 && (
-              <div className="bg-gradient-to-br from-cyan-600/15 to-cyan-900/10 border border-cyan-500/20 rounded-2xl p-4 group hover:scale-[1.02] transition-transform duration-200">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center">
-                    <Activity className="w-5 h-5 text-white" />
-                  </div>
+            <div className="bg-gradient-to-br from-cyan-600/15 to-cyan-900/10 border border-cyan-500/20 rounded-2xl p-4 group hover:scale-[1.02] transition-transform duration-200">
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+                  <Activity className="w-5 h-5 text-white" />
                 </div>
-                <ScoreBadge value={overallAvg} size="md" />
-                <div className="text-xs text-slate-300 mt-1.5">Điểm trung bình</div>
               </div>
-            )}
+              {hasGradedData ? (
+                <ScoreBadge value={overallAvg} size="md" />
+              ) : (
+                <div className="text-2xl font-bold text-slate-500">—</div>
+              )}
+              <div className="text-xs text-slate-300 mt-1.5">Điểm trung bình</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">
+                {hasGradedData ? 'Điểm / điểm tối đa' : 'Chưa có bài được chấm'}
+              </div>
+            </div>
           </div>
 
           {/* Inactive students alert */}
@@ -479,17 +507,25 @@ export function TeacherReportsView() {
                 <span className="flex-1">Học sinh không hoạt động ≥7 ngày</span>
                 <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-bold">{inactive.length}</span>
               </summary>
-              <div className="px-5 pb-4 space-y-1">
+              <div className="px-5 pb-4">
+                <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 gap-y-0 text-[11px] text-slate-500 border-b border-amber-900/20 pb-2 mb-1">
+                  <span>Học sinh</span>
+                  <span className="text-right">Bài chưa nộp</span>
+                  <span className="text-right w-24">Lần cuối</span>
+                </div>
                 {inactive.map((s) => (
-                  <div key={s.student_id} className="flex items-center justify-between text-sm py-2 border-b border-amber-900/15 last:border-0">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-amber-600/20 flex items-center justify-center text-xs font-bold text-amber-400">
+                  <div key={s.student_id} className="grid grid-cols-[1fr_auto_auto] gap-x-4 items-center text-sm py-2 border-b border-amber-900/15 last:border-0">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-7 h-7 rounded-lg bg-amber-600/20 flex items-center justify-center text-xs font-bold text-amber-400 shrink-0">
                         {(s.display_name ?? '?').charAt(0)}
                       </div>
-                      <span className="text-white">{s.display_name} <span className="text-slate-500 text-xs">({s.room_name})</span></span>
+                      <span className="text-white truncate">{s.display_name} <span className="text-slate-500 text-xs">({s.room_name})</span></span>
                     </div>
-                    <span className="text-amber-400 text-xs font-medium bg-amber-500/10 px-2 py-0.5 rounded-md">
-                      {s.days_inactive >= 999 ? 'Chưa hoạt động' : `${s.days_inactive} ngày`}
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-md text-right ${s.pending_assignments > 0 ? 'bg-red-500/10 text-red-400' : 'text-slate-500'}`}>
+                      {s.pending_assignments > 0 ? `${s.pending_assignments} bài` : '—'}
+                    </span>
+                    <span className="text-amber-400 text-xs font-medium bg-amber-500/10 px-2 py-0.5 rounded-md w-24 text-right">
+                      {s.days_inactive >= 999 ? 'Chưa từng' : s.last_active_date ? new Date(s.last_active_date).toLocaleDateString('vi-VN') : `${s.days_inactive}d`}
                     </span>
                   </div>
                 ))}
@@ -526,8 +562,10 @@ export function TeacherReportsView() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <div className="flex justify-between text-xs text-slate-400 mb-1.5">
-                        <span>Tiến độ chấm</span>
-                        <span className="text-white font-medium">{r.submissions_graded}/{r.submissions_total}</span>
+                        <span>Đã chấm / đã nộp</span>
+                        <span className="text-white font-medium">
+                          {r.submissions_total > 0 ? `${r.submissions_graded}/${r.submissions_total}` : '—'}
+                        </span>
                       </div>
                       <AnimatedBar
                         value={r.submissions_total > 0 ? Math.round((r.submissions_graded / r.submissions_total) * 100) : 0}
@@ -536,14 +574,20 @@ export function TeacherReportsView() {
                     </div>
                     <div>
                       <div className="flex justify-between text-xs text-slate-400 mb-1.5">
-                        <span>Điểm trung bình</span>
-                        <span className="text-white font-medium">{r.avg_accuracy}%</span>
+                        <span>Điểm TB (điểm/tối đa)</span>
+                        <span className="text-white font-medium">
+                          {r.submissions_graded > 0 ? `${r.avg_accuracy}%` : '—'}
+                        </span>
                       </div>
-                      <AnimatedBar
-                        value={r.avg_accuracy}
-                        color={r.avg_accuracy >= 70 ? 'bg-emerald-500' : r.avg_accuracy >= 50 ? 'bg-amber-500' : 'bg-red-500'}
-                        delay={100}
-                      />
+                      {r.submissions_graded > 0 ? (
+                        <AnimatedBar
+                          value={r.avg_accuracy}
+                          color={r.avg_accuracy >= 70 ? 'bg-emerald-500' : r.avg_accuracy >= 50 ? 'bg-amber-500' : 'bg-red-500'}
+                          delay={100}
+                        />
+                      ) : (
+                        <div className="h-2.5 bg-slate-800/80 rounded-full" />
+                      )}
                     </div>
                   </div>
                 </button>
@@ -621,7 +665,11 @@ function RoomsGrid({ data, onSelect }: { data: RoomRow[]; onSelect: (r: RoomRow)
               <div className="text-[10px] text-slate-500">Bài giao</div>
             </div>
             <div className="bg-slate-800/40 rounded-xl p-2.5 text-center">
-              <ScoreBadge value={r.avg_accuracy} size="sm" />
+              {r.submissions_graded > 0 ? (
+                <ScoreBadge value={r.avg_accuracy} size="sm" />
+              ) : (
+                <div className="text-lg font-bold text-slate-500">—</div>
+              )}
               <div className="text-[10px] text-slate-500 mt-1">Điểm TB</div>
             </div>
           </div>
