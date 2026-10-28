@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { NotificationBell } from './NotificationBell';
 import { LanguageSwitch } from '@/components/i18n/LanguageSwitch';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 interface CityHUDProps {
   character: CharacterConfig;
@@ -65,6 +66,7 @@ export const CityHUD: React.FC<CityHUDProps> = ({
   onToggleListMode,
   notifications,
 }) => {
+  const { t } = useLocale();
   const [internalFastTravel, setInternalFastTravel] = useState(false);
   const showFastTravelModal = fastTravelOpen ?? internalFastTravel;
   const setShowFastTravelModal = (open: boolean) => {
@@ -94,9 +96,9 @@ export const CityHUD: React.FC<CityHUDProps> = ({
           <button
             type="button"
             onClick={onEditCharacter}
-            aria-label="Đổi trang phục nhân vật"
+            aria-label={t('hud.changeOutfit')}
             className="w-11 h-11 bg-slate-800 rounded-lg border border-indigo-500/40 flex items-center justify-center cursor-pointer hover:border-indigo-400 transition overflow-hidden shrink-0"
-            title="Nhấn để đổi trang phục nhân vật"
+            title={t('hud.changeOutfitTitle')}
           >
             <PixelAvatar config={character} size={34} direction="down" />
           </button>
@@ -105,7 +107,7 @@ export const CityHUD: React.FC<CityHUDProps> = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="font-bold text-xs sm:text-sm text-white truncate">
-                {character.name || 'Học Sinh VINA-EDUVERSE'}
+                {character.name || t('hud.defaultName')}
               </span>
               <span className="hidden sm:inline text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1 py-0.2 rounded font-semibold shrink-0">
                 {character.className}
@@ -115,7 +117,7 @@ export const CityHUD: React.FC<CityHUDProps> = ({
             {/* Level & XP Bar */}
             <div className="mt-0.5 flex items-center gap-1.5">
               <span className="text-[9px] font-bold text-amber-400 bg-amber-950/60 border border-amber-800/80 px-1 py-0.2 rounded shrink-0">
-                CẤP {progress.level}
+                {t('hud.level')} {progress.level}
               </span>
 
               {/* Progress track */}
@@ -148,7 +150,7 @@ export const CityHUD: React.FC<CityHUDProps> = ({
           {/* Quests Button */}
           <button
             type="button"
-            aria-label="Xem nhiệm vụ học tập"
+            aria-label={t('hud.tasksAria')}
             onClick={() => {
               sound.playClick();
               setShowQuestsModal(true);
@@ -156,7 +158,7 @@ export const CityHUD: React.FC<CityHUDProps> = ({
             className="relative min-h-11 min-w-11 justify-center px-2.5 py-1 bg-slate-900/85 hover:bg-slate-800 border border-slate-700/70 text-slate-200 rounded-lg text-xs font-semibold shadow-md backdrop-blur-md flex items-center gap-1 cursor-pointer transition hover:text-white"
           >
             <Scroll className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">Nhiệm Vụ</span>
+            <span className="hidden sm:inline">{t('hud.tasks')}</span>
             {progress.quests.some((q) => !q.completed) && (
               <span aria-hidden="true" className="w-2 h-2 rounded-full bg-amber-400 absolute top-1 right-1" />
             )}
@@ -165,7 +167,7 @@ export const CityHUD: React.FC<CityHUDProps> = ({
           {/* Quick Travel / List of Zones */}
           <button
             type="button"
-            aria-label="Mở danh sách khu vực thành phố"
+            aria-label={t('hud.zonesAria')}
             onClick={() => {
               sound.playClick();
               setShowFastTravelModal(true);
@@ -173,19 +175,19 @@ export const CityHUD: React.FC<CityHUDProps> = ({
             className="min-h-11 min-w-11 justify-center px-2.5 py-1 bg-indigo-600/85 hover:bg-indigo-600 text-white border border-indigo-400/40 rounded-lg text-xs font-semibold shadow-md shadow-indigo-600/20 backdrop-blur-md flex items-center gap-1 cursor-pointer transition active:scale-95"
           >
             <Compass className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Khu Vực</span>
+            <span className="hidden sm:inline">{t('hud.zones')}</span>
           </button>
 
           {/* Edit Avatar */}
           <button
             type="button"
-            aria-label="Tùy chỉnh diện mạo nhân vật"
+            aria-label={t('hud.customize')}
             onClick={() => {
               sound.playClick();
               onEditCharacter();
             }}
             className="min-h-11 min-w-11 flex items-center justify-center bg-slate-900/85 hover:bg-slate-800 border border-slate-700/70 text-slate-200 rounded-lg shadow-md backdrop-blur-md cursor-pointer transition hover:text-white"
-            title="Đổi trang phục & nhân vật"
+            title={t('hud.customizeTitle')}
           >
             <UserCog className="w-4 h-4 text-indigo-300" />
           </button>
@@ -194,13 +196,13 @@ export const CityHUD: React.FC<CityHUDProps> = ({
           {onToggleListMode && (
             <button
               type="button"
-              aria-label={listMode ? 'Bật chế độ bản đồ' : 'Bật chế độ danh sách'}
+              aria-label={listMode ? t('hud.mapMode') : t('hud.listMode')}
               onClick={() => {
                 sound.playClick();
                 onToggleListMode();
               }}
               className="min-h-11 min-w-11 flex items-center justify-center bg-slate-900/85 hover:bg-slate-800 border border-slate-700/70 text-slate-200 rounded-lg shadow-md backdrop-blur-md cursor-pointer transition hover:text-white"
-              title={listMode ? 'Chế độ bản đồ' : 'Chế độ danh sách (máy yếu)'}
+              title={listMode ? t('hud.mapModeTitle') : t('hud.listModeTitle')}
             >
               {listMode ? <Map className="w-4 h-4 text-emerald-400" /> : <List className="w-4 h-4 text-slate-300" />}
             </button>
@@ -209,10 +211,10 @@ export const CityHUD: React.FC<CityHUDProps> = ({
           {/* Sound Mute */}
           <button
             type="button"
-            aria-label={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
+            aria-label={isMuted ? t('hud.unmute') : t('hud.mute')}
             onClick={handleToggleMute}
             className="min-h-11 min-w-11 flex items-center justify-center bg-slate-900/85 hover:bg-slate-800 border border-slate-700/70 text-slate-200 rounded-lg shadow-md backdrop-blur-md cursor-pointer transition hover:text-white"
-            title="Bật/Tắt âm thanh [M]"
+            title={t('hud.muteTitle')}
           >
             {isMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-slate-300" />}
           </button>
@@ -221,8 +223,8 @@ export const CityHUD: React.FC<CityHUDProps> = ({
           <form action="/auth/dang-xuat" method="post">
             <button
               type="submit"
-              aria-label="Đăng xuất"
-              title="Đăng xuất"
+              aria-label={t('hud.logout')}
+              title={t('hud.logout')}
               className="min-h-11 min-w-11 flex items-center justify-center bg-slate-900/85 hover:bg-slate-800 border border-slate-700/70 text-slate-200 rounded-lg shadow-md backdrop-blur-md cursor-pointer transition hover:text-white"
             >
               <LogOut className="w-4 h-4 text-slate-300" />
