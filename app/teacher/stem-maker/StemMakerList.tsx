@@ -1,21 +1,24 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 type Room = { id: string; name: string };
 
 const STEM_PROJECTS = [
   {
     id: 'pin-volta',
+    titleKey: 'stem.projectTitle',
+    descriptionKey: 'stem.projectDesc',
     title: 'Lắp ráp pin Volta (Zn-Cu)',
-    description: 'Mô phỏng thí nghiệm lắp ráp pin điện hóa Volta, khám phá phản ứng oxi hóa - khử, đo điện áp và dòng điện chuẩn THCS.',
     grade: 9,
     url: '/stem/pin-volta/index.html',
     icon: '🔋',
   },
-];
+] as const;
 
 export function StemMakerList({ teacherId }: { teacherId: string }) {
+  const { t } = useLocale();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [assigning, setAssigning] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState('');
@@ -45,15 +48,15 @@ export function StemMakerList({ teacherId }: { teacherId: string }) {
         }),
       });
       if (res.ok) {
-        setMessage('Đã giao bài tập thành công! Học sinh sẽ nhận thông báo.');
+        setMessage(t('stem.assigned'));
         setAssigning(null);
         setSelectedRoom('');
       } else {
         const data = await res.json();
-        setMessage(data.error || 'Có lỗi xảy ra');
+        setMessage(data.error || t('stem.error'));
       }
     } catch {
-      setMessage('Lỗi kết nối');
+      setMessage(t('stem.connError'));
     }
     setSubmitting(false);
   }
@@ -74,10 +77,10 @@ export function StemMakerList({ teacherId }: { teacherId: string }) {
         const projects = STEM_PROJECTS.filter((p) => p.grade === grade);
         return (
           <div key={grade}>
-            <h2 className="text-sm font-medium text-slate-400 mb-2">Khối {grade}</h2>
+            <h2 className="text-sm font-medium text-slate-400 mb-2">{t('ai.gradeWord')} {grade}</h2>
             {projects.length === 0 ? (
               <p className="text-xs text-slate-600 bg-slate-900 rounded-lg p-3 border border-slate-800">
-                Chưa có dự án STEM Maker cho khối {grade}. Sắp ra mắt!
+                {t('stem.noProjectA')} {grade}. {t('stem.comingSoon')}
               </p>
             ) : (
               <div className="space-y-3">
@@ -91,32 +94,32 @@ export function StemMakerList({ teacherId }: { teacherId: string }) {
                         {p.icon}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-white">{p.title}</h3>
-                        <p className="text-xs text-slate-400 mt-0.5">{p.description}</p>
+                        <h3 className="font-bold text-white">{t(p.titleKey)}</h3>
+                        <p className="text-xs text-slate-400 mt-0.5">{t(p.descriptionKey)}</p>
                       </div>
                       <div className="flex gap-2 shrink-0">
                         <button
                           onClick={() => { setAssigning(p.id); setSelectedRoom(''); setMessage(''); }}
                           className="rounded-lg bg-blue-600 hover:bg-blue-500 px-4 py-2 text-sm font-medium text-white min-h-[44px] transition-colors"
                         >
-                          Giao bài tập
+                          {t('gm.assignExercise')}
                         </button>
                         <button
                           onClick={() => handleOpenInClass(p)}
                           className="rounded-lg bg-amber-600 hover:bg-amber-500 px-4 py-2 text-sm font-medium text-white min-h-[44px] transition-colors"
                         >
-                          Mở tại lớp
+                          {t('stem.openInClass')}
                         </button>
                       </div>
                     </div>
 
                     {assigning === p.id && (
                       <div className="mt-4 p-4 bg-slate-900 border border-slate-800 rounded-lg space-y-3">
-                        <h4 className="text-sm font-bold text-white">Giao bài tập STEM</h4>
-                        <p className="text-xs text-slate-400">Chọn lớp để giao. Học sinh sẽ nhận thông báo và thấy nhiệm vụ trong phòng STEM.</p>
+                        <h4 className="text-sm font-bold text-white">{t('stem.assignSection')}</h4>
+                        <p className="text-xs text-slate-400">{t('stem.assignDesc')}</p>
 
                         {rooms.length === 0 ? (
-                          <p className="text-xs text-slate-500">Chưa có phòng học. Vào Phòng học để tạo lớp trước.</p>
+                          <p className="text-xs text-slate-500">{t('stem.noRooms')}</p>
                         ) : (
                           <div className="space-y-2">
                             {rooms.map((r) => (
@@ -148,13 +151,13 @@ export function StemMakerList({ teacherId }: { teacherId: string }) {
                             disabled={!selectedRoom || submitting}
                             className="rounded-lg bg-blue-600 hover:bg-blue-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 min-h-[44px] transition-colors"
                           >
-                            {submitting ? 'Đang giao...' : 'Xác nhận giao'}
+                            {submitting ? t('as.assigning') : t('stem.confirm')}
                           </button>
                           <button
                             onClick={() => setAssigning(null)}
                             className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-white min-h-[44px]"
                           >
-                            Hủy
+                            {t('cs.cancel')}
                           </button>
                         </div>
                       </div>

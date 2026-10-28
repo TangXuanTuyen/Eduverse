@@ -4,14 +4,8 @@ import { useState, useEffect } from 'react';
 import { FlaskConical, Clock, Send, Play } from 'lucide-react';
 import type { ExperimentRow } from '@/services/experiments';
 import { assignExperimentAction } from './actions';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
-const SUBJECT_LABELS: Record<string, string> = {
-  vat_ly: 'Vật lý',
-  hoa_hoc: 'Hóa học',
-  sinh_hoc: 'Sinh học',
-  khtn_chung: 'KHTN chung',
-};
-const DIFF_LABELS: Record<number, string> = { 1: 'Dễ', 2: 'TB', 3: 'Khó' };
 const DIFF_COLORS: Record<number, string> = {
   1: 'bg-green-900/50 text-green-400',
   2: 'bg-yellow-900/50 text-yellow-400',
@@ -21,6 +15,14 @@ const DIFF_COLORS: Record<number, string> = {
 type Room = { id: string; name: string };
 
 export function LabCatalog({ experiments }: { experiments: ExperimentRow[] }) {
+  const { t } = useLocale();
+  const SUBJECT_LABELS: Record<string, string> = {
+    vat_ly: t('lab.subjPhysics'),
+    hoa_hoc: t('lab.subjChem'),
+    sinh_hoc: t('lab.subjBio'),
+    khtn_chung: t('lab.subjGeneral'),
+  };
+  const DIFF_LABELS: Record<number, string> = { 1: t('qf.diffEasy'), 2: t('qs.diffMediumShort'), 3: t('qf.diffHard') };
   const [filter, setFilter] = useState('all');
   const [assigningId, setAssigningId] = useState<string | null>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -48,7 +50,7 @@ export function LabCatalog({ experiments }: { experiments: ExperimentRow[] }) {
     if ('error' in result && result.error) {
       setMessage(result.error);
     } else {
-      setMessage('Đã giao thí nghiệm!');
+      setMessage(t('lab.assigned'));
       setAssigningId(null);
       setSelectedRoom('');
     }
@@ -58,11 +60,11 @@ export function LabCatalog({ experiments }: { experiments: ExperimentRow[] }) {
     <div className="space-y-4">
       <div className="flex gap-2 flex-wrap">
         {[
-          { key: 'all', label: 'Tất cả' },
-          { key: 'vat_ly', label: 'Vật lý' },
-          { key: 'hoa_hoc', label: 'Hóa học' },
-          { key: 'sinh_hoc', label: 'Sinh học' },
-          { key: 'khtn_chung', label: 'KHTN chung' },
+          { key: 'all', label: t('lab.all') },
+          { key: 'vat_ly', label: t('lab.subjPhysics') },
+          { key: 'hoa_hoc', label: t('lab.subjChem') },
+          { key: 'sinh_hoc', label: t('lab.subjBio') },
+          { key: 'khtn_chung', label: t('lab.subjGeneral') },
         ].map((f) => (
           <button
             key={f.key}
@@ -81,7 +83,7 @@ export function LabCatalog({ experiments }: { experiments: ExperimentRow[] }) {
       {filtered.length === 0 ? (
         <div className="text-center py-12 text-slate-500">
           <FlaskConical className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>Chưa có thí nghiệm nào</p>
+          <p>{t('lab.empty')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -107,13 +109,13 @@ export function LabCatalog({ experiments }: { experiments: ExperimentRow[] }) {
                     {SUBJECT_LABELS[exp.subject]}
                   </span>
                   <span className="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">
-                    Lớp {exp.grade_level}
+                    {t('ai.gradeWord')} {exp.grade_level}
                   </span>
                   <span className={`px-1.5 py-0.5 rounded ${DIFF_COLORS[exp.difficulty] ?? ''}`}>
                     {DIFF_LABELS[exp.difficulty]}
                   </span>
                   <span className="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                    <Clock size={10} /> {exp.duration_minutes}p
+                    <Clock size={10} /> {exp.duration_minutes}{t('lab.minutes')}
                   </span>
                 </div>
 
@@ -124,7 +126,7 @@ export function LabCatalog({ experiments }: { experiments: ExperimentRow[] }) {
                       onChange={(e) => setSelectedRoom(e.target.value)}
                       className="w-full rounded-lg bg-slate-800 border border-slate-700 px-2 py-1.5 text-xs text-white min-h-[36px]"
                     >
-                      <option value="">Chọn lớp...</option>
+                      <option value="">{t('gm.chooseRoom')}</option>
                       {rooms.map((r) => (
                         <option key={r.id} value={r.id}>{r.name}</option>
                       ))}
@@ -135,13 +137,13 @@ export function LabCatalog({ experiments }: { experiments: ExperimentRow[] }) {
                         disabled={!selectedRoom || assigning}
                         className="flex-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 px-3 py-1.5 text-xs text-white disabled:opacity-50 min-h-[36px]"
                       >
-                        {assigning ? '...' : 'Giao'}
+                        {assigning ? '...' : t('gm.give')}
                       </button>
                       <button
                         onClick={() => { setAssigningId(null); setMessage(''); }}
                         className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs text-slate-400 min-h-[36px]"
                       >
-                        Hủy
+                        {t('cs.cancel')}
                       </button>
                     </div>
                     {message && <p className="text-xs text-green-400">{message}</p>}
@@ -153,14 +155,14 @@ export function LabCatalog({ experiments }: { experiments: ExperimentRow[] }) {
                         onClick={() => window.open(exp.embed_url!, '_blank')}
                         className="flex-1 rounded-lg bg-cyan-700 hover:bg-cyan-600 px-3 py-2 text-xs text-white flex items-center justify-center gap-1.5 min-h-[44px]"
                       >
-                        <Play size={12} /> Mở dạy
+                        <Play size={12} /> {t('lab.openTeach')}
                       </button>
                     )}
                     <button
                       onClick={() => setAssigningId(exp.id)}
                       className="flex-1 rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-xs text-white flex items-center justify-center gap-1.5 min-h-[44px]"
                     >
-                      <Send size={12} /> Giao cho lớp
+                      <Send size={12} /> {t('lab.assignToClass')}
                     </button>
                   </div>
                 )}
