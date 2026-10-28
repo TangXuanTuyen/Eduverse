@@ -3,10 +3,12 @@
 import { useActionState, useRef, useState } from 'react';
 import { importQuestionsAction, type QuestionActionState } from './actions';
 import type { CreateQuestionData } from '@/services/questions';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 type Props = { onClose: () => void };
 
 export function ImportDialog({ onClose }: Props) {
+  const { t } = useLocale();
   const [state, formAction, pending] = useActionState<QuestionActionState, FormData>(importQuestionsAction, {});
   const [rows, setRows] = useState<CreateQuestionData[]>([]);
   const [parseError, setParseError] = useState('');
@@ -25,12 +27,12 @@ export function ImportDialog({ onClose }: Props) {
 
       // CSV: header row + data rows
       const lines = text.split('\n').filter((l) => l.trim());
-      if (lines.length < 2) { setParseError('Cần ít nhất 2 dòng (tiêu đề + dữ liệu)'); return; }
+      if (lines.length < 2) { setParseError(t('im.needTwo')); return; }
 
       const headers = lines[0].split(',').map((h) => h.trim().toLowerCase());
       const contentIdx = headers.indexOf('content');
       const typeIdx = headers.indexOf('type');
-      if (contentIdx < 0) { setParseError('Thiếu cột "content"'); return; }
+      if (contentIdx < 0) { setParseError(t('im.missingContent')); return; }
 
       const parsed: CreateQuestionData[] = [];
       for (let i = 1; i < lines.length; i++) {
@@ -45,7 +47,7 @@ export function ImportDialog({ onClose }: Props) {
       }
       setRows(parsed);
     } catch {
-      setParseError('Không đọc được file');
+      setParseError(t('im.readError'));
     }
   }
 
@@ -54,7 +56,7 @@ export function ImportDialog({ onClose }: Props) {
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
         <p className="text-green-400 text-sm">{state.success}</p>
         <button onClick={onClose} className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-white min-h-[44px]">
-          Đóng
+          {t('im.close')}
         </button>
       </div>
     );
@@ -62,8 +64,8 @@ export function ImportDialog({ onClose }: Props) {
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4">
-      <h3 className="font-bold text-white">Nhập câu hỏi từ file</h3>
-      <p className="text-xs text-slate-400">Hỗ trợ CSV (cột: content, type, difficulty, skill_tags) hoặc JSON.</p>
+      <h3 className="font-bold text-white">{t('im.title')}</h3>
+      <p className="text-xs text-slate-400">{t('im.desc')}</p>
 
       <input
         ref={fileRef}
@@ -79,14 +81,14 @@ export function ImportDialog({ onClose }: Props) {
       {rows.length > 0 && (
         <>
           <div className="bg-slate-800 rounded-lg p-3 max-h-48 overflow-y-auto">
-            <p className="text-xs text-slate-400 mb-2">{rows.length} câu hỏi sẽ được nhập:</p>
+            <p className="text-xs text-slate-400 mb-2">{rows.length} {t('im.willImport')}</p>
             <ul className="space-y-1">
               {rows.slice(0, 20).map((r, i) => (
                 <li key={i} className="text-xs text-white truncate">
                   {i + 1}. [{r.type}] {r.content}
                 </li>
               ))}
-              {rows.length > 20 && <li className="text-xs text-slate-400">...và {rows.length - 20} câu nữa</li>}
+              {rows.length > 20 && <li className="text-xs text-slate-400">{t('im.andMoreA')} {rows.length - 20} {t('im.andMoreB')}</li>}
             </ul>
           </div>
 
@@ -98,14 +100,14 @@ export function ImportDialog({ onClose }: Props) {
                 disabled={pending}
                 className="rounded-lg bg-green-600 hover:bg-green-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 min-h-[44px]"
               >
-                {pending ? 'Đang nhập...' : `Nhập ${rows.length} câu hỏi`}
+                {pending ? t('im.importing') : `${t('im.import')} ${rows.length} ${t('im.questionsUnit')}`}
               </button>
               <button
                 type="button"
                 onClick={onClose}
                 className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-white min-h-[44px]"
               >
-                Hủy
+                {t('im.cancel')}
               </button>
             </div>
           </form>
@@ -114,7 +116,7 @@ export function ImportDialog({ onClose }: Props) {
 
       {rows.length === 0 && (
         <button onClick={onClose} className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-white min-h-[44px]">
-          Hủy
+          {t('im.cancel')}
         </button>
       )}
     </div>

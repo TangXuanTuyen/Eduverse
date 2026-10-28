@@ -3,18 +3,10 @@
 import { useActionState, useState, lazy, Suspense } from 'react';
 import { createQuestionAction, updateQuestionAction, type QuestionActionState } from './actions';
 import type { QuestionWithAnswer } from '@/services/questions';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 const InlineMath = lazy(() => import('react-katex').then((m) => ({ default: m.InlineMath })));
 const BlockMath = lazy(() => import('react-katex').then((m) => ({ default: m.BlockMath })));
-
-const TYPE_LABELS: Record<string, string> = {
-  single_choice: 'Một lựa chọn',
-  multiple_choice: 'Nhiều lựa chọn',
-  short_answer: 'Trả lời ngắn',
-  essay: 'Tự luận',
-};
-
-const DIFFICULTY_LABELS = ['', 'Dễ', 'Trung bình', 'Khó'];
 
 type Props = {
   editing?: QuestionWithAnswer;
@@ -22,6 +14,14 @@ type Props = {
 };
 
 export function QuestionForm({ editing, onDone }: Props) {
+  const { t } = useLocale();
+  const TYPE_LABELS: Record<string, string> = {
+    single_choice: t('qf.typeSingle'),
+    multiple_choice: t('qf.typeMultiple'),
+    short_answer: t('qf.typeShort'),
+    essay: t('qf.typeEssay'),
+  };
+  const DIFFICULTY_LABELS = ['', t('qf.diffEasy'), t('qf.diffMedium'), t('qf.diffHard')];
   const action = editing ? updateQuestionAction : createQuestionAction;
   const [state, formAction, pending] = useActionState<QuestionActionState, FormData>(action, {});
   const [type, setType] = useState<string>(editing?.type ?? 'single_choice');
@@ -35,7 +35,7 @@ export function QuestionForm({ editing, onDone }: Props) {
 
   return (
     <form action={formAction} className="space-y-4 bg-slate-900 border border-slate-800 rounded-xl p-4">
-      <h3 className="font-bold text-white">{editing ? 'Sửa câu hỏi' : 'Tạo câu hỏi mới'}</h3>
+      <h3 className="font-bold text-white">{editing ? t('qf.editTitle') : t('qf.newTitle')}</h3>
 
       {editing && <input type="hidden" name="questionId" value={editing.id} />}
 
@@ -44,7 +44,7 @@ export function QuestionForm({ editing, onDone }: Props) {
 
       <div className="grid grid-cols-2 gap-3">
         <label className="block">
-          <span className="text-xs text-slate-400">Loại câu hỏi</span>
+          <span className="text-xs text-slate-400">{t('qf.questionType')}</span>
           <select
             name="type"
             value={type}
@@ -58,7 +58,7 @@ export function QuestionForm({ editing, onDone }: Props) {
         </label>
 
         <label className="block">
-          <span className="text-xs text-slate-400">Độ khó</span>
+          <span className="text-xs text-slate-400">{t('qf.difficulty')}</span>
           <select
             name="difficulty"
             defaultValue={editing?.difficulty ?? 1}
@@ -73,13 +73,13 @@ export function QuestionForm({ editing, onDone }: Props) {
 
       <label className="block">
         <span className="text-xs text-slate-400">
-          Nội dung câu hỏi
+          {t('qf.content')}
           <button
             type="button"
             onClick={() => setShowPreview(!showPreview)}
             className="ml-2 text-blue-400 hover:underline"
           >
-            {showPreview ? 'Ẩn' : 'Xem'} KaTeX
+            {showPreview ? t('qf.hidePreview') : t('qf.showPreview')} {t('qf.katex')}
           </button>
         </span>
         <textarea
@@ -89,13 +89,13 @@ export function QuestionForm({ editing, onDone }: Props) {
           rows={3}
           required
           className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white resize-y"
-          placeholder="Hỗ trợ KaTeX: $E = mc^2$ hoặc $$F = ma$$"
+          placeholder={t('qf.contentPlaceholder')}
         />
       </label>
 
       {showPreview && content && (
         <div className="bg-slate-800 rounded-lg p-3 text-sm text-white">
-          <Suspense fallback={<span className="text-slate-400">Đang tải KaTeX...</span>}>
+          <Suspense fallback={<span className="text-slate-400">{t('qf.loadingKatex')}</span>}>
             <KaTeXPreview text={content} />
           </Suspense>
         </div>
@@ -104,7 +104,7 @@ export function QuestionForm({ editing, onDone }: Props) {
       {isChoice && (
         <>
           <label className="block">
-            <span className="text-xs text-slate-400">Đáp án (mỗi dòng một lựa chọn)</span>
+            <span className="text-xs text-slate-400">{t('qf.options')}</span>
             <textarea
               name="options"
               rows={4}
@@ -120,7 +120,7 @@ export function QuestionForm({ editing, onDone }: Props) {
 
           <label className="block">
             <span className="text-xs text-slate-400">
-              Đáp án đúng ({type === 'single_choice' ? 'chữ cái: a, b, c...' : 'nhiều chữ cái: a,c'})
+              {t('qf.correct')} ({type === 'single_choice' ? t('qf.letterSingle') : t('qf.letterMulti')})
             </span>
             <input
               name="correct_answer"
@@ -141,7 +141,7 @@ export function QuestionForm({ editing, onDone }: Props) {
 
       {type === 'short_answer' && (
         <label className="block">
-          <span className="text-xs text-slate-400">Đáp án đúng (nhiều đáp án phân cách bằng dấu |)</span>
+          <span className="text-xs text-slate-400">{t('qf.correctPipe')}</span>
           <input
             name="correct_answer"
             type="text"
@@ -159,18 +159,18 @@ export function QuestionForm({ editing, onDone }: Props) {
       )}
 
       <label className="block">
-        <span className="text-xs text-slate-400">Kỹ năng (phân cách bằng dấu phẩy)</span>
+        <span className="text-xs text-slate-400">{t('qf.skills')}</span>
         <input
           name="skill_tags"
           type="text"
           defaultValue={editing?.skill_tags?.join(', ') ?? ''}
           className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white"
-          placeholder="lực, cơ-học, vật-lý"
+          placeholder={t('qf.skillsPlaceholder')}
         />
       </label>
 
       <label className="block">
-        <span className="text-xs text-slate-400">Giải thích (hiển thị sau khi nộp)</span>
+        <span className="text-xs text-slate-400">{t('qf.explanation')}</span>
         <textarea
           name="explanation"
           rows={2}
@@ -185,7 +185,7 @@ export function QuestionForm({ editing, onDone }: Props) {
           disabled={pending}
           className="rounded-lg bg-green-600 hover:bg-green-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 min-h-[44px]"
         >
-          {pending ? 'Đang lưu...' : editing ? 'Cập nhật' : 'Tạo câu hỏi'}
+          {pending ? t('qf.saving') : editing ? t('qf.update') : t('qf.create')}
         </button>
         {onDone && (
           <button
@@ -193,7 +193,7 @@ export function QuestionForm({ editing, onDone }: Props) {
             onClick={onDone}
             className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-white min-h-[44px]"
           >
-            Hủy
+            {t('qf.cancel')}
           </button>
         )}
       </div>
