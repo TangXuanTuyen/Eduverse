@@ -1724,39 +1724,41 @@ function skillLabel(slug: string | undefined | null): string {
 function generateComments(report: DetailReport) {
   const strengths: string[] = [];
   const improvements: string[] = [];
+  const shorten = (text: string, max = 80) => (text.length > max ? `${text.slice(0, max)}…` : text);
 
-  const goodSkills = report.skill_breakdown.filter((s) => s.accuracy >= 80);
-  const weakSkills = report.skill_breakdown.filter((s) => s.accuracy < 50);
-
-  if (goodSkills.length > 0) {
-    strengths.push(`Nắm vững: ${goodSkills.map((s) => skillLabel(s.skill)).join(', ')}`);
+  for (const s of report.skill_breakdown.filter((s) => s.accuracy >= 80)) {
+    strengths.push(`${skillLabel(s.skill)}: đúng ${s.correct}/${s.total} câu (${s.accuracy}%)`);
   }
-  if (weakSkills.length > 0) {
-    improvements.push(`Cần ôn lại: ${weakSkills.map((s) => skillLabel(s.skill)).join(', ')}`);
+  for (const s of report.skill_breakdown.filter((s) => s.accuracy < 50)) {
+    improvements.push(`${skillLabel(s.skill)}: chỉ đúng ${s.correct}/${s.total} câu (${s.accuracy}%), cần ôn lại`);
   }
 
-  const scored = report.submissions.filter((s) => s.total_score != null && s.max_score);
+  const wrong = report.question_details.filter((q) => q.is_correct === false);
+  for (const q of wrong.slice(0, 3)) {
+    improvements.push(`Sai câu "${shorten(q.question_content)}" (bài ${q.assignment_title})`);
+  }
+  if (wrong.length > 3) improvements.push(`Còn ${wrong.length - 3} câu sai khác, xem chi tiết bên dưới`);
+
+  const scored = report.submissions
+    .filter((s) => s.total_score != null && s.max_score)
+    .map((s) => ({ title: s.assignment_title, pct: Math.round((Number(s.total_score) / Number(s.max_score)) * 100) }));
   if (scored.length > 0) {
-    const avgPct = Math.round(scored.reduce((sum, s) => sum + (Number(s.total_score) / Number(s.max_score)) * 100, 0) / scored.length);
+    const avgPct = Math.round(scored.reduce((sum, s) => sum + s.pct, 0) / scored.length);
     if (avgPct >= 80) strengths.push(`Điểm trung bình cao (${avgPct}%)`);
-    else if (avgPct < 50) improvements.push(`Điểm trung bình còn thấp (${avgPct}%), cần cố gắng hơn`);
+    else if (avgPct < 50) improvements.push(`Điểm trung bình còn thấp (${avgPct}%)`);
+
+    for (const s of scored.filter((s) => s.pct >= 80)) {
+      strengths.push(`Bài "${s.title}" đạt ${s.pct}%`);
+    }
+    const lowest = scored.reduce((a, b) => (b.pct < a.pct ? b : a));
+    if (lowest.pct < 50) improvements.push(`Bài "${lowest.title}" đạt thấp nhất: ${lowest.pct}%`);
   }
 
-  const completed = report.submissions.filter((s) => s.status === 'graded' || s.status === 'published');
   const drafts = report.submissions.filter((s) => s.status === 'draft');
-  if (completed.length > 0 && drafts.length === 0) {
-    strengths.push('Hoàn thành đầy đủ bài tập được giao');
-  }
   if (drafts.length > 0) {
-    improvements.push(`Còn ${drafts.length} bài chưa nộp`);
-  }
-
-  const totalQ = report.question_details.length;
-  const correctQ = report.question_details.filter((q) => q.is_correct).length;
-  if (totalQ > 0) {
-    const rate = Math.round((correctQ / totalQ) * 100);
-    if (rate >= 90) strengths.push('Tỷ lệ trả lời đúng rất tốt');
-    else if (rate < 40) improvements.push('Cần luyện tập thêm, tỷ lệ đúng còn thấp');
+    improvements.push(`Chưa nộp: ${drafts.map((d) => `"${d.assignment_title}"`).join(', ')}`);
+  } else if (report.submissions.length > 0) {
+    strengths.push('Đã nộp đầy đủ bài được giao');
   }
 
   if (report.total_xp >= 200) strengths.push('Tích cực tham gia học tập trên hệ thống');
