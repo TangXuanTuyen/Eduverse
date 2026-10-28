@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { buildAssignmentInsights } from '@/lib/reports/assignment-insights';
 import {
   X, CheckCircle2, XCircle, TrendingUp, Users, BookOpen,
   AlertTriangle, ChevronRight, ArrowLeft, BarChart3, Trophy,
@@ -120,6 +119,14 @@ type AssignmentOption = {
   title: string;
   assignment_type: string;
   due_at: string | null;
+};
+
+type AssignmentInsightsData = {
+  assignment_id: string;
+  source: 'ai' | 'rules';
+  overview: string;
+  issues: Array<{ question: number; problem: string; action: string }>;
+  suggestions: string[];
 };
 
 type AssignmentDetailData = {
@@ -376,6 +383,8 @@ export function TeacherReportsView() {
   const [ovAssignmentId, setOvAssignmentId] = useState<string | null>(null);
   const [ovDetail, setOvDetail] = useState<AssignmentDetailData | null>(null);
   const [ovLoading, setOvLoading] = useState(false);
+  const [ovInsights, setOvInsights] = useState<AssignmentInsightsData | null>(null);
+  const [ovInsightsLoading, setOvInsightsLoading] = useState(false);
 
   const fetchTab = useCallback(async (t: string, room?: string) => {
     setLoading(true);
@@ -691,8 +700,14 @@ export function TeacherReportsView() {
         };
         const handleAssignmentChange = async (aid: string) => {
           setOvAssignmentId(aid);
+          setOvInsights(null);
           if (!aid) { setOvDetail(null); return; }
           setOvLoading(true);
+          setOvInsightsLoading(true);
+          fetch(`/api/teacher/reports/insights?assignment=${aid}`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((d) => setOvInsights(d))
+            .finally(() => setOvInsightsLoading(false));
           const res = await fetch(`/api/teacher/reports?tab=assignment-detail&assignment=${aid}`);
           const d = await res.json();
           setOvDetail(d);
@@ -774,31 +789,38 @@ export function TeacherReportsView() {
               </div>
 
               {(() => {
-                const insights = buildAssignmentInsights({
-                  submittedCount: ovDetail.submittedCount,
-                  avgScore: ovDetail.avgScore,
-                  passRate: ovDetail.passRate,
-                  questions: ovDetail.questions,
-                });
+                const ready = ovInsights && ovInsights.assignment_id === ovAssignmentId ? ovInsights : null;
                 return (
                   <>
                     <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5">
-                      <SectionHeader icon={Eye} title="Nhận định chính" subtitle={insights.summary} iconColor="text-indigo-400" />
+                      <SectionHeader
+                        icon={Eye}
+                        title="Phân tích tổng quan"
+                        subtitle={ready ? (ready.source === 'ai' ? 'Phân tích bởi AI, cần giáo viên xác nhận' : 'Tự động theo số liệu (AI tạm không khả dụng)') : undefined}
+                        iconColor="text-indigo-400"
+                      />
                       <div className="grid gap-4 md:grid-cols-2">
-                        <div className="bg-emerald-950/20 border border-emerald-900/30 rounded-xl p-4">
-                          <h4 className="text-xs font-bold text-emerald-300 mb-3 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> Thế mạnh của lớp</h4>
-                          <ul className="space-y-2 text-sm text-slate-300">
-                            {insights.strengths.map((s, i) => <li key={i} className="leading-relaxed">• {s}</li>)}
-                          </ul>
+                        <div className="bg-indigo-950/20 border border-indigo-900/30 rounded-xl p-4">
+                          {ready ? (
+                            <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-line">{ready.overview}</p>
+                          ) : (
+                            <p className="text-sm text-slate-400">{ovInsightsLoading ? 'AI đang phân tích bài làm...' : 'Chưa có phân tích.'}</p>
+                          )}
                         </div>
                         <div className="bg-red-950/20 border border-red-900/30 rounded-xl p-4">
-                          <h4 className="text-xs font-bold text-red-300 mb-3 flex items-center gap-1.5"><AlertTriangle className="w-4 h-4" /> Cần cải thiện</h4>
-                          {insights.improvements.length > 0 ? (
-                            <ul className="space-y-2 text-sm text-slate-300">
-                              {insights.improvements.map((s, i) => <li key={i} className="leading-relaxed">• {s}</li>)}
+                          <h4 className="text-xs font-bold text-red-300 mb-3 flex items-center gap-1.5"><AlertTriangle className="w-4 h-4" /> Vấn đề cần cải thiện</h4>
+                          {ready && ready.issues.length > 0 ? (
+                            <ul className="space-y-3 text-sm text-slate-300">
+                              {ready.issues.map((it, i) => (
+                                <li key={i} className="leading-relaxed">
+                                  <span className="text-red-300 font-semibold">{it.question > 0 ? `Câu ${it.question}: ` : ''}</span>
+                                  {it.problem}
+                                  {it.action && <div className="text-xs text-slate-500 mt-0.5">→ {it.action}</div>}
+                                </li>
+                              ))}
                             </ul>
                           ) : (
-                            <p className="text-sm text-slate-400">Chưa phát hiện điểm yếu nổi bật.</p>
+                            <p className="text-sm text-slate-400">{ovInsightsLoading ? 'Đang tải...' : 'Chưa phát hiện điểm yếu nổi bật.'}</p>
                           )}
                         </div>
                       </div>
@@ -806,9 +828,9 @@ export function TeacherReportsView() {
 
                     <div className="bg-indigo-950/20 border border-indigo-500/20 rounded-2xl p-5">
                       <SectionHeader icon={Zap} title="Đề xuất cho giáo viên" iconColor="text-indigo-300" />
-                      {insights.suggestions.length > 0 ? (
+                      {ready && ready.suggestions.length > 0 ? (
                         <ol className="space-y-2.5 text-sm text-slate-200">
-                          {insights.suggestions.map((s, i) => (
+                          {ready.suggestions.map((s, i) => (
                             <li key={i} className="flex gap-3 leading-relaxed">
                               <span className="shrink-0 w-6 h-6 rounded-lg bg-indigo-600/25 text-indigo-300 text-xs font-bold flex items-center justify-center">{i + 1}</span>
                               <span>{s}</span>
@@ -816,7 +838,7 @@ export function TeacherReportsView() {
                           ))}
                         </ol>
                       ) : (
-                        <p className="text-sm text-slate-400">Chưa đủ bài nộp để đưa ra đề xuất.</p>
+                        <p className="text-sm text-slate-400">{ovInsightsLoading ? 'Đang tải...' : 'Chưa đủ bài nộp để đưa ra đề xuất.'}</p>
                       )}
                     </div>
                   </>
