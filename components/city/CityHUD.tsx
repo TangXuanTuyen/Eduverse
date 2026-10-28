@@ -36,6 +36,7 @@ import {
   Bell,
 } from 'lucide-react';
 import { NotificationBell } from './NotificationBell';
+import { LanguageSwitch } from '@/components/i18n/LanguageSwitch';
 
 interface CityHUDProps {
   character: CharacterConfig;
@@ -134,6 +135,7 @@ export const CityHUD: React.FC<CityHUDProps> = ({
 
         {/* COMPACT TOP RIGHT UTILITY BAR */}
         <div className="pointer-events-auto flex items-center gap-1 sm:gap-1.5 shrink-0">
+          <LanguageSwitch />
           {/* EduPoints pill */}
           <div className="hidden sm:flex bg-slate-900/85 border border-amber-500/40 text-amber-300 px-2.5 py-1 rounded-lg text-xs font-bold items-center gap-1 shadow-md backdrop-blur-md">
             <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />

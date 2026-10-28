@@ -174,10 +174,6 @@ export function CityShell({ children }: { children: React.ReactNode }) {
             />
           </div>
 
-          <div className="absolute top-3 right-3 z-40">
-            <LanguageSwitch />
-          </div>
-
           {children}
 
           {/* Sau children để hộp thoại nhân vật nằm trên hộp thoại địa điểm */}
