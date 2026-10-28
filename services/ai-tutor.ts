@@ -141,7 +141,6 @@ function buildTutorSystemPrompt(
   context: string | undefined,
 ): string {
   const base = getSystemPrompt(req.mode, context);
-  if (req.mode === 'companion') return base;
   const lastAssistant = [...history].reverse().find((m) => m.role === 'assistant');
   const askedQuestion = lastAssistant ? lastAssistant.content.trim().endsWith('?') : false;
   const intent = classifyIntent(req.message, askedQuestion);

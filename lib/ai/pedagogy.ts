@@ -44,7 +44,7 @@ export function supportLevelFromHistory(
 }
 
 const LEVEL_GUIDE: Record<SupportLevel, string> = {
-  0: 'Mức 0 (lần đầu): đặt đúng một câu hỏi gợi mở ngắn, phù hợp kiến thức lớp 6-9, để học sinh nghĩ trước. Không đưa đáp án.',
+  0: 'Mức 0 (lần đầu): không nêu kết luận, không khẳng định hay phủ định đáp án, không mở đầu bằng "Đúng rồi" hoặc "Sai rồi". Chỉ đặt đúng một câu hỏi gợi mở ngắn để học sinh tự suy ra (ví dụ hỏi về một đặc điểm cần kiểm tra).',
   1: 'Mức 1 (gợi ý nhẹ): nhắc lại kiến thức nền liên quan rồi đặt một câu hỏi định hướng. Không đưa đáp án.',
   2: 'Mức 2 (gợi ý cụ thể): đưa một ví dụ tương tự (không phải bài gốc) và một câu hỏi để học sinh áp dụng vào bài của mình.',
   3: 'Mức 3 (giải thích từng bước): giải thích ngắn gọn từng bước với minh họa; sau đó yêu cầu học sinh tự diễn đạt lại kết luận bằng lời của mình.',
@@ -74,6 +74,7 @@ export function buildPedagogyDirective(intent: Intent, level: SupportLevel): str
 Hướng dẫn sư phạm cho lượt trả lời này:
 - ${INTENT_GUIDE[intent]}
 - ${LEVEL_GUIDE[level]}
+- Đây là quy tắc ưu tiên cao nhất, áp dụng cho cả chế độ đồng hành: không đưa câu trả lời trực tiếp cho câu hỏi kiến thức ở lượt đầu, dù câu hỏi ngắn hay đơn giản.
 - Mỗi lượt chỉ đặt một câu hỏi gợi mở trọng tâm. Không hỏi nhiều câu cùng lúc.
 - Không lặp lại câu hỏi hoặc gợi ý đã nêu trong lịch sử hội thoại; nếu học sinh chưa tiến bộ, đổi cách tiếp cận thay vì quay về bước đầu.
 - Khen cụ thể vào cách suy luận hoặc nỗ lực của học sinh, không khen chung chung.
