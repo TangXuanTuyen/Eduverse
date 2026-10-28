@@ -102,7 +102,7 @@ export async function handleTutorMessage(req: TutorRequest): Promise<TutorRespon
     content: m.content,
   }));
 
-  const thinkingBudget = req.mode === 'companion' ? 0 : 512;
+  const thinkingBudget = req.mode === 'companion' ? 256 : 512;
 
   const response = await provider.generateText(sanitizeForAI(req.message), {
     systemPrompt,
@@ -205,7 +205,7 @@ export async function handleTutorStream(req: TutorRequest): Promise<TutorStreamR
     content: m.content,
   }));
 
-  const thinkingBudget = req.mode === 'companion' ? 0 : 512;
+  const thinkingBudget = req.mode === 'companion' ? 256 : 512;
 
   const innerStream = provider.generateStream(sanitizeForAI(req.message), {
     systemPrompt,
