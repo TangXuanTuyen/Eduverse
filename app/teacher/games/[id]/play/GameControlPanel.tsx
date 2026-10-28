@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { advanceQuestionAction, endSessionAction } from '../../actions';
 import { createClient } from '@/lib/supabase/client';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 type Player = { display_name: string; total_score: number };
 type QuestionData = {
@@ -23,6 +24,7 @@ type QuestionResult = {
 type Props = { gameId: string; sessionId: string };
 
 export function GameControlPanel({ gameId, sessionId }: Props) {
+  const { t } = useLocale();
   const [players, setPlayers] = useState<Player[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState<QuestionData | null>(null);
   const [questionIndex, setQuestionIndex] = useState(-1);
@@ -110,28 +112,28 @@ export function GameControlPanel({ gameId, sessionId }: Props) {
   }, [sessionId, currentQuestion]);
 
   const handleEnd = useCallback(async () => {
-    if (!confirm('Kết thúc trò chơi?')) return;
+    if (!confirm(t('gm.endConfirm'))) return;
     await endSessionAction(sessionId);
     setGameEnded(true);
-  }, [sessionId]);
+  }, [sessionId, t]);
 
   if (gameEnded) {
     return (
       <div className="max-w-xl mx-auto px-4 py-12 text-center space-y-6">
-        <h1 className="text-3xl font-bold">Trò chơi kết thúc!</h1>
+        <h1 className="text-3xl font-bold">{t('gm.finished')}</h1>
         <div className="space-y-2">
-          <h2 className="text-lg text-slate-300">Bảng xếp hạng</h2>
+          <h2 className="text-lg text-slate-300">{t('gm.leaderboard')}</h2>
           {players.sort((a, b) => b.total_score - a.total_score).map((p, i) => (
             <div key={p.display_name} className={`flex items-center justify-between p-3 rounded-lg ${i === 0 ? 'bg-yellow-900/30 border border-yellow-500/30' : 'bg-slate-900 border border-slate-800'}`}>
               <span className="text-white font-medium">
                 {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`} {p.display_name}
               </span>
-              <span className="text-green-400 font-bold">{p.total_score} đ</span>
+              <span className="text-green-400 font-bold">{p.total_score} {t('gm.pts')}</span>
             </div>
           ))}
         </div>
         <a href="/teacher/games" className="inline-block rounded-lg bg-slate-700 hover:bg-slate-600 px-6 py-3 text-sm text-white min-h-[44px]">
-          Quay lại
+          {t('grading.back')}
         </a>
       </div>
     );
@@ -141,14 +143,14 @@ export function GameControlPanel({ gameId, sessionId }: Props) {
   if (questionIndex < 0) {
     return (
       <div className="max-w-xl mx-auto px-4 py-12 text-center space-y-6">
-        <h1 className="text-2xl font-bold">Phòng chờ</h1>
+        <h1 className="text-2xl font-bold">{t('gm.lobby')}</h1>
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-          <p className="text-sm text-slate-400 mb-2">Mã trò chơi</p>
+          <p className="text-sm text-slate-400 mb-2">{t('gm.gameCode')}</p>
           <p className="text-5xl font-mono font-bold tracking-[0.3em] text-green-400">{joinCode}</p>
-          <p className="text-xs text-slate-500 mt-2">Học sinh nhập mã này tại Arcade để tham gia</p>
+          <p className="text-xs text-slate-500 mt-2">{t('gm.joinHint')}</p>
         </div>
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-          <p className="text-sm text-slate-400 mb-2">{players.length} người chơi đã tham gia</p>
+          <p className="text-sm text-slate-400 mb-2">{players.length} {t('gm.playersJoined')}</p>
           <div className="flex flex-wrap gap-2 justify-center">
             {players.map((p) => (
               <span key={p.display_name} className="bg-slate-800 text-white text-sm px-3 py-1 rounded-full">{p.display_name}</span>
@@ -160,7 +162,7 @@ export function GameControlPanel({ gameId, sessionId }: Props) {
           disabled={loading || players.length === 0}
           className="rounded-lg bg-green-600 hover:bg-green-500 px-8 py-3 text-lg font-medium text-white disabled:opacity-50 min-h-[44px]"
         >
-          {loading ? 'Đang bắt đầu...' : 'Bắt đầu!'}
+          {loading ? t('gm.starting') : t('gm.startBtn')}
         </button>
       </div>
     );
@@ -170,9 +172,9 @@ export function GameControlPanel({ gameId, sessionId }: Props) {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-400">Câu {questionIndex + 1}/{totalQuestions}</span>
+        <span className="text-sm text-slate-400">{t('grading.question')} {questionIndex + 1}/{totalQuestions}</span>
         <span className={`text-2xl font-bold font-mono ${timeLeft <= 5 ? 'text-red-400' : 'text-white'}`}>{timeLeft}s</span>
-        <span className="text-sm text-slate-400">{answeredCount}/{players.length} đã trả lời</span>
+        <span className="text-sm text-slate-400">{answeredCount}/{players.length} {t('gm.answered')}</span>
       </div>
 
       {currentQuestion && (
@@ -203,7 +205,7 @@ export function GameControlPanel({ gameId, sessionId }: Props) {
 
       {questionResult && (
         <div className="bg-slate-900 border border-green-500/30 rounded-xl p-4 space-y-2">
-          <p className="text-green-400 font-medium">Tỉ lệ đúng: {questionResult.accuracy}% ({questionResult.correct}/{questionResult.total})</p>
+          <p className="text-green-400 font-medium">{t('gm.accuracy')}: {questionResult.accuracy}% ({questionResult.correct}/{questionResult.total})</p>
           {questionResult.explanation && <p className="text-sm text-slate-400 italic">{questionResult.explanation}</p>}
         </div>
       )}
@@ -214,7 +216,7 @@ export function GameControlPanel({ gameId, sessionId }: Props) {
             onClick={handleShowResults}
             className="rounded-lg bg-blue-600 hover:bg-blue-500 px-6 py-3 text-sm font-medium text-white min-h-[44px]"
           >
-            Hiện đáp án
+            {t('gm.showAnswer')}
           </button>
         ) : (
           <button
@@ -222,14 +224,14 @@ export function GameControlPanel({ gameId, sessionId }: Props) {
             disabled={loading}
             className="rounded-lg bg-green-600 hover:bg-green-500 px-6 py-3 text-sm font-medium text-white disabled:opacity-50 min-h-[44px]"
           >
-            {loading ? '...' : 'Câu tiếp theo'}
+            {loading ? '...' : t('gm.nextQuestion')}
           </button>
         )}
         <button
           onClick={handleEnd}
           className="rounded-lg bg-red-700 hover:bg-red-600 px-6 py-3 text-sm text-white min-h-[44px]"
         >
-          Kết thúc
+          {t('gm.end')}
         </button>
       </div>
 

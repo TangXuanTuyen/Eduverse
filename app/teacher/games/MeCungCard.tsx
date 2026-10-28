@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 type QuestionSet = { id: string; name: string; question_count: number };
 
 export function MeCungCard() {
+  const { t } = useLocale();
   const [open, setOpen] = useState(false);
   const [sets, setSets] = useState<QuestionSet[]>([]);
   const [selectedSetId, setSelectedSetId] = useState('');
@@ -32,16 +34,16 @@ export function MeCungCard() {
             🎮
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-white">Mê Cung Tri Thức</h3>
+            <h3 className="font-bold text-white">{t('gm.meCungName')}</h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Robot Vina khám phá mê cung, giải câu hỏi để mở khóa cổng. Chọn bộ câu hỏi sẵn có để tổ chức tại lớp.
+              {t('gm.meCungDesc')}
             </p>
           </div>
           <button
             onClick={() => setOpen(true)}
             className="shrink-0 rounded-lg bg-cyan-600 hover:bg-cyan-500 px-4 py-2 text-sm font-medium text-white min-h-[44px] transition-colors"
           >
-            Tổ chức tại lớp
+            {t('gm.host')}
           </button>
         </div>
       </div>
@@ -49,13 +51,13 @@ export function MeCungCard() {
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
           <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-white">Tổ chức Mê Cung Tri Thức</h3>
-            <p className="text-sm text-slate-400">Chọn bộ câu hỏi để chèn vào trò chơi. Câu hỏi mẫu sẽ được thay bằng bộ đề bạn chọn.</p>
+            <h3 className="text-lg font-bold text-white">{t('gm.hostTitle')}</h3>
+            <p className="text-sm text-slate-400">{t('gm.hostDesc')}</p>
 
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {sets.length === 0 && (
                 <p className="text-xs text-slate-500 p-3 bg-slate-800 rounded-lg border border-slate-700">
-                  Chưa có bộ đề. Vào Ngân hàng câu hỏi để tạo bộ đề trước.
+                  {t('gm.noSetsGo')}
                 </p>
               )}
               {sets.map((s) => (
@@ -77,7 +79,7 @@ export function MeCungCard() {
                   />
                   <div>
                     <p className="text-sm text-white">{s.name}</p>
-                    <p className="text-xs text-slate-400">{s.question_count} câu hỏi</p>
+                    <p className="text-xs text-slate-400">{s.question_count} {t('qs.unit')}</p>
                   </div>
                 </label>
               ))}
@@ -89,13 +91,13 @@ export function MeCungCard() {
                 disabled={!selectedSetId}
                 className="rounded-lg bg-cyan-600 hover:bg-cyan-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 min-h-[44px] transition-colors"
               >
-                Mở trò chơi
+                {t('gm.open')}
               </button>
               <button
                 onClick={() => { setOpen(false); setSelectedSetId(''); }}
                 className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-white min-h-[44px]"
               >
-                Hủy
+                {t('cs.cancel')}
               </button>
             </div>
           </div>
