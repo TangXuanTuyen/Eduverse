@@ -18,6 +18,8 @@ import { STUDENT_HOME, GUEST_HOME } from '@/lib/student-routes';
 import { PRESENCE_BROADCAST_INTERVAL_MS } from '@/game/config/town-map';
 import Link from 'next/link';
 import { BreakReminder } from '@/components/ui/BreakReminder';
+import { LanguageSwitch } from '@/components/i18n/LanguageSwitch';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 const AoDaiCompanion = dynamic(
   () => import('@/components/companion/AoDaiCompanion').then((m) => m.AoDaiCompanion),
@@ -31,9 +33,10 @@ const CityMapCanvas = dynamic(
 );
 
 function CityLoading() {
+  const { t } = useLocale();
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-slate-950 text-slate-300" role="status">
-      <span className="text-sm">Đang mở thành phố…</span>
+      <span className="text-sm">{t('city.loading')}</span>
     </div>
   );
 }
@@ -44,6 +47,7 @@ function CityLoading() {
  */
 export function CityShell({ children }: { children: React.ReactNode }) {
   const game = useStudentGame();
+  const { t } = useLocale();
   const pathname = usePathname();
   const reducedMotion = useReducedMotion();
   const { listMode, toggleListMode } = useListMode();
@@ -170,6 +174,10 @@ export function CityShell({ children }: { children: React.ReactNode }) {
             />
           </div>
 
+          <div className="absolute top-3 right-3 z-40">
+            <LanguageSwitch />
+          </div>
+
           {children}
 
           {/* Sau children để hộp thoại nhân vật nằm trên hộp thoại địa điểm */}
@@ -189,13 +197,13 @@ export function CityShell({ children }: { children: React.ReactNode }) {
             <div className="absolute bottom-3 left-3 right-3 z-40 pointer-events-none flex justify-center">
               <div className="pointer-events-auto bg-amber-900/90 border border-amber-600/50 backdrop-blur-md rounded-xl px-4 py-2.5 shadow-lg flex items-center gap-3 max-w-lg">
                 <span className="text-sm text-amber-100">
-                  🎮 Chế độ tự do — dữ liệu không được lưu
+                  {t('city.guest.banner')}
                 </span>
                 <Link
                   href="/login"
                   className="shrink-0 px-3 py-1.5 bg-white/90 hover:bg-white text-slate-900 rounded-lg text-xs font-bold transition min-h-[36px] flex items-center"
                 >
-                  Đăng nhập
+                  {t('city.guest.login')}
                 </Link>
               </div>
             </div>

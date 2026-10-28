@@ -33,6 +33,9 @@ const vi = {
   'footer.hotline': 'Hotline',
   'footer.email': 'Email',
   'footer.developedBy': 'Phát triển bởi',
+  'city.loading': 'Đang mở thành phố…',
+  'city.guest.banner': '🎮 Chế độ tự do — dữ liệu không được lưu',
+  'city.guest.login': 'Đăng nhập',
 } as const;
 
 export type DictKey = keyof typeof vi;
@@ -64,6 +67,9 @@ const en: Dict = {
   'footer.hotline': 'Hotline',
   'footer.email': 'Email',
   'footer.developedBy': 'Developed by',
+  'city.loading': 'Opening the city…',
+  'city.guest.banner': '🎮 Free play mode — progress is not saved',
+  'city.guest.login': 'Log in',
 };
 
 export const DICTS: Record<Locale, Dict> = { vi, en };
