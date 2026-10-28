@@ -767,6 +767,239 @@ export function TeacherReportsView() {
               </div>
             </>
           )}
+
+          {(() => {
+            const studentsWithScore = allStudents.filter(s => s.avg_score >= 0);
+            const excellent = studentsWithScore.filter(s => s.avg_score >= 80).length;
+            const good = studentsWithScore.filter(s => s.avg_score >= 60 && s.avg_score < 80).length;
+            const average = studentsWithScore.filter(s => s.avg_score >= 40 && s.avg_score < 60).length;
+            const weak = studentsWithScore.filter(s => s.avg_score < 40).length;
+            const distTotal = excellent + good + average + weak;
+            const needsSupport = allStudents.filter(s => s.needs_attention).length;
+            const hardQuestions = [...allQuestions].sort((a, b) => a.accuracy - b.accuracy).filter(q => q.accuracy < 60).slice(0, 5);
+            const completionPct = totalStudents > 0 && totalAssignments > 0 ? Math.round((totalSubmissions / (totalStudents * totalAssignments)) * 100) : -1;
+            return (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-lg font-bold text-white mb-4">Tổng quan học tập</h2>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <KpiCard icon={Users} value={totalStudents} label="Học sinh đang theo dõi" sublabel={`${filteredRooms.length} lớp`} color="blue" />
+                    <KpiCard
+                      icon={CheckCircle2}
+                      value={completionPct >= 0 ? `${completionPct}%` : '—'}
+                      label="Tỷ lệ hoàn thành"
+                      sublabel={completionPct >= 0 ? `${totalSubmissions} / ${totalStudents * totalAssignments} lượt nộp` : 'Chưa giao bài'}
+                      color={completionPct >= 70 ? 'emerald' : completionPct >= 40 ? 'amber' : 'cyan'}
+                    />
+                    <button
+                      type="button" onClick={() => setTab('students')}
+                      className="text-left bg-gradient-to-br from-red-600/15 to-red-900/10 border border-red-500/20 rounded-2xl p-4 hover:scale-[1.02] transition-transform duration-200 cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-2 mb-3">
+                        <AlertTriangle className="w-4 h-4 text-red-400" />
+                        <span className="text-xs text-slate-400">Cần hỗ trợ học tập</span>
+                      </div>
+                      <div className="text-2xl font-bold text-white">{needsSupport}</div>
+                      <div className="text-[11px] text-slate-500 mt-1 group-hover:text-red-400 transition-colors">Điểm thấp hoặc thiếu bài →</div>
+                    </button>
+                    <button
+                      type="button" onClick={() => setShowInactiveDetail(true)}
+                      className="text-left bg-gradient-to-br from-amber-600/15 to-amber-900/10 border border-amber-500/20 rounded-2xl p-4 hover:scale-[1.02] transition-transform duration-200 cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-2 mb-3">
+                        <Clock className="w-4 h-4 text-amber-400" />
+                        <span className="text-xs text-slate-400">Chưa hoạt động ≥7 ngày</span>
+                      </div>
+                      <div className="text-2xl font-bold text-white">{filteredInactive.length}</div>
+                      <div className="text-[11px] text-slate-500 mt-1 group-hover:text-amber-400 transition-colors">Bấm để xem danh sách →</div>
+                    </button>
+                  </div>
+                </div>
+
+                {(needsSupport > 0 || hardQuestions.length > 0 || filteredInactive.length > 0) && (
+                  <div className="bg-gradient-to-r from-indigo-950/30 to-blue-950/20 border border-indigo-500/20 rounded-2xl p-5">
+                    <h3 className="text-sm font-bold text-indigo-300 mb-4 flex items-center gap-2">
+                      <Zap className="w-4 h-4" /> Việc cần làm trước
+                    </h3>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {needsSupport > 0 && (
+                        <button type="button" onClick={() => setTab('students')}
+                          className="text-left bg-red-950/20 border border-red-900/25 rounded-xl p-4 hover:border-red-700/40 transition-all cursor-pointer group">
+                          <div className="flex items-center gap-2 mb-2">
+                            <AlertTriangle className="w-4 h-4 text-red-400" />
+                            <span className="text-sm font-semibold text-white">Học sinh cần hỗ trợ</span>
+                          </div>
+                          <p className="text-xs text-slate-400">{needsSupport} em có điểm thấp hoặc thiếu bài. Xem danh sách, lý do và bài tập còn thiếu.</p>
+                          <span className="text-[11px] text-red-400 mt-2 inline-block group-hover:underline">Xem danh sách →</span>
+                        </button>
+                      )}
+                      {hardQuestions.length > 0 && (
+                        <button type="button" onClick={() => setTab('questions')}
+                          className="text-left bg-amber-950/20 border border-amber-900/25 rounded-xl p-4 hover:border-amber-700/40 transition-all cursor-pointer group">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Target className="w-4 h-4 text-amber-400" />
+                            <span className="text-sm font-semibold text-white">Kiến thức cần dạy lại</span>
+                          </div>
+                          <p className="text-xs text-slate-400">{hardQuestions.length} câu có tỷ lệ đúng dưới 60%. Đi đến kỹ năng và câu hỏi có tỷ lệ đúng thấp.</p>
+                          <span className="text-[11px] text-amber-400 mt-2 inline-block group-hover:underline">Xem phân tích →</span>
+                        </button>
+                      )}
+                      {filteredInactive.length > 0 && (
+                        <button type="button" onClick={() => setShowInactiveDetail(true)}
+                          className="text-left bg-slate-800/30 border border-slate-700/40 rounded-xl p-4 hover:border-slate-600/50 transition-all cursor-pointer group">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Clock className="w-4 h-4 text-slate-400" />
+                            <span className="text-sm font-semibold text-white">Học sinh chưa hoạt động</span>
+                          </div>
+                          <p className="text-xs text-slate-400">{filteredInactive.length} em chưa hoạt động ≥7 ngày. Kiểm tra lý do và liên hệ phụ huynh.</p>
+                          <span className="text-[11px] text-slate-400 mt-2 inline-block group-hover:underline">Xem danh sách →</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5">
+                    <SectionHeader icon={BarChart3} title="Phân bố kết quả" subtitle={distTotal > 0 ? `${distTotal} học sinh có điểm` : undefined} iconColor="text-indigo-400" />
+                    {distTotal > 0 ? (
+                      <VerticalBarChart data={[
+                        { label: 'Giỏi', value: excellent, color: 'bg-emerald-500', pct: Math.round((excellent / distTotal) * 100) },
+                        { label: 'Khá', value: good, color: 'bg-blue-500', pct: Math.round((good / distTotal) * 100) },
+                        { label: 'TB', value: average, color: 'bg-amber-500', pct: Math.round((average / distTotal) * 100) },
+                        { label: 'Yếu', value: weak, color: 'bg-red-500', pct: Math.round((weak / distTotal) * 100) },
+                      ]} />
+                    ) : (
+                      <EmptyState message="Chưa có dữ liệu điểm" />
+                    )}
+                  </div>
+                  <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5">
+                    <SectionHeader icon={Eye} title="Tỷ lệ hoàn thành bài" iconColor="text-blue-400" />
+                    {totalAssignments > 0 ? (
+                      <>
+                        <div className="flex items-center justify-center py-4">
+                          <DonutChart value={totalSubmissions} total={totalStudents * totalAssignments} size={140} />
+                        </div>
+                        <div className="flex justify-center gap-6 text-[11px] text-slate-400">
+                          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Đã nộp</span>
+                          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-slate-700" /> Chưa nộp</span>
+                        </div>
+                      </>
+                    ) : (
+                      <EmptyState message="Chưa giao bài tập" />
+                    )}
+                  </div>
+                </div>
+
+                {hardQuestions.length > 0 && (
+                  <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5">
+                    <SectionHeader icon={AlertTriangle} title="Cần dạy lại ngay" subtitle={`Top ${hardQuestions.length} câu có tỷ lệ đúng thấp nhất`} iconColor="text-red-400" />
+                    <div className="space-y-3">
+                      {hardQuestions.map((q, i) => {
+                        const wrongPct = 100 - q.accuracy;
+                        const priority = q.accuracy < 30 ? 'Ưu tiên cao' : q.accuracy < 50 ? 'Ưu tiên' : 'Nên ôn';
+                        const prColor = q.accuracy < 30 ? 'bg-red-500/15 text-red-400' : q.accuracy < 50 ? 'bg-amber-500/15 text-amber-400' : 'bg-blue-500/15 text-blue-400';
+                        return (
+                          <div key={`${q.question_id}-${i}`} className="bg-slate-800/40 border border-slate-700/30 rounded-xl p-4 hover:border-red-900/40 transition-colors">
+                            <div className="flex items-start justify-between gap-3 mb-3">
+                              <p className="text-sm text-white flex-1 line-clamp-2">{q.content}</p>
+                              <span className={`text-[10px] font-bold px-2 py-1 rounded-lg shrink-0 ${prColor}`}>{priority}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1.5">
+                                  <span className="text-lg font-bold text-red-400">{q.accuracy}%</span>
+                                  <span className="text-xs text-slate-500">trả lời đúng</span>
+                                </div>
+                                <AnimatedBar value={q.accuracy} color={q.accuracy < 30 ? 'bg-red-500' : q.accuracy < 50 ? 'bg-amber-500' : 'bg-blue-500'} delay={i * 80} />
+                              </div>
+                              <div className="text-right text-[11px] text-slate-500 shrink-0">
+                                <div>{q.total_attempts} lượt</div>
+                                <div className="text-red-400 font-medium">{wrongPct}% sai</div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <TrendChart data={trends} />
+
+                {errorData.length > 0 && (
+                  <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5">
+                    <SectionHeader icon={XCircle} title="Kiến thức cần dạy lại" subtitle="Xếp hạng theo tỷ lệ sai" iconColor="text-red-400" />
+                    <div className="space-y-2.5">
+                      {errorData.slice(0, 6).map((e, i) => (
+                        <div key={e.skill} className="flex items-center gap-3 bg-slate-800/30 rounded-xl p-3">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${e.error_rate >= 50 ? 'bg-red-500/15 text-red-400' : 'bg-amber-500/15 text-amber-400'}`}>{i + 1}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-white">{skillLabel(e.skill)}</div>
+                            <div className="text-[10px] text-slate-500 truncate">{e.sample_questions[0]}</div>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <div className={`text-sm font-bold ${e.error_rate >= 50 ? 'text-red-400' : 'text-amber-400'}`}>{e.error_rate}%</div>
+                            <div className="text-[10px] text-slate-500">sai</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {stemData.length > 0 && (
+                  <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5">
+                    <SectionHeader icon={FlaskConical} title="Hoạt động STEM" subtitle={`${stemData.length} nhiệm vụ`} iconColor="text-teal-400" />
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {stemData.map((s) => (
+                        <div key={s.assignment_id} className="bg-slate-800/30 rounded-xl p-3.5 flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${s.assignment_type === 'experiment' ? 'bg-teal-600/15 text-teal-400' : 'bg-violet-600/15 text-violet-400'}`}>
+                            {s.assignment_type === 'experiment' ? <FlaskConical className="w-4 h-4" /> : <BookOpenCheck className="w-4 h-4" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm text-white truncate">{s.title}</div>
+                            <div className="text-[11px] text-slate-500">{s.room_name} · {s.completed_count}/{s.total_students}</div>
+                          </div>
+                          <div className={`text-sm font-bold shrink-0 ${s.completion_rate >= 70 ? 'text-emerald-400' : s.completion_rate >= 40 ? 'text-amber-400' : 'text-red-400'}`}>
+                            {s.completion_rate}%
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <SectionHeader icon={Users} title="Tình hình các lớp" subtitle={`${filteredRooms.length} lớp`} />
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {filteredRooms.map((r) => (
+                      <button key={r.room_id} type="button" onClick={() => openRoomDetail(r)}
+                        className="w-full text-left bg-slate-900/60 border border-slate-800/80 rounded-xl p-3.5 hover:border-indigo-500/30 transition-all group cursor-pointer">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-indigo-600/15 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-xs shrink-0">
+                              {r.grade ?? <BookOpen className="w-4 h-4" />}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-semibold text-white text-sm truncate">{r.room_name}</div>
+                              <div className="text-[10px] text-slate-500">{r.member_count} HS · {r.assignment_count} bài</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {r.submissions_graded > 0 ? <ScoreBadge value={r.avg_accuracy} size="sm" /> : <span className="text-xs text-slate-500">—</span>}
+                            <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                          </div>
+                        </div>
+                        <AnimatedBar value={r.submissions_total > 0 ? Math.round((r.submissions_graded / r.submissions_total) * 100) : 0} color="bg-blue-500" />
+                        <div className="text-[10px] text-slate-500 text-right mt-1">{r.submissions_graded}/{r.submissions_total} chấm</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
         );
       })()}
