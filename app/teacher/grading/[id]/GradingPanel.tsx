@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { gradeAttemptAction, finalizeAction } from './actions';
 import type { AttemptForGrading } from '@/services/grading';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 const FEEDBACK_TEMPLATES = [
   'Tốt lắm!',
@@ -20,6 +21,7 @@ type Props = {
 
 export function GradingPanel({ submissionId, attempts }: Props) {
   const router = useRouter();
+  const { t } = useLocale();
   const [saving, setSaving] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [message, setMessage] = useState('');
@@ -42,7 +44,7 @@ export function GradingPanel({ submissionId, attempts }: Props) {
     if (result.error) {
       setMessage(result.error);
     } else {
-      setMessage('Đã hoàn tất chấm bài!');
+      setMessage(t('grading.done'));
       setTimeout(() => router.push('/teacher/grading'), 1000);
     }
   }
@@ -50,13 +52,13 @@ export function GradingPanel({ submissionId, attempts }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-white">Chấm bài</h1>
+        <h1 className="text-xl font-bold text-white">{t('grading.title')}</h1>
         <button
           type="button"
           onClick={() => router.push('/teacher/grading')}
           className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-white min-h-[44px]"
         >
-          Quay lại
+          {t('grading.back')}
         </button>
       </div>
 
@@ -81,7 +83,7 @@ export function GradingPanel({ submissionId, attempts }: Props) {
           disabled={finalizing}
           className="rounded-lg bg-green-600 hover:bg-green-500 px-6 py-2 text-sm font-medium text-white disabled:opacity-50 min-h-[44px]"
         >
-          {finalizing ? 'Đang lưu...' : 'Hoàn tất chấm bài'}
+          {finalizing ? t('grading.finishing') : t('grading.finish')}
         </button>
       </div>
     </div>
@@ -99,6 +101,7 @@ function AttemptCard({
   onGrade: (attemptId: string, score: number, feedback: string | null) => void;
   saving: boolean;
 }) {
+  const { t } = useLocale();
   const q = a.question;
   const [score, setScore] = useState(a.score ?? 0);
   const [feedback, setFeedback] = useState(a.feedback ?? '');
@@ -108,26 +111,26 @@ function AttemptCard({
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
       <div className="flex justify-between items-start">
         <div>
-          <p className="text-xs text-slate-400">Câu {index} · {q.type} · {q.points} điểm</p>
+          <p className="text-xs text-slate-400">{t('grading.question')} {index} · {q.type} · {q.points} {t('grading.points')}</p>
           <p className="text-sm text-white mt-1">{q.content}</p>
         </div>
         {a.is_correct !== null && (
           <span className={`text-xs px-2 py-0.5 rounded ${a.is_correct ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`}>
-            {a.is_correct ? 'Đúng' : 'Sai'}
+            {a.is_correct ? t('grading.correct') : t('grading.wrong')}
           </span>
         )}
       </div>
 
       <div className="bg-slate-800 rounded-lg p-3">
-        <p className="text-xs text-slate-400 mb-1">Câu trả lời:</p>
+        <p className="text-xs text-slate-400 mb-1">{t('grading.answer')}</p>
         <p className="text-sm text-white whitespace-pre-wrap">
-          {a.student_answer != null ? String(a.student_answer) : '(Chưa trả lời)'}
+          {a.student_answer != null ? String(a.student_answer) : t('grading.noAnswer')}
         </p>
       </div>
 
       {q.correct_answer != null && (
         <div className="bg-slate-800/50 rounded-lg p-3">
-          <p className="text-xs text-slate-400 mb-1">Đáp án đúng:</p>
+          <p className="text-xs text-slate-400 mb-1">{t('grading.correctAnswer')}</p>
           <p className="text-sm text-green-300">{JSON.stringify(q.correct_answer)}</p>
         </div>
       )}
@@ -135,7 +138,7 @@ function AttemptCard({
       {needsManual && (
         <div className="space-y-2 pt-2 border-t border-slate-800">
           <div className="flex items-center gap-3">
-            <label className="text-xs text-slate-400">Điểm:</label>
+            <label className="text-xs text-slate-400">{t('grading.score')}</label>
             <input
               type="number"
               min={0}
@@ -148,7 +151,7 @@ function AttemptCard({
           </div>
 
           <div>
-            <label className="text-xs text-slate-400">Nhận xét:</label>
+            <label className="text-xs text-slate-400">{t('grading.comment')}</label>
             <textarea
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
@@ -175,7 +178,7 @@ function AttemptCard({
             onClick={() => onGrade(a.id, score, feedback || null)}
             className="rounded-lg bg-blue-600 hover:bg-blue-500 px-4 py-2 text-sm text-white disabled:opacity-50 min-h-[44px]"
           >
-            Lưu điểm câu này
+            {t('grading.saveQuestion')}
           </button>
         </div>
       )}

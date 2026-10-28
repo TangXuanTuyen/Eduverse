@@ -5,10 +5,14 @@ import { redirect } from 'next/navigation';
 import { CreateRoomForm } from './CreateRoomForm';
 import { RoomCard } from './RoomCard';
 import { Users } from 'lucide-react';
+import { getLocale } from '@/lib/i18n/server';
+import { translate } from '@/lib/i18n/dict';
 
 export const metadata: Metadata = { title: 'Phòng học của tôi' };
 
 export default async function TeacherRoomsPage() {
+  const locale = await getLocale();
+  const tr = (key: Parameters<typeof translate>[1]) => translate(locale, key);
   const profile = await getCurrentProfile();
   if (!profile || profile.role !== 'teacher') redirect('/');
 
@@ -27,9 +31,9 @@ export default async function TeacherRoomsPage() {
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Phòng học của tôi</h1>
+          <h1 className="text-2xl font-bold text-white">{tr('rooms.title')}</h1>
           <p className="text-sm text-slate-400 mt-1">
-            {roomsWithCount.length} phòng · {totalStudents} học sinh
+            {roomsWithCount.length} {tr('rooms.roomsUnit')} · {totalStudents} {tr('rooms.studentsUnit')}
           </p>
         </div>
       </div>
@@ -41,7 +45,7 @@ export default async function TeacherRoomsPage() {
           <div className="w-16 h-16 rounded-2xl bg-slate-800/50 flex items-center justify-center mb-4">
             <Users className="w-8 h-8 text-slate-600" />
           </div>
-          <p className="text-slate-400 text-center">Chưa có phòng nào. Tạo phòng đầu tiên!</p>
+          <p className="text-slate-400 text-center">{tr('rooms.empty')}</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">

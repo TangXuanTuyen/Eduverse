@@ -4,6 +4,7 @@ import { useActionState } from 'react';
 import { Copy, RefreshCw, Users, Check, Clock, Hash, Pencil, Trash2, X } from 'lucide-react';
 import { refreshCodeAction, updateRoomAction, deleteRoomAction, type RoomActionState } from './actions';
 import { useState, useTransition } from 'react';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 type Room = {
   id: string;
@@ -39,6 +40,7 @@ function hashIndex(id: string) {
 }
 
 export function RoomCard({ room }: { room: Room }) {
+  const { t } = useLocale();
   const [state, formAction, pending] = useActionState<RoomActionState, FormData>(refreshCodeAction, {});
   const code = state.success?.match(/:\s*(\S+)/)?.[1] ?? room.join_code;
   const expired = room.join_code_expires_at ? new Date(room.join_code_expires_at) < new Date() : false;
@@ -91,7 +93,7 @@ export function RoomCard({ room }: { room: Room }) {
       <div className={`bg-gradient-to-br ${gradient} border ${accent.border} rounded-2xl p-5 transition-all duration-300`}>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-300">Chỉnh sửa phòng</span>
+            <span className="text-sm font-medium text-slate-300">{t('rooms.editTitle')}</span>
             <button onClick={() => { setEditing(false); setActionMsg(''); }} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 min-h-[44px] min-w-[44px] flex items-center justify-center">
               <X className="w-4 h-4" />
             </button>
@@ -99,13 +101,13 @@ export function RoomCard({ room }: { room: Room }) {
           <input
             value={editName}
             onChange={(e) => setEditName(e.target.value)}
-            placeholder="Tên phòng"
+            placeholder={t('rooms.placeholderName')}
             className="w-full rounded-xl bg-black/30 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 min-h-[44px]"
           />
           <input
             value={editSubject}
             onChange={(e) => setEditSubject(e.target.value)}
-            placeholder="Môn học (tùy chọn)"
+            placeholder={t('rooms.placeholderSubject')}
             className="w-full rounded-xl bg-black/30 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 min-h-[44px]"
           />
           <select
@@ -113,18 +115,18 @@ export function RoomCard({ room }: { room: Room }) {
             onChange={(e) => setEditGrade(e.target.value)}
             className="w-full rounded-xl bg-black/30 border border-slate-700 px-3 py-2.5 text-sm text-white min-h-[44px]"
           >
-            <option value="">Khối (tùy chọn)</option>
-            <option value="6">Khối 6</option>
-            <option value="7">Khối 7</option>
-            <option value="8">Khối 8</option>
-            <option value="9">Khối 9</option>
+            <option value="">{t('rooms.gradeOptional')}</option>
+            <option value="6">{t('rooms.gradeWord')} 6</option>
+            <option value="7">{t('rooms.gradeWord')} 7</option>
+            <option value="8">{t('rooms.gradeWord')} 8</option>
+            <option value="9">{t('rooms.gradeWord')} 9</option>
           </select>
           <button
             onClick={handleUpdate}
             disabled={isPending || !editName.trim()}
             className="w-full rounded-xl bg-cyan-600 hover:bg-cyan-500 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50 min-h-[44px] transition-colors"
           >
-            {isPending ? 'Đang lưu...' : 'Lưu thay đổi'}
+            {isPending ? t('rooms.saving') : t('rooms.save')}
           </button>
           {actionMsg && <p className="text-sm text-rose-300 bg-rose-500/10 rounded-lg px-3 py-2">{actionMsg}</p>}
         </div>
@@ -146,7 +148,7 @@ export function RoomCard({ room }: { room: Room }) {
             )}
             {room.grade && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-800/60 text-slate-300">
-                Khối {room.grade}
+                {t('rooms.gradeWord')} {room.grade}
               </span>
             )}
           </div>
@@ -155,14 +157,14 @@ export function RoomCard({ room }: { room: Room }) {
           <button
             onClick={() => { setEditing(true); setEditName(room.name); setEditSubject(room.subject ?? ''); setEditGrade(room.grade?.toString() ?? ''); }}
             className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 min-h-[44px] min-w-[44px] flex items-center justify-center transition-all"
-            title="Chỉnh sửa"
+            title={t('rooms.edit')}
           >
             <Pencil className="w-4 h-4" />
           </button>
           <button
             onClick={() => setConfirmDelete(true)}
             className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 min-h-[44px] min-w-[44px] flex items-center justify-center transition-all"
-            title="Xóa phòng"
+            title={t('rooms.delete')}
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -175,20 +177,20 @@ export function RoomCard({ room }: { room: Room }) {
 
       {confirmDelete && (
         <div className="mt-3 bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 space-y-2">
-          <p className="text-sm text-rose-300">Xóa phòng <strong>{room.name}</strong>? Tất cả thành viên sẽ bị xóa khỏi phòng.</p>
+          <p className="text-sm text-rose-300">{t('rooms.confirmDeleteA')} <strong>{room.name}</strong>{t('rooms.confirmDeleteB')}</p>
           <div className="flex gap-2">
             <button
               onClick={handleDelete}
               disabled={isPending}
               className="flex-1 rounded-lg bg-rose-600 hover:bg-rose-500 px-3 py-2 text-sm text-white disabled:opacity-50 min-h-[44px] transition-colors"
             >
-              {isPending ? 'Đang xóa...' : 'Xác nhận xóa'}
+              {isPending ? t('rooms.deleting') : t('rooms.confirmDelete')}
             </button>
             <button
               onClick={() => { setConfirmDelete(false); setActionMsg(''); }}
               className="rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm text-slate-300 min-h-[44px] transition-colors"
             >
-              Hủy
+              {t('rooms.cancel')}
             </button>
           </div>
         </div>
@@ -203,7 +205,7 @@ export function RoomCard({ room }: { room: Room }) {
             className={`p-2 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center ${
               copied ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-400 hover:text-white hover:bg-white/10'
             }`}
-            title="Sao chép mã"
+            title={t('rooms.copyCode')}
           >
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           </button>
@@ -213,14 +215,14 @@ export function RoomCard({ room }: { room: Room }) {
               type="submit"
               disabled={pending}
               className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 disabled:opacity-60 min-h-[44px] min-w-[44px] flex items-center justify-center transition-all"
-              title="Đổi mã mới"
+              title={t('rooms.newCode')}
             >
               <RefreshCw className={`w-4 h-4 ${pending ? 'animate-spin' : ''}`} />
             </button>
           </form>
           {expired && (
             <span className="flex items-center gap-1 text-xs text-amber-400 font-medium">
-              <Clock className="w-3 h-3" /> Hết hạn
+              <Clock className="w-3 h-3" /> {t('rooms.expired')}
             </span>
           )}
         </div>
