@@ -4,16 +4,22 @@ import { useActionState, useState } from 'react';
 import { deleteQuestionAction, type QuestionActionState } from './actions';
 import { QuestionForm } from './QuestionForm';
 import type { QuestionRow, QuestionWithAnswer } from '@/services/questions';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
-const TYPE_LABELS: Record<string, string> = {
-  single_choice: 'Trắc nghiệm',
-  multiple_choice: 'Nhiều đáp án',
-  short_answer: 'Ngắn',
-  essay: 'Tự luận',
-};
-
-const DIFF_LABELS = ['', 'Dễ', 'TB', 'Khó'];
 const DIFF_COLORS = ['', 'text-green-400', 'text-yellow-400', 'text-red-400'];
+
+function useQuestionLabels() {
+  const { t } = useLocale();
+  return {
+    types: {
+      single_choice: t('qs.typeSingle'),
+      multiple_choice: t('qs.typeMultiple'),
+      short_answer: t('qs.typeShort'),
+      essay: t('qs.typeEssay'),
+    } as Record<string, string>,
+    diffs: ['', t('qs.diffEasy'), t('qs.diffMediumShort'), t('qs.diffHard')],
+  };
+}
 
 type Props = {
   questions: QuestionRow[];
@@ -23,20 +29,21 @@ type Props = {
 };
 
 export function QuestionList({ questions, total, page, limit }: Props) {
+  const { t } = useLocale();
   const [editingId, setEditingId] = useState<string | null>(null);
   const totalPages = Math.ceil(total / limit);
 
   if (questions.length === 0) {
     return (
       <div className="text-center text-slate-400 py-12">
-        Chưa có câu hỏi nào. Bấm &ldquo;Tạo câu hỏi&rdquo; để bắt đầu.
+        {t('qs.empty')}
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-400">{total} câu hỏi · Trang {page}/{totalPages}</p>
+      <p className="text-xs text-slate-400">{total} {t('qs.unit')} · {t('qs.page')} {page}/{totalPages}</p>
 
       {questions.map((q) => (
         <div key={q.id}>
@@ -76,6 +83,8 @@ export function QuestionList({ questions, total, page, limit }: Props) {
 }
 
 function QuestionCard({ question: q, onEdit }: { question: QuestionRow; onEdit: () => void }) {
+  const { t } = useLocale();
+  const labels = useQuestionLabels();
   const [delState, delAction, delPending] = useActionState<QuestionActionState, FormData>(deleteQuestionAction, {});
 
   return (
@@ -84,10 +93,10 @@ function QuestionCard({ question: q, onEdit }: { question: QuestionRow; onEdit: 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded">
-              {TYPE_LABELS[q.type] ?? q.type}
+              {labels.types[q.type] ?? q.type}
             </span>
             <span className={`text-xs ${DIFF_COLORS[q.difficulty]}`}>
-              {DIFF_LABELS[q.difficulty]}
+              {labels.diffs[q.difficulty]}
             </span>
             {q.skill_tags?.map((t) => (
               <span key={t} className="text-xs bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">
@@ -104,7 +113,7 @@ function QuestionCard({ question: q, onEdit }: { question: QuestionRow; onEdit: 
             onClick={onEdit}
             className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-sm text-slate-300"
           >
-            Sửa
+            {t('qs.edit')}
           </button>
           <form action={delAction}>
             <input type="hidden" name="questionId" value={q.id} />
@@ -113,7 +122,7 @@ function QuestionCard({ question: q, onEdit }: { question: QuestionRow; onEdit: 
               disabled={delPending}
               className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-slate-800 hover:bg-red-900 text-sm text-slate-300 disabled:opacity-50"
             >
-              Xóa
+              {t('qs.delete')}
             </button>
           </form>
         </div>

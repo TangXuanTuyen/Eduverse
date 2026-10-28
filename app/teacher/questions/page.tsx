@@ -3,12 +3,15 @@ import { getTeacherQuestions, type QuestionType } from '@/services/questions';
 import { redirect } from 'next/navigation';
 import { QuestionList } from './QuestionList';
 import { QuestionToolbar } from './QuestionToolbar';
+import { getLocale } from '@/lib/i18n/server';
+import { translate } from '@/lib/i18n/dict';
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export default async function TeacherQuestionsPage({ searchParams }: Props) {
+  const locale = await getLocale();
   const profile = await getCurrentProfile();
   if (!profile || profile.role !== 'teacher') redirect('/login');
 
@@ -29,8 +32,8 @@ export default async function TeacherQuestionsPage({ searchParams }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Ngân hàng câu hỏi</h1>
-        <p className="text-sm text-slate-400 mt-1">{total} câu hỏi</p>
+        <h1 className="text-2xl font-bold text-white">{translate(locale, 'qs.title')}</h1>
+        <p className="text-sm text-slate-400 mt-1">{total} {translate(locale, 'qs.unit')}</p>
       </div>
       <QuestionToolbar />
       <QuestionList questions={questions} total={total} page={page} limit={20} />
