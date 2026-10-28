@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useLocale } from '@/components/i18n/LocaleProvider';
+import type { DictKey } from '@/lib/i18n/dict';
 import {
   X, CheckCircle2, XCircle, TrendingUp, Users, BookOpen,
   AlertTriangle, ChevronRight, ArrowLeft, BarChart3, Trophy,
@@ -350,18 +352,19 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
-const TABS: { key: Tab; label: string; icon: typeof BarChart3 }[] = [
-  { key: 'overview', label: 'Tổng quan', icon: BarChart3 },
-  { key: 'rooms', label: 'Theo lớp', icon: Users },
-  { key: 'students', label: 'Theo học sinh', icon: GraduationCap },
-  { key: 'skills', label: 'Kỹ năng', icon: TrendingUp },
-  { key: 'questions', label: 'Câu hỏi', icon: BookOpen },
+const TABS: { key: Tab; labelKey: DictKey; icon: typeof BarChart3 }[] = [
+  { key: 'overview', labelKey: 'reports.tab.overview', icon: BarChart3 },
+  { key: 'rooms', labelKey: 'reports.tab.rooms', icon: Users },
+  { key: 'students', labelKey: 'reports.tab.students', icon: GraduationCap },
+  { key: 'skills', labelKey: 'reports.tab.skills', icon: TrendingUp },
+  { key: 'questions', labelKey: 'reports.tab.questions', icon: BookOpen },
 ];
 
 // ── Main Component ──
 
 export function TeacherReportsView() {
   const [tab, setTab] = useState<Tab>('overview');
+  const { t: tr } = useLocale();
   const [roomFilter, setRoomFilter] = useState('');
   const [data, setData] = useState<unknown>(null);
   const [inactive, setInactive] = useState<InactiveRow[]>([]);
@@ -663,7 +666,7 @@ export function TeacherReportsView() {
             }`}
           >
             <t.icon className="w-4 h-4 shrink-0" />
-            <span className="hidden sm:inline text-[13px]">{t.label}</span>
+            <span className="hidden sm:inline text-[13px]">{tr(t.labelKey)}</span>
           </button>
         ))}
       </div>
@@ -716,30 +719,30 @@ export function TeacherReportsView() {
         <div className="space-y-6">
           {/* ── Chọn lớp & bài ── */}
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5">
-            <h2 className="text-base font-bold text-white mb-4">Phân tích theo bài tập</h2>
+            <h2 className="text-base font-bold text-white mb-4">{tr('reports.assignment.title')}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Chọn lớp</label>
+                <label className="block text-xs text-slate-400 mb-1.5">{tr('reports.assignment.chooseRoom')}</label>
                 <select
                   value={ovRoomId ?? ''}
                   onChange={(e) => handleRoomChange(e.target.value)}
                   className="w-full min-h-[44px] bg-slate-800/80 border border-slate-700/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/40 appearance-none cursor-pointer"
                 >
-                  <option value="">— Chọn lớp —</option>
+                  <option value="">— {tr('reports.assignment.chooseRoom')} —</option>
                   {rooms.map((r) => (
                     <option key={r.room_id} value={r.room_id}>{r.room_name} ({r.member_count} HS)</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Chọn bài kiểm tra</label>
+                <label className="block text-xs text-slate-400 mb-1.5">{tr('reports.assignment.chooseAssessment')}</label>
                 <select
                   value={ovAssignmentId ?? ''}
                   onChange={(e) => handleAssignmentChange(e.target.value)}
                   disabled={!ovRoomId}
                   className="w-full min-h-[44px] bg-slate-800/80 border border-slate-700/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/40 appearance-none cursor-pointer disabled:opacity-40"
                 >
-                  <option value="">— Chọn bài —</option>
+                  <option value="">— {tr('reports.assignment.chooseAssessment')} —</option>
                   {ovAssignments.map((a) => (
                     <option key={a.id} value={a.id}>{a.title}{a.due_at ? ` · hạn ${new Date(a.due_at).toLocaleDateString('vi')}` : ''}</option>
                   ))}
@@ -752,7 +755,7 @@ export function TeacherReportsView() {
           {!ovAssignmentId && !ovLoading && (
             <div className="text-center py-16">
               <BarChart3 className="w-12 h-12 text-slate-700 mx-auto mb-3" />
-              <p className="text-slate-500 text-sm">{!ovRoomId ? 'Chọn lớp để bắt đầu phân tích' : 'Chọn bài kiểm tra để xem kết quả'}</p>
+              <p className="text-slate-500 text-sm">{!ovRoomId ? tr('reports.assignment.pickRoomHint') : tr('reports.assignment.pickAssessmentHint')}</p>
             </div>
           )}
 
@@ -770,7 +773,7 @@ export function TeacherReportsView() {
 
               {/* Score Histogram */}
               <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5">
-                <SectionHeader icon={BarChart3} title="Phân bố điểm số" subtitle={`${ovDetail.submittedCount} bài nộp`} iconColor="text-indigo-400" />
+                <SectionHeader icon={BarChart3} title={tr('reports.scoreDistribution')} subtitle={`${ovDetail.submittedCount} bài nộp`} iconColor="text-indigo-400" />
                 <ScoreHistogram buckets={ovDetail.scoreBuckets} />
               </div>
 
@@ -782,7 +785,7 @@ export function TeacherReportsView() {
 
               {/* Per-question breakdown */}
               <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5">
-                <SectionHeader icon={BookOpen} title="Chi tiết từng câu" subtitle={`${ovDetail.questions.length} câu hỏi`} iconColor="text-cyan-400" />
+                <SectionHeader icon={BookOpen} title={tr('reports.questionDetails')} subtitle={`${ovDetail.questions.length} câu hỏi`} iconColor="text-cyan-400" />
                 <QuestionBreakdown questions={ovDetail.questions} />
               </div>
 
@@ -793,7 +796,7 @@ export function TeacherReportsView() {
                     <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5">
                       <SectionHeader
                         icon={Eye}
-                        title="Phân tích tổng quan"
+                        title={tr('reports.overviewAnalysis')}
                         subtitle={ready ? (ready.source === 'ai' ? 'Phân tích bởi AI, cần giáo viên xác nhận' : 'Tự động theo số liệu (AI tạm không khả dụng)') : undefined}
                         iconColor="text-indigo-400"
                       />
@@ -806,7 +809,7 @@ export function TeacherReportsView() {
                           )}
                         </div>
                         <div className="bg-red-950/20 border border-red-900/30 rounded-xl p-4">
-                          <h4 className="text-xs font-bold text-red-300 mb-3 flex items-center gap-1.5"><AlertTriangle className="w-4 h-4" /> Vấn đề cần cải thiện</h4>
+                          <h4 className="text-xs font-bold text-red-300 mb-3 flex items-center gap-1.5"><AlertTriangle className="w-4 h-4" /> {tr('reports.issues')}</h4>
                           {ready && ready.issues.length > 0 ? (
                             <ul className="space-y-3 text-sm text-slate-300">
                               {ready.issues.map((it, i) => (
@@ -825,7 +828,7 @@ export function TeacherReportsView() {
                     </div>
 
                     <div className="bg-indigo-950/20 border border-indigo-500/20 rounded-2xl p-5">
-                      <SectionHeader icon={Zap} title="Đề xuất cho giáo viên" iconColor="text-indigo-300" />
+                      <SectionHeader icon={Zap} title={tr('reports.suggestions')} iconColor="text-indigo-300" />
                       {ready && ready.suggestions.length > 0 ? (
                         <ol className="space-y-2.5 text-sm text-slate-200">
                           {ready.suggestions.map((s, i) => (
@@ -858,7 +861,7 @@ export function TeacherReportsView() {
             return (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-lg font-bold text-white mb-4">Tổng quan học tập</h2>
+                  <h2 className="text-lg font-bold text-white mb-4">{tr('reports.classOverview')}</h2>
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <KpiCard icon={Users} value={totalStudents} label="Học sinh đang theo dõi" sublabel={`${filteredRooms.length} lớp`} color="blue" />
                     <KpiCard
