@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { buildAssignmentInsights } from '@/lib/reports/assignment-insights';
 import {
   X, CheckCircle2, XCircle, TrendingUp, Users, BookOpen,
   AlertTriangle, ChevronRight, ArrowLeft, BarChart3, Trophy,
@@ -760,11 +761,67 @@ export function TeacherReportsView() {
                 <ScoreHistogram buckets={ovDetail.scoreBuckets} />
               </div>
 
+              {/* Per-question counts */}
+              <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5">
+                <SectionHeader icon={BarChart3} title="Phân bố kết quả theo câu" subtitle="Số học sinh đúng và sai mỗi câu" iconColor="text-cyan-400" />
+                <QuestionColumnChart questions={ovDetail.questions} />
+              </div>
+
               {/* Per-question breakdown */}
               <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5">
-                <SectionHeader icon={BookOpen} title="Phân tích từng câu" subtitle={`${ovDetail.questions.length} câu hỏi`} iconColor="text-cyan-400" />
+                <SectionHeader icon={BookOpen} title="Chi tiết từng câu" subtitle={`${ovDetail.questions.length} câu hỏi`} iconColor="text-cyan-400" />
                 <QuestionBreakdown questions={ovDetail.questions} />
               </div>
+
+              {(() => {
+                const insights = buildAssignmentInsights({
+                  submittedCount: ovDetail.submittedCount,
+                  avgScore: ovDetail.avgScore,
+                  passRate: ovDetail.passRate,
+                  questions: ovDetail.questions,
+                });
+                return (
+                  <>
+                    <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5">
+                      <SectionHeader icon={Eye} title="Nhận định chính" subtitle={insights.summary} iconColor="text-indigo-400" />
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="bg-emerald-950/20 border border-emerald-900/30 rounded-xl p-4">
+                          <h4 className="text-xs font-bold text-emerald-300 mb-3 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> Thế mạnh của lớp</h4>
+                          <ul className="space-y-2 text-sm text-slate-300">
+                            {insights.strengths.map((s, i) => <li key={i} className="leading-relaxed">• {s}</li>)}
+                          </ul>
+                        </div>
+                        <div className="bg-red-950/20 border border-red-900/30 rounded-xl p-4">
+                          <h4 className="text-xs font-bold text-red-300 mb-3 flex items-center gap-1.5"><AlertTriangle className="w-4 h-4" /> Cần cải thiện</h4>
+                          {insights.improvements.length > 0 ? (
+                            <ul className="space-y-2 text-sm text-slate-300">
+                              {insights.improvements.map((s, i) => <li key={i} className="leading-relaxed">• {s}</li>)}
+                            </ul>
+                          ) : (
+                            <p className="text-sm text-slate-400">Chưa phát hiện điểm yếu nổi bật.</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-indigo-950/20 border border-indigo-500/20 rounded-2xl p-5">
+                      <SectionHeader icon={Zap} title="Đề xuất cho giáo viên" iconColor="text-indigo-300" />
+                      {insights.suggestions.length > 0 ? (
+                        <ol className="space-y-2.5 text-sm text-slate-200">
+                          {insights.suggestions.map((s, i) => (
+                            <li key={i} className="flex gap-3 leading-relaxed">
+                              <span className="shrink-0 w-6 h-6 rounded-lg bg-indigo-600/25 text-indigo-300 text-xs font-bold flex items-center justify-center">{i + 1}</span>
+                              <span>{s}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      ) : (
+                        <p className="text-sm text-slate-400">Chưa đủ bài nộp để đưa ra đề xuất.</p>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </>
           )}
 
@@ -1241,6 +1298,65 @@ function ScoreHistogram({ buckets }: { buckets: { label: string; count: number }
       })}
       <text x={W / 2} y={H} textAnchor="middle" className="fill-slate-600" fontSize={9}>Khoảng điểm (%)</text>
     </svg>
+  );
+}
+
+// ── Question Column Chart (SVG) ──
+
+function QuestionColumnChart({ questions }: { questions: AssignmentDetailData['questions'] }) {
+  if (!questions || questions.length === 0) return <EmptyState message="Không có câu hỏi" />;
+
+  const W = 600;
+  const H = 280;
+  const PL = 40;
+  const PR = 16;
+  const PT = 24;
+  const PB = 36;
+  const chartW = W - PL - PR;
+  const chartH = H - PT - PB;
+  const maxY = Math.max(1, ...questions.map((q) => Math.max(q.correctCount, q.incorrectCount)));
+  const groupW = chartW / questions.length;
+  const barW = Math.min(groupW * 0.35, 28);
+  const yTicks = Array.from(new Set([0, Math.round(maxY / 4), Math.round(maxY / 2), Math.round((3 * maxY) / 4), maxY])).sort((a, b) => a - b);
+  const yOf = (v: number) => PT + chartH - (v / maxY) * chartH;
+
+  return (
+    <div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Số học sinh đúng và sai theo từng câu">
+        {yTicks.map((v) => (
+          <g key={v}>
+            <line x1={PL} y1={yOf(v)} x2={W - PR} y2={yOf(v)} stroke="rgba(148,163,184,0.12)" strokeDasharray="4 4" />
+            <text x={PL - 6} y={yOf(v) + 4} textAnchor="end" className="fill-slate-500" fontSize={10}>{v}</text>
+          </g>
+        ))}
+        {questions.map((q, i) => {
+          const cx = PL + i * groupW + groupW / 2;
+          const xCorrect = cx - barW - 2;
+          const xIncorrect = cx + 2;
+          return (
+            <g key={q.sort_order}>
+              <rect x={xCorrect} y={yOf(q.correctCount)} width={barW} height={PT + chartH - yOf(q.correctCount)} rx={4} className="fill-emerald-500">
+                <title>Câu {q.sort_order}: {q.correctCount} HS đúng</title>
+              </rect>
+              <rect x={xIncorrect} y={yOf(q.incorrectCount)} width={barW} height={PT + chartH - yOf(q.incorrectCount)} rx={4} className="fill-red-500">
+                <title>Câu {q.sort_order}: {q.incorrectCount} HS sai</title>
+              </rect>
+              {q.correctCount > 0 && (
+                <text x={xCorrect + barW / 2} y={yOf(q.correctCount) - 5} textAnchor="middle" className="fill-emerald-300" fontSize={10} fontWeight={600}>{q.correctCount}</text>
+              )}
+              {q.incorrectCount > 0 && (
+                <text x={xIncorrect + barW / 2} y={yOf(q.incorrectCount) - 5} textAnchor="middle" className="fill-red-300" fontSize={10} fontWeight={600}>{q.incorrectCount}</text>
+              )}
+              <text x={cx} y={H - 12} textAnchor="middle" className="fill-slate-300" fontSize={11} fontWeight={600}>Câu {q.sort_order}</text>
+            </g>
+          );
+        })}
+      </svg>
+      <div className="flex gap-5 mt-2 text-[11px] text-slate-400 justify-center">
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-emerald-500 inline-block" /> Số HS đúng</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-500 inline-block" /> Số HS sai</span>
+      </div>
+    </div>
   );
 }
 
