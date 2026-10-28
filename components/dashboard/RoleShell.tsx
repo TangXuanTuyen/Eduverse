@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SignOutButton } from '@/components/auth/SignOutButton';
+import { SiteFooter } from '@/components/layout/SiteFooter';
 import { ROLE_LABEL, type AppRole } from '@/lib/auth/roles';
 import {
   Home,
@@ -174,6 +175,7 @@ export function RoleShell({
         <main className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-5xl mx-auto">{children}</div>
         </main>
+        <SiteFooter />
       </div>
     </div>
   );

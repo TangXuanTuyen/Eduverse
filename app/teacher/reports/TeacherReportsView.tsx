@@ -613,8 +613,6 @@ export function TeacherReportsView() {
             })}
           </div>
         )}
-
-        <AuthorFooter />
       </div>
     );
   }
@@ -1140,7 +1138,6 @@ export function TeacherReportsView() {
         <StudentDetailModal studentId={detailStudentId} onClose={() => setDetailStudentId(null)} />
       )}
 
-      <AuthorFooter />
     </div>
   );
 }
@@ -2119,20 +2116,3 @@ function StudentDetailModal({ studentId, onClose }: { studentId: string; onClose
   );
 }
 
-// ── Author Footer ──
-
-function AuthorFooter() {
-  return (
-    <footer className="mt-12 pt-6 border-t border-slate-800/40">
-      <div className="text-center text-xs text-slate-500 space-y-1">
-        <p className="font-medium text-slate-400">Vina-Eduverse</p>
-        <p>
-          Tác giả: Tăng Thị Xuân Tuyền | SĐT: 0964022270 | Email:{' '}
-          <a href="mailto:xuantuyen96@gmail.com" className="text-indigo-400 hover:text-indigo-300 transition-colors">
-            xuantuyen96@gmail.com
-          </a>
-        </p>
-      </div>
-    </footer>
-  );
-}
