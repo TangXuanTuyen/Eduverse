@@ -8,7 +8,7 @@ import {
   AlertTriangle, ChevronRight, ArrowLeft, BarChart3, Trophy,
   Clock, Target, Zap, Send, FileSpreadsheet, Filter,
   GraduationCap, Activity, Award, Mail, Phone, FlaskConical,
-  BookOpenCheck, Eye,
+  BookOpenCheck, Eye, Sparkles,
 } from 'lucide-react';
 
 // ── Types ──
@@ -1719,6 +1719,94 @@ function skillLabel(slug: string | undefined | null): string {
   return SKILL_LABELS[slug] ?? slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+type VinaComment =
+  | { status: 'ok'; summary: string; strengths: string[]; improvements: string[]; next_steps: string[]; evidence: string[] }
+  | { status: 'insufficient' | 'error'; message: string };
+
+function VinaCommentPanel({ studentId }: { studentId: string }) {
+  const [comment, setComment] = useState<VinaComment | null>(null);
+  const [summary, setSummary] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function generate() {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/teacher/reports/student-comment?student=${studentId}`);
+      const data: VinaComment = await res.json();
+      setComment(data);
+      if (data.status === 'ok') setSummary(data.summary);
+    } catch {
+      setComment({ status: 'error', message: 'Không kết nối được. Hãy thử lại.' });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="bg-indigo-950/20 border border-indigo-500/20 rounded-xl p-4 space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <h4 className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+          <Sparkles className="w-3.5 h-3.5" /> Vina AI nhận xét học tập
+        </h4>
+        <button
+          type="button"
+          onClick={generate}
+          disabled={loading}
+          className="px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg min-h-[36px]"
+        >
+          {loading ? 'Đang viết...' : comment?.status === 'ok' ? 'Viết lại' : 'Tạo nhận xét'}
+        </button>
+      </div>
+
+      {!comment && !loading && (
+        <p className="text-xs text-slate-500">Vina sẽ viết nhận xét dựa trên bài làm đã có. Bạn có thể chỉnh sửa trước khi dùng.</p>
+      )}
+
+      {comment && comment.status !== 'ok' && (
+        <p className="text-xs text-amber-200 bg-amber-950/30 border border-amber-900/30 rounded-lg p-3">{comment.message}</p>
+      )}
+
+      {comment?.status === 'ok' && (
+        <div className="space-y-3">
+          <label className="block">
+            <span className="text-[11px] text-slate-400">Nhận xét chung (có thể chỉnh sửa)</span>
+            <textarea
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
+              rows={5}
+              className="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white leading-relaxed resize-y"
+            />
+          </label>
+          {comment.strengths.length > 0 && (
+            <div>
+              <p className="text-[11px] font-semibold text-emerald-300 mb-1">Điểm mạnh</p>
+              <ul className="text-xs text-slate-300 space-y-1">{comment.strengths.map((s, i) => <li key={i}>• {s}</li>)}</ul>
+            </div>
+          )}
+          {comment.improvements.length > 0 && (
+            <div>
+              <p className="text-[11px] font-semibold text-amber-300 mb-1">Điều em cần cải thiện</p>
+              <ul className="text-xs text-slate-300 space-y-1">{comment.improvements.map((s, i) => <li key={i}>• {s}</li>)}</ul>
+            </div>
+          )}
+          {comment.next_steps.length > 0 && (
+            <div>
+              <p className="text-[11px] font-semibold text-cyan-300 mb-1">Thử thách tiếp theo</p>
+              <ul className="text-xs text-slate-300 space-y-1">{comment.next_steps.map((s, i) => <li key={i}>• {s}</li>)}</ul>
+            </div>
+          )}
+          {comment.evidence.length > 0 && (
+            <details className="text-[11px] text-slate-500">
+              <summary className="cursor-pointer">Căn cứ để giáo viên kiểm tra</summary>
+              <ul className="mt-1 space-y-0.5">{comment.evidence.map((s, i) => <li key={i}>• {s}</li>)}</ul>
+            </details>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Helpers: auto-generate comments ──
 
 function generateComments(report: DetailReport) {
@@ -2004,6 +2092,8 @@ function StudentDetailModal({ studentId, onClose }: { studentId: string; onClose
                 iconColor="bg-emerald-500/20"
               />
             </div>
+
+            <VinaCommentPanel studentId={studentId} />
 
             {/* Auto comments */}
             {(() => {
