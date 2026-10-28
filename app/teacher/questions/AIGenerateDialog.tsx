@@ -3,38 +3,42 @@
 import { useActionState, useState, useCallback } from 'react';
 import { generateQuestionsAction, saveAIQuestionsAction, type AIGenerateState } from './ai-actions';
 import type { CreateQuestionData } from '@/services/questions';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
-const SUBJECTS = [
-  { id: 'vat-ly', name: 'Vật lý' },
-  { id: 'hoa-hoc', name: 'Hóa học' },
-  { id: 'sinh-hoc', name: 'Sinh học' },
-  { id: 'khtn', name: 'KHTN tổng hợp' },
-];
-
-const QUESTION_TYPES = [
-  { id: 'single_choice', name: 'Trắc nghiệm (1 đáp án)' },
-  { id: 'multiple_choice', name: 'Trắc nghiệm (nhiều đáp án)' },
-  { id: 'short_answer', name: 'Trả lời ngắn' },
-  { id: 'essay', name: 'Tự luận' },
-];
-
-const DIFFICULTIES = [
-  { id: 1, name: 'Dễ' },
-  { id: 2, name: 'Trung bình' },
-  { id: 3, name: 'Khó' },
-];
-
-const DIFF_LABELS: Record<number, string> = { 1: 'Dễ', 2: 'TB', 3: 'Khó' };
-const TYPE_SHORT: Record<string, string> = {
-  single_choice: 'TN1',
-  multiple_choice: 'TNN',
-  short_answer: 'Ngắn',
-  essay: 'TL',
-};
+function useAILabels() {
+  const { t } = useLocale();
+  const subjects = [
+    { id: 'vat-ly', name: t('ai.sub.vatly') },
+    { id: 'hoa-hoc', name: t('ai.sub.hoahoc') },
+    { id: 'sinh-hoc', name: t('ai.sub.sinhhoc') },
+    { id: 'khtn', name: t('ai.sub.khtn') },
+  ];
+  const questionTypes = [
+    { id: 'single_choice', name: t('ai.type.single') },
+    { id: 'multiple_choice', name: t('ai.type.multi') },
+    { id: 'short_answer', name: t('ai.type.short') },
+    { id: 'essay', name: t('ai.type.essay') },
+  ];
+  const difficulties = [
+    { id: 1, name: t('qf.diffEasy') },
+    { id: 2, name: t('qf.diffMedium') },
+    { id: 3, name: t('qf.diffHard') },
+  ];
+  const diffShort: Record<number, string> = { 1: t('qf.diffEasy'), 2: t('qs.diffMediumShort'), 3: t('qf.diffHard') };
+  const typeShort: Record<string, string> = {
+    single_choice: t('cs.typeSingleShort'),
+    multiple_choice: t('cs.typeMultiShort'),
+    short_answer: t('cs.typeShort'),
+    essay: t('cs.typeEssayShort'),
+  };
+  return { t, subjects, questionTypes, difficulties, diffShort, typeShort };
+}
 
 type Props = { onClose: () => void };
 
 export function AIGenerateDialog({ onClose }: Props) {
+  const L = useAILabels();
+  const { t } = L;
   const [state, formAction, pending] = useActionState<AIGenerateState, FormData>(generateQuestionsAction, {});
   const [saving, setSaving] = useState(false);
   const [saveResult, setSaveResult] = useState<{ saved?: number; error?: string; setName?: string } | null>(null);
@@ -73,10 +77,10 @@ export function AIGenerateDialog({ onClose }: Props) {
   if (saveResult?.saved) {
     return (
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
-        <p className="text-green-400 text-sm">Đã lưu {saveResult.saved} câu hỏi vào bộ đề &quot;{saveResult.setName || 'Bộ đề AI'}&quot;!</p>
-        <p className="text-xs text-slate-400">Vào Bài giao → chọn bộ đề này để giao cho học sinh.</p>
+        <p className="text-green-400 text-sm">{t('ai.savedA')} {saveResult.saved} {t('ai.savedB')} &quot;{saveResult.setName || t('ai.defaultSet')}&quot;!</p>
+        <p className="text-xs text-slate-400">{t('cs.goAssign')}</p>
         <button onClick={onClose} className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-white min-h-[44px]">
-          Đóng
+          {t('cs.close')}
         </button>
       </div>
     );
@@ -85,9 +89,9 @@ export function AIGenerateDialog({ onClose }: Props) {
   return (
     <div className="bg-slate-900 border border-purple-500/30 rounded-xl p-4 space-y-4">
       <h3 className="font-bold text-white flex items-center gap-2">
-        <span className="text-purple-400">✦</span> Tạo câu hỏi bằng AI
+        <span className="text-purple-400">✦</span> {t('ai.title')}
       </h3>
-      <p className="text-xs text-slate-400">AI tạo câu hỏi mẫu — giáo viên xem lại, chỉnh sửa và chọn trước khi lưu.</p>
+      <p className="text-xs text-slate-400">{t('ai.desc')}</p>
 
       {questions.length === 0 && (
         <form action={formAction} className="space-y-3">
@@ -95,46 +99,46 @@ export function AIGenerateDialog({ onClose }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="text-xs text-slate-400">Môn học</span>
+              <span className="text-xs text-slate-400">{t('ai.subject')}</span>
               <select name="subject" required className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white">
-                {SUBJECTS.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                {L.subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </label>
             <label className="block">
-              <span className="text-xs text-slate-400">Lớp</span>
+              <span className="text-xs text-slate-400">{t('ai.grade')}</span>
               <select name="grade" className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white">
-                {[6, 7, 8, 9].map((g) => <option key={g} value={g}>Lớp {g}</option>)}
+                {[6, 7, 8, 9].map((g) => <option key={g} value={g}>{t('ai.gradeWord')} {g}</option>)}
               </select>
             </label>
           </div>
 
           <label className="block">
-            <span className="text-xs text-slate-400">Chủ đề / Bài học</span>
+            <span className="text-xs text-slate-400">{t('ai.topic')}</span>
             <input
               name="topic"
               type="text"
               required
-              placeholder="VD: Lực và chuyển động, Phản ứng hóa học..."
+              placeholder={t('ai.topicPlaceholder')}
               className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white"
             />
           </label>
 
           <fieldset>
-            <legend className="text-xs text-slate-400 mb-1">Loại câu hỏi (chọn nhiều)</legend>
+            <legend className="text-xs text-slate-400 mb-1">{t('ai.types')}</legend>
             <div className="flex flex-wrap gap-2">
-              {QUESTION_TYPES.map((t) => (
-                <label key={t.id} className="flex items-center gap-1.5 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white cursor-pointer hover:border-purple-500/50 has-[:checked]:border-purple-500 has-[:checked]:bg-purple-900/20">
-                  <input type="checkbox" name="types" value={t.id} defaultChecked={t.id === 'single_choice'} className="accent-purple-500" />
-                  {t.name}
+              {L.questionTypes.map((q) => (
+                <label key={q.id} className="flex items-center gap-1.5 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white cursor-pointer hover:border-purple-500/50 has-[:checked]:border-purple-500 has-[:checked]:bg-purple-900/20">
+                  <input type="checkbox" name="types" value={q.id} defaultChecked={q.id === 'single_choice'} className="accent-purple-500" />
+                  {q.name}
                 </label>
               ))}
             </div>
           </fieldset>
 
           <fieldset>
-            <legend className="text-xs text-slate-400 mb-1">Độ khó (chọn nhiều)</legend>
+            <legend className="text-xs text-slate-400 mb-1">{t('ai.difficulties')}</legend>
             <div className="flex flex-wrap gap-2">
-              {DIFFICULTIES.map((d) => (
+              {L.difficulties.map((d) => (
                 <label key={d.id} className="flex items-center gap-1.5 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white cursor-pointer hover:border-purple-500/50 has-[:checked]:border-purple-500 has-[:checked]:bg-purple-900/20">
                   <input type="checkbox" name="difficulties" value={d.id} defaultChecked={d.id === 2} className="accent-purple-500" />
                   {d.name}
@@ -144,7 +148,7 @@ export function AIGenerateDialog({ onClose }: Props) {
           </fieldset>
 
           <label className="block">
-            <span className="text-xs text-slate-400">Số câu</span>
+            <span className="text-xs text-slate-400">{t('ai.count')}</span>
             <input name="count" type="number" min={1} max={20} defaultValue={5} className="mt-1 w-24 rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white" />
           </label>
 
@@ -154,10 +158,10 @@ export function AIGenerateDialog({ onClose }: Props) {
               disabled={pending}
               className="rounded-lg bg-purple-600 hover:bg-purple-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 min-h-[44px]"
             >
-              {pending ? 'AI đang tạo...' : 'Tạo câu hỏi'}
+              {pending ? t('ai.generating') : t('ai.create')}
             </button>
             <button type="button" onClick={onClose} className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-white min-h-[44px]">
-              Hủy
+              {t('cs.cancel')}
             </button>
           </div>
         </form>
@@ -168,13 +172,13 @@ export function AIGenerateDialog({ onClose }: Props) {
           {saveResult?.error && <p className="text-red-400 text-sm">{saveResult.error}</p>}
 
           <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-400">AI đã tạo {questions.length} câu — chỉnh sửa, chọn rồi lưu:</p>
+            <p className="text-xs text-slate-400">{t('ai.generatedA')} {questions.length} {t('ai.generatedB')}</p>
             <button
               type="button"
               onClick={() => setSelected(selected.size === questions.length ? new Set() : new Set(questions.map((_, i) => i)))}
               className="text-xs text-purple-400 hover:underline"
             >
-              {selected.size === questions.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+              {selected.size === questions.length ? t('cs.unselectAll') : t('cs.selectAll')}
             </button>
           </div>
 
@@ -207,11 +211,11 @@ export function AIGenerateDialog({ onClose }: Props) {
           </div>
 
           <label className="block">
-            <span className="text-xs text-slate-400">Tên bộ đề</span>
+            <span className="text-xs text-slate-400">{t('cs.name')}</span>
             <input
               value={setName}
               onChange={(e) => setSetName(e.target.value)}
-              placeholder="VD: Vi khuẩn - Lớp 6 - Dễ"
+              placeholder={t('ai.setPlaceholder')}
               className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white"
             />
           </label>
@@ -223,17 +227,17 @@ export function AIGenerateDialog({ onClose }: Props) {
               disabled={saving || selected.size === 0}
               className="rounded-lg bg-green-600 hover:bg-green-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 min-h-[44px]"
             >
-              {saving ? 'Đang lưu...' : `Lưu ${selected.size} câu vào bộ đề`}
+              {saving ? t('qf.saving') : `${t('ai.saveA')} ${selected.size} ${t('ai.saveB')}`}
             </button>
             <button
               type="button"
               onClick={() => { setEditedQuestions([]); setSelected(new Set()); }}
               className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-white min-h-[44px]"
             >
-              Tạo lại
+              {t('ai.regenerate')}
             </button>
             <button type="button" onClick={onClose} className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-white min-h-[44px]">
-              Hủy
+              {t('cs.cancel')}
             </button>
           </div>
         </div>
@@ -255,13 +259,15 @@ function AIQuestionPreview({
   onToggle: () => void;
   onEdit: () => void;
 }) {
+  const L = useAILabels();
+  const { t } = L;
   return (
     <div className={`flex items-start gap-2 p-3 rounded-lg transition ${selected ? 'bg-purple-900/20 border border-purple-500/30' : 'bg-slate-800 border border-slate-700'}`}>
       <input type="checkbox" checked={selected} onChange={onToggle} className="mt-1 cursor-pointer" />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-[10px] bg-purple-800/50 text-purple-300 px-1.5 rounded">{TYPE_SHORT[q.type] ?? q.type}</span>
-          <span className="text-[10px] bg-slate-700 text-slate-400 px-1.5 rounded">{DIFF_LABELS[q.difficulty ?? 1] ?? q.difficulty}</span>
+          <span className="text-[10px] bg-purple-800/50 text-purple-300 px-1.5 rounded">{L.typeShort[q.type] ?? q.type}</span>
+          <span className="text-[10px] bg-slate-700 text-slate-400 px-1.5 rounded">{L.diffShort[q.difficulty ?? 1] ?? q.difficulty}</span>
         </div>
         <p className="text-sm text-white">{index + 1}. {q.content}</p>
         {q.options && (
@@ -274,12 +280,12 @@ function AIQuestionPreview({
           </div>
         )}
         {q.explanation && (
-          <p className="text-xs text-slate-500 mt-1 italic">Giải thích: {q.explanation}</p>
+          <p className="text-xs text-slate-500 mt-1 italic">{t('ai.explainPrefix')}: {q.explanation}</p>
         )}
         {q.skill_tags && q.skill_tags.length > 0 && (
           <div className="flex gap-1 mt-1">
-            {q.skill_tags.map((t) => (
-              <span key={t} className="text-[10px] bg-slate-700 text-slate-400 px-1 rounded">{t}</span>
+            {q.skill_tags.map((s) => (
+              <span key={s} className="text-[10px] bg-slate-700 text-slate-400 px-1 rounded">{s}</span>
             ))}
           </div>
         )}
@@ -289,7 +295,7 @@ function AIQuestionPreview({
         onClick={onEdit}
         className="shrink-0 text-xs text-blue-400 hover:text-blue-300 hover:underline mt-1 min-h-[44px] px-2"
       >
-        Sửa
+        {t('qs.edit')}
       </button>
     </div>
   );
@@ -304,6 +310,8 @@ function QuestionEditor({
   onSave: (q: CreateQuestionData) => void;
   onCancel: () => void;
 }) {
+  const L = useAILabels();
+  const { t } = L;
   const [content, setContent] = useState(question.content);
   const [type, setType] = useState<string>(question.type);
   const [difficulty, setDifficulty] = useState(question.difficulty);
@@ -329,10 +337,10 @@ function QuestionEditor({
 
   return (
     <div className="bg-slate-800 border border-blue-500/40 rounded-lg p-3 space-y-3">
-      <div className="flex items-center gap-2 text-xs text-blue-400 font-medium">Chỉnh sửa câu hỏi</div>
+      <div className="flex items-center gap-2 text-xs text-blue-400 font-medium">{t('ai.editing')}</div>
 
       <label className="block">
-        <span className="text-xs text-slate-400">Nội dung</span>
+        <span className="text-xs text-slate-400">{t('ai.content')}</span>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -343,22 +351,22 @@ function QuestionEditor({
 
       <div className="grid grid-cols-2 gap-3">
         <label className="block">
-          <span className="text-xs text-slate-400">Loại</span>
+          <span className="text-xs text-slate-400">{t('ai.typeLabel')}</span>
           <select value={type} onChange={(e) => setType(e.target.value)} className="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white">
-            {QUESTION_TYPES.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            {L.questionTypes.map((q) => <option key={q.id} value={q.id}>{q.name}</option>)}
           </select>
         </label>
         <label className="block">
-          <span className="text-xs text-slate-400">Độ khó</span>
+          <span className="text-xs text-slate-400">{t('ai.diffLabel')}</span>
           <select value={difficulty} onChange={(e) => setDifficulty(Number(e.target.value))} className="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white">
-            {DIFFICULTIES.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+            {L.difficulties.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
           </select>
         </label>
       </div>
 
       {isChoice && (
         <div className="space-y-2">
-          <span className="text-xs text-slate-400">Lựa chọn</span>
+          <span className="text-xs text-slate-400">{t('ai.choices')}</span>
           {options.map((opt, i) => (
             <div key={opt.id} className="flex gap-2 items-center">
               <span className="text-xs text-slate-500 font-mono w-5">{opt.id.toUpperCase()}.</span>
@@ -397,13 +405,13 @@ function QuestionEditor({
               )}
             </div>
           ))}
-          <p className="text-[10px] text-slate-500">{type === 'single_choice' ? 'Chọn đáp án đúng (radio)' : 'Chọn các đáp án đúng (checkbox)'}</p>
+          <p className="text-[10px] text-slate-500">{type === 'single_choice' ? t('ai.radioHint') : t('ai.checkHint')}</p>
         </div>
       )}
 
       {type === 'short_answer' && (
         <label className="block">
-          <span className="text-xs text-slate-400">Đáp án chấp nhận (phân cách bằng dấu phẩy)</span>
+          <span className="text-xs text-slate-400">{t('ai.acceptAnswers')}</span>
           <input
             value={Array.isArray(correctAnswer) ? correctAnswer.join(', ') : String(correctAnswer ?? '')}
             onChange={(e) => setCorrectAnswer(e.target.value.split(',').map((s) => s.trim()).filter(Boolean))}
@@ -413,7 +421,7 @@ function QuestionEditor({
       )}
 
       <label className="block">
-        <span className="text-xs text-slate-400">Giải thích</span>
+        <span className="text-xs text-slate-400">{t('ai.explainLabel')}</span>
         <textarea
           value={explanation}
           onChange={(e) => setExplanation(e.target.value)}
@@ -423,7 +431,7 @@ function QuestionEditor({
       </label>
 
       <label className="block">
-        <span className="text-xs text-slate-400">Kỹ năng (phân cách dấu phẩy)</span>
+        <span className="text-xs text-slate-400">{t('qf.skills')}</span>
         <input
           value={skillTags}
           onChange={(e) => setSkillTags(e.target.value)}
@@ -434,10 +442,10 @@ function QuestionEditor({
 
       <div className="flex gap-2">
         <button type="button" onClick={handleSubmit} className="rounded-lg bg-blue-600 hover:bg-blue-500 px-4 py-2 text-sm font-medium text-white min-h-[44px]">
-          Xong
+          {t('ai.done')}
         </button>
         <button type="button" onClick={onCancel} className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-white min-h-[44px]">
-          Hủy
+          {t('cs.cancel')}
         </button>
       </div>
     </div>
