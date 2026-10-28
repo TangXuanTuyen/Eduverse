@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { PRESET_EMOTES, CONTEXT_PHRASES, type PresetEmote } from '@/game/config/town-map';
 import { MessageCircle, Flag } from 'lucide-react';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 interface EmoteBarProps {
   onEmote: (emote: PresetEmote) => void;
@@ -14,6 +15,7 @@ interface EmoteBarProps {
 
 export function EmoteBar({ onEmote, onPhrase, onReport, context = 'default', disabled }: EmoteBarProps) {
   const [showPhrases, setShowPhrases] = useState(false);
+  const { t } = useLocale();
   const phrases = CONTEXT_PHRASES[context] ?? CONTEXT_PHRASES.default;
 
   if (disabled) return null;
@@ -26,7 +28,7 @@ export function EmoteBar({ onEmote, onPhrase, onReport, context = 'default', dis
           type="button"
           onClick={() => onEmote(e)}
           className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition text-lg cursor-pointer active:scale-90"
-          aria-label={`Gửi biểu cảm ${e}`}
+          aria-label={`${t('emote.send')} ${e}`}
         >
           {e}
         </button>
@@ -39,7 +41,7 @@ export function EmoteBar({ onEmote, onPhrase, onReport, context = 'default', dis
           type="button"
           onClick={() => setShowPhrases(!showPhrases)}
           className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition cursor-pointer"
-          aria-label="Mở câu nói sẵn"
+          aria-label={t('emote.phrases')}
         >
           <MessageCircle className="w-4 h-4 text-indigo-400" />
         </button>
@@ -64,8 +66,8 @@ export function EmoteBar({ onEmote, onPhrase, onReport, context = 'default', dis
         type="button"
         onClick={onReport}
         className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-rose-900/40 transition cursor-pointer"
-        aria-label="Báo cáo"
-        title="Báo cáo hành vi không phù hợp"
+        aria-label={t('emote.report')}
+        title={t('emote.reportTitle')}
       >
         <Flag className="w-4 h-4 text-rose-400" />
       </button>

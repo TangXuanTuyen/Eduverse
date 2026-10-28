@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Compass, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 interface PlayerControllerProps {
   onMoveInput: (dx: number, dy: number) => void;
@@ -24,6 +25,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
   const activeDirRef = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
   const [pressedBtn, setPressedBtn] = useState<string | null>(null);
   const [isDpadHidden, setIsDpadHidden] = useState(false);
+  const { t } = useLocale();
 
   const startMoving = (dir: 'up' | 'down' | 'left' | 'right') => {
     setPressedBtn(dir);
@@ -66,7 +68,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
             {/* UP */}
             <button
               type="button"
-              aria-label="Di chuyển lên"
+              aria-label={t('pc.up')}
               onPointerDown={(e) => {
                 e.preventDefault();
                 startMoving('up');
@@ -83,7 +85,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
             {/* DOWN */}
             <button
               type="button"
-              aria-label="Di chuyển xuống"
+              aria-label={t('pc.down')}
               onPointerDown={(e) => {
                 e.preventDefault();
                 startMoving('down');
@@ -100,7 +102,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
             {/* LEFT */}
             <button
               type="button"
-              aria-label="Di chuyển sang trái"
+              aria-label={t('pc.left')}
               onPointerDown={(e) => {
                 e.preventDefault();
                 startMoving('left');
@@ -117,7 +119,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
             {/* RIGHT */}
             <button
               type="button"
-              aria-label="Di chuyển sang phải"
+              aria-label={t('pc.right')}
               onPointerDown={(e) => {
                 e.preventDefault();
                 startMoving('right');
@@ -141,10 +143,10 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
         {/* Toggle D-pad visibility button */}
         <button
           type="button"
-          aria-label={isDpadHidden ? 'Hiện cụm phím điều hướng' : 'Ẩn cụm phím điều hướng'}
+          aria-label={isDpadHidden ? t('pc.showPad') : t('pc.hidePad')}
           onClick={() => setIsDpadHidden(!isDpadHidden)}
           className="min-w-11 min-h-11 flex items-center justify-center rounded-lg bg-slate-900/50 hover:bg-slate-900/80 border border-slate-700/50 text-slate-400 hover:text-white transition backdrop-blur-sm cursor-pointer"
-          title={isDpadHidden ? 'Hiện cụm phím ảo' : 'Ẩn cụm phím ảo'}
+          title={isDpadHidden ? t('pc.showPadTitle') : t('pc.hidePadTitle')}
         >
           {isDpadHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
         </button>
@@ -156,22 +158,22 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
         {hasNearbyBuilding && (
           <button
             type="button"
-            aria-label="Vào khu vực tương tác"
+            aria-label={t('pc.interact')}
             onClick={onInteract}
             className="w-14 h-14 bg-gradient-to-tr from-amber-500 to-yellow-400 text-slate-950 font-black rounded-2xl shadow-xl shadow-amber-500/30 flex flex-col items-center justify-center border-2 border-yellow-200 transition transform hover:scale-105 active:scale-95 cursor-pointer motion-safe:animate-pulse"
           >
             <Sparkles className="w-5 h-5" />
-            <span className="text-[9px] uppercase font-bold tracking-tight">VÀO</span>
+            <span className="text-[9px] uppercase font-bold tracking-tight">{t('pc.enter')}</span>
           </button>
         )}
 
         {/* FAST TRAVEL BUTTON */}
         <button
           type="button"
-          aria-label="Mở danh sách khu vực và di chuyển nhanh"
+          aria-label={t('pc.quickTravelAria')}
           onClick={onOpenQuickTravel}
           className="w-11 h-11 bg-slate-900/80 hover:bg-slate-900 border border-slate-700/80 text-slate-200 rounded-xl shadow-lg backdrop-blur flex items-center justify-center transition hover:text-white cursor-pointer"
-          title="Lối truy cập nhanh & Bản đồ"
+          title={t('pc.quickTravelTitle')}
         >
           <Compass className="w-5 h-5 text-indigo-400" />
         </button>
