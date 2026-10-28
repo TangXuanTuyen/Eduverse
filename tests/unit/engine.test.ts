@@ -87,9 +87,9 @@ test('PathfindingSystem handles clicking on a building by navigating to an adjac
 test('ProgressionSystem manages XP, level-up and unlock conditions', () => {
   const p = { ...INITIAL_PROGRESS };
 
-  // Initial check: STEM lab is locked for Level 1 with 0 quizzes
+  // STEM lab is open from the start, without any points or quizzes
   const stemStatus = ProgressionSystem.isBuildingUnlocked('stem_lab', p);
-  assert.equal(stemStatus.unlocked, false);
+  assert.equal(stemStatus.unlocked, true);
 
   // Add 160 XP -> triggers level up from 1 to 2
   const result = ProgressionSystem.addXP(p, 160, 50);
@@ -97,12 +97,6 @@ test('ProgressionSystem manages XP, level-up and unlock conditions', () => {
   assert.equal(result.updatedProgress.level, 2);
   assert.equal(result.updatedProgress.currentXP, 10); // 160 - 150 = 10
 
-  // At Level 2, STEM lab should now be unlocked!
-  const stemStatusLvl2 = ProgressionSystem.isBuildingUnlocked(
-    'stem_lab',
-    result.updatedProgress
-  );
-  assert.equal(stemStatusLvl2.unlocked, true);
 
   // Check outfit unlocks at Level 2
   const unlocked = ProgressionSystem.checkNewlyUnlockedItems(result.updatedProgress);

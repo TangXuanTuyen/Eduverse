@@ -99,16 +99,6 @@ export class ProgressionSystem {
       return { unlocked: true };
     }
 
-    if (buildingId === 'stem_lab') {
-      const unlocked = progress.quizzesCompleted >= 1 || progress.level >= 2;
-      return {
-        unlocked,
-        reason: unlocked
-          ? undefined
-          : 'Khóa: Cần hoàn thành 1 trận Quiz Arcade hoặc đạt Cấp 2 để mở STEM Lab!',
-      };
-    }
-
     if (buildingId === 'review_station') {
       const hasErrors = progress.mistakes.length > 0;
       const unlocked = hasErrors || progress.quizzesCompleted >= 1;
@@ -156,9 +146,6 @@ export class ProgressionSystem {
     }
 
     const updatedUnlockedBuildings = [...progress.unlockedBuildings];
-    if (level >= 2 && !updatedUnlockedBuildings.includes('stem_lab')) {
-      updatedUnlockedBuildings.push('stem_lab');
-    }
     if (!updatedUnlockedBuildings.includes('review_station')) {
       updatedUnlockedBuildings.push('review_station');
     }
