@@ -4,7 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SignOutButton } from '@/components/auth/SignOutButton';
 import { SiteFooter } from '@/components/layout/SiteFooter';
+import { LanguageSwitch } from '@/components/i18n/LanguageSwitch';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 import { ROLE_LABEL, type AppRole } from '@/lib/auth/roles';
+import type { DictKey } from '@/lib/i18n/dict';
 import {
   Home,
   HelpCircle,
@@ -21,28 +24,30 @@ import {
 } from 'lucide-react';
 
 const PARENT_NAV = [
-  { href: '/parent', label: 'Tổng quan', icon: Home },
-  { href: '/parent/reports', label: 'Báo cáo tuần', icon: BarChart3 },
-];
+  { href: '/parent', labelKey: 'nav.parent.overview', icon: Home },
+  { href: '/parent/reports', labelKey: 'nav.parent.weeklyReports', icon: BarChart3 },
+] as const;
 
 const ADMIN_NAV = [
-  { href: '/admin/experiments', label: 'Thí nghiệm', icon: FlaskConical },
-  { href: '/admin/models', label: 'Mô hình 3D', icon: Box },
-  { href: '/admin/lessons', label: 'Bài học', icon: BookOpen },
-];
+  { href: '/admin/experiments', labelKey: 'nav.admin.experiments', icon: FlaskConical },
+  { href: '/admin/models', labelKey: 'nav.admin.models', icon: Box },
+  { href: '/admin/lessons', labelKey: 'nav.admin.lessons', icon: BookOpen },
+] as const;
 
 const TEACHER_NAV = [
-  { href: '/teacher/rooms', label: 'Phòng học', icon: Users },
-  { href: '/teacher/questions', label: 'Ngân hàng câu hỏi', icon: HelpCircle },
-  { href: '/teacher/assignments', label: 'Bài giao', icon: ClipboardList },
-  { href: '/teacher/games', label: 'Xưởng trò chơi', icon: Gamepad2 },
-  { href: '/teacher/stem-maker', label: 'STEM Maker', icon: Wrench },
-  { href: '/teacher/labs', label: 'Thí nghiệm', icon: FlaskConical },
-  { href: '/teacher/models', label: 'Mô hình 3D', icon: Box },
-  { href: '/teacher/lessons', label: 'Bài học', icon: BookOpen },
-  { href: '/teacher/grading', label: 'Chấm bài', icon: CheckSquare },
-  { href: '/teacher/reports', label: 'Báo cáo', icon: BarChart3 },
-];
+  { href: '/teacher/rooms', labelKey: 'nav.teacher.rooms', icon: Users },
+  { href: '/teacher/questions', labelKey: 'nav.teacher.questions', icon: HelpCircle },
+  { href: '/teacher/assignments', labelKey: 'nav.teacher.assignments', icon: ClipboardList },
+  { href: '/teacher/games', labelKey: 'nav.teacher.games', icon: Gamepad2 },
+  { href: '/teacher/stem-maker', labelKey: 'nav.teacher.stemMaker', icon: Wrench },
+  { href: '/teacher/labs', labelKey: 'nav.teacher.labs', icon: FlaskConical },
+  { href: '/teacher/models', labelKey: 'nav.teacher.models', icon: Box },
+  { href: '/teacher/lessons', labelKey: 'nav.teacher.lessons', icon: BookOpen },
+  { href: '/teacher/grading', labelKey: 'nav.teacher.grading', icon: CheckSquare },
+  { href: '/teacher/reports', labelKey: 'nav.teacher.reports', icon: BarChart3 },
+] as const;
+
+type NavItem = { href: string; labelKey: DictKey; icon: React.ComponentType<{ className?: string }> };
 
 function NavLink({ href, label, icon: Icon, isActive }: { href: string; label: string; icon: React.ComponentType<{ className?: string }>; isActive: boolean }) {
   return (
@@ -66,8 +71,9 @@ function NavLink({ href, label, icon: Icon, isActive }: { href: string; label: s
   );
 }
 
-function NavBar({ items }: { items: typeof TEACHER_NAV }) {
+function NavBar({ items }: { items: readonly NavItem[] }) {
   const pathname = usePathname();
+  const { t } = useLocale();
 
   return (
     <nav className="flex flex-col gap-0.5 px-2">
@@ -75,7 +81,7 @@ function NavBar({ items }: { items: typeof TEACHER_NAV }) {
         <NavLink
           key={n.href}
           href={n.href}
-          label={n.label}
+          label={t(n.labelKey)}
           icon={n.icon}
           isActive={pathname === n.href || pathname.startsWith(n.href + '/')}
         />
@@ -84,7 +90,7 @@ function NavBar({ items }: { items: typeof TEACHER_NAV }) {
   );
 }
 
-function getNavItems(role: AppRole) {
+function getNavItems(role: AppRole): readonly NavItem[] {
   switch (role) {
     case 'teacher': return TEACHER_NAV;
     case 'admin': return ADMIN_NAV;
@@ -103,6 +109,7 @@ export function RoleShell({
   children: React.ReactNode;
 }) {
   const navItems = getNavItems(role);
+  const { t } = useLocale();
 
   return (
     <div className="min-h-dvh bg-slate-950 text-slate-100 flex">
@@ -133,10 +140,11 @@ export function RoleShell({
               {(displayName || '?').charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-sm font-medium text-white truncate">{displayName || 'Chưa đặt tên'}</div>
+              <div className="text-sm font-medium text-white truncate">{displayName || t('shell.user.noName')}</div>
               <div className="text-[11px] text-slate-500">{ROLE_LABEL[role]}</div>
             </div>
           </div>
+          <LanguageSwitch className="mt-1 w-full justify-center" />
           <SignOutButton className="w-full mt-1 min-h-10 px-3 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/5 flex items-center gap-2 transition-colors" />
         </div>
       </aside>
@@ -151,7 +159,10 @@ export function RoleShell({
               </div>
               <span className="font-bold text-sm text-white">EDUVERSE</span>
             </div>
-            <SignOutButton className="min-h-10 px-3 rounded-lg text-sm text-slate-400 hover:text-white flex items-center gap-1.5" />
+            <div className="flex items-center gap-2">
+              <LanguageSwitch />
+              <SignOutButton className="min-h-10 px-3 rounded-lg text-sm text-slate-400 hover:text-white flex items-center gap-1.5" />
+            </div>
           </div>
           {/* Mobile nav scroll */}
           <nav className="px-3 pb-2 flex gap-1 overflow-x-auto scrollbar-none">
@@ -164,7 +175,7 @@ export function RoleShell({
                   className="shrink-0 px-3 py-2 text-xs text-slate-400 hover:text-white hover:bg-white/5 rounded-lg min-h-[44px] flex items-center gap-1.5 transition-colors"
                 >
                   <Icon className="w-3.5 h-3.5" />
-                  {n.label}
+                  {t(n.labelKey)}
                 </Link>
               );
             })}

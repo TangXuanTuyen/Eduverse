@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Be_Vietnam_Pro, Press_Start_2P, Silkscreen } from 'next/font/google';
 import './globals.css';
+import { getLocale } from '@/lib/i18n/server';
+import { LocaleProvider } from '@/components/i18n/LocaleProvider';
 
 const sans = Be_Vietnam_Pro({
   subsets: ['vietnamese', 'latin'],
@@ -39,10 +41,13 @@ export const viewport: Viewport = {
   themeColor: '#020617',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
   return (
-    <html lang="vi" suppressHydrationWarning className={`${sans.variable} ${pixel.variable} ${retro.variable}`}>
-      <body suppressHydrationWarning>{children}</body>
+    <html lang={locale} suppressHydrationWarning className={`${sans.variable} ${pixel.variable} ${retro.variable}`}>
+      <body suppressHydrationWarning>
+        <LocaleProvider locale={locale}>{children}</LocaleProvider>
+      </body>
     </html>
   );
 }
