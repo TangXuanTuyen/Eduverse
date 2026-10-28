@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 import type { AssignmentRow } from '@/services/assignments';
 import type { QuestionStat } from '@/services/dashboard';
 import { ExportButton } from './ExportButton';
@@ -13,6 +14,7 @@ type Props = {
 
 export function DashboardView({ assignments, selectedAssignment, questionStats }: Props) {
   const router = useRouter();
+  const { t } = useLocale();
 
   return (
     <div className="space-y-6">
@@ -23,7 +25,7 @@ export function DashboardView({ assignments, selectedAssignment, questionStats }
           onChange={(e) => router.push(`/teacher/dashboard?assignment=${e.target.value}`)}
           className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white min-h-[44px] flex-1"
         >
-          {assignments.length === 0 && <option value="">Chưa có bài giao</option>}
+          {assignments.length === 0 && <option value="">{t('dash.noAssignments')}</option>}
           {assignments.map((a) => (
             <option key={a.id} value={a.id}>{a.title}</option>
           ))}
@@ -34,12 +36,12 @@ export function DashboardView({ assignments, selectedAssignment, questionStats }
       {/* Question analytics */}
       {questionStats.length > 0 ? (
         <div className="space-y-3">
-          <h2 className="text-sm font-bold text-white">Tỉ lệ đúng theo câu hỏi</h2>
+          <h2 className="text-sm font-bold text-white">{t('dash.questionRate')}</h2>
           {questionStats.map((q, i) => (
             <div key={q.question_id} className="bg-slate-900 border border-slate-800 rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-white">Câu {i + 1}: {q.content}</p>
-                <span className="text-xs text-slate-400">{q.total_attempts} lượt</span>
+                <p className="text-sm text-white">{t('dash.question')} {i + 1}: {q.content}</p>
+                <span className="text-xs text-slate-400">{q.total_attempts} {t('dash.attempts')}</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex-1 bg-slate-800 rounded-full h-3 overflow-hidden">
@@ -56,7 +58,7 @@ export function DashboardView({ assignments, selectedAssignment, questionStats }
           ))}
         </div>
       ) : (
-        <p className="text-slate-400 text-sm text-center py-8">Chưa có dữ liệu.</p>
+        <p className="text-slate-400 text-sm text-center py-8">{t('dash.noData')}</p>
       )}
     </div>
   );

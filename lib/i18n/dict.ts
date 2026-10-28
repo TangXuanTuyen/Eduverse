@@ -52,6 +52,14 @@ const vi = {
   'reports.issues': 'Vấn đề cần cải thiện',
   'reports.suggestions': 'Đề xuất cho giáo viên',
   'reports.classOverview': 'Tổng quan học tập',
+  'dash.noAssignments': 'Chưa có bài giao',
+  'dash.questionRate': 'Tỉ lệ đúng theo câu hỏi',
+  'dash.question': 'Câu',
+  'dash.attempts': 'lượt',
+  'dash.noData': 'Chưa có dữ liệu.',
+  'dash.export': 'Xuất Excel',
+  'dash.exporting': 'Đang xuất...',
+  'dash.exportError': 'Không thể xuất file',
 } as const;
 
 export type DictKey = keyof typeof vi;
@@ -102,6 +110,14 @@ const en: Dict = {
   'reports.issues': 'Issues to improve',
   'reports.suggestions': 'Suggestions for the teacher',
   'reports.classOverview': 'Class overview',
+  'dash.noAssignments': 'No assessments yet',
+  'dash.questionRate': 'Correct rate by question',
+  'dash.question': 'Q',
+  'dash.attempts': 'attempts',
+  'dash.noData': 'No data yet.',
+  'dash.export': 'Export Excel',
+  'dash.exporting': 'Exporting...',
+  'dash.exportError': 'Could not export the file',
 };
 
 export const DICTS: Record<Locale, Dict> = { vi, en };

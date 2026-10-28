@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 export function ExportButton({ assignmentId }: { assignmentId: string }) {
+  const { t } = useLocale();
   const [loading, setLoading] = useState(false);
 
   async function handleExport() {
@@ -18,7 +20,7 @@ export function ExportButton({ assignmentId }: { assignmentId: string }) {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      alert('Không thể xuất file');
+      alert(t('dash.exportError'));
     } finally {
       setLoading(false);
     }
@@ -31,7 +33,7 @@ export function ExportButton({ assignmentId }: { assignmentId: string }) {
       disabled={loading}
       className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-white disabled:opacity-50 min-h-[44px] shrink-0"
     >
-      {loading ? 'Đang xuất...' : 'Xuất Excel'}
+      {loading ? t('dash.exporting') : t('dash.export')}
     </button>
   );
 }
