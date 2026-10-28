@@ -2,11 +2,7 @@
 
 import Link from 'next/link';
 import type { AssignmentRow } from '@/services/assignments';
-
-const STATUS_LABEL: Record<string, string> = {
-  hard_lock: 'Khóa khi hết hạn',
-  marked_late: 'Cho nộp muộn',
-};
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 const TYPE_ICON: Record<string, string> = {
   quiz: '📝',
@@ -16,21 +12,26 @@ const TYPE_ICON: Record<string, string> = {
   stem: '🧪',
 };
 
-const TYPE_LABEL: Record<string, string> = {
-  quiz: 'Bài tập',
-  lesson: 'Lý thuyết',
-  experiment: 'Thí nghiệm',
-  model3d: 'Mô hình 3D',
-  stem: 'STEM Lab',
-};
-
 type Props = { assignments: AssignmentRow[] };
 
 export function AssignmentList({ assignments }: Props) {
+  const { t, locale } = useLocale();
+  const STATUS_LABEL: Record<string, string> = {
+    hard_lock: t('as.statusHard'),
+    marked_late: t('as.statusLate'),
+  };
+  const TYPE_LABEL: Record<string, string> = {
+    quiz: t('as.typeQuiz'),
+    lesson: t('as.typeLesson'),
+    experiment: t('as.typeExperiment'),
+    model3d: t('as.typeModel'),
+    stem: t('as.typeStem'),
+  };
+
   if (assignments.length === 0) {
     return (
       <div className="text-center text-slate-400 py-12">
-        Chưa có bài giao nào.
+        {t('as.empty')}
       </div>
     );
   }
@@ -52,15 +53,15 @@ export function AssignmentList({ assignments }: Props) {
               {a.description && <p className="text-xs text-slate-400 mt-1 line-clamp-1">{a.description}</p>}
               <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
                 {a.due_at && (
-                  <span>Hạn: {new Date(a.due_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                  <span>{t('as.due')}: {new Date(a.due_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                 )}
                 <span>{TYPE_LABEL[a.assignment_type ?? 'quiz']}</span>
                 <span>{STATUS_LABEL[a.late_policy]}</span>
-                {a.max_retries > 0 && <span>{a.max_retries} lượt thử</span>}
+                {a.max_retries > 0 && <span>{a.max_retries} {t('as.retries')}</span>}
               </div>
             </div>
             <span className={`text-xs px-2 py-0.5 rounded ${a.results_published ? 'bg-green-900 text-green-300' : 'bg-slate-800 text-slate-400'}`}>
-              {a.results_published ? 'Đã công bố' : 'Chưa công bố'}
+              {a.results_published ? t('as.published') : t('as.unpublished')}
             </span>
           </div>
         </Link>
