@@ -1272,6 +1272,104 @@ export async function getErrorAnalysis(
 }
 
 // ---------------------------------------------------------------------------
+// Assignment Detail Report
+// ---------------------------------------------------------------------------
+
+export type AssignmentDetailReport = {
+  assignment_id: string;
+  title: string;
+  assignment_type: string;
+  due_at: string | null;
+  totalStudents: number;
+  submittedCount: number;
+  avgScore: number;
+  passRate: number;
+  maxScore: number;
+  scoreBuckets: { label: string; count: number }[];
+  questions: Array<{
+    id: string;
+    sort_order: number;
+    content: string;
+    type: string;
+    points: number;
+    correctCount: number;
+    incorrectCount: number;
+    unansweredCount: number;
+    correctRate: number;
+  }>;
+};
+
+export async function getAssignmentDetailReport(
+  teacherId: string,
+  assignmentId: string
+): Promise<AssignmentDetailReport | null> {
+  const admin = createAdminClient();
+
+  const { data: assignment } = await admin
+    .from('assignments')
+    .select('id, title, assignment_type, due_at, room_id, rooms!inner(owner_id, id)')
+    .eq('id', assignmentId)
+    .single();
+
+  if (!assignment) return null;
+  const room = assignment.rooms as unknown as { owner_id: string; id: string };
+  if (room.owner_id !== teacherId) return null;
+
+  const { getSubmissionStats, getQuestionAnalytics } = await import('@/services/assignments');
+  const [submissions, questions] = await Promise.all([
+    getSubmissionStats(assignmentId),
+    getQuestionAnalytics(assignmentId),
+  ]);
+
+  const graded = submissions.filter(
+    (s) => s.status !== 'draft' && s.total_score != null && s.max_score != null && s.max_score > 0
+  );
+
+  const { count: memberCount } = await admin
+    .from('room_members')
+    .select('id', { count: 'exact', head: true })
+    .eq('room_id', room.id);
+
+  const totalStudents = memberCount ?? 0;
+  const submittedCount = graded.length;
+  const maxScore = graded[0]?.max_score ?? 100;
+
+  const avgScore =
+    submittedCount > 0
+      ? Math.round(graded.reduce((s, r) => s + ((r.total_score ?? 0) / (r.max_score ?? 1)) * 100, 0) / submittedCount)
+      : -1;
+
+  const passRate =
+    submittedCount > 0
+      ? Math.round((graded.filter((s) => ((s.total_score ?? 0) / (s.max_score ?? 1)) * 100 >= 50).length / submittedCount) * 100)
+      : -1;
+
+  const buckets = Array.from({ length: 10 }, (_, i) => ({
+    label: `${i * 10}-${i * 10 + 10}`,
+    count: 0,
+  }));
+  for (const s of graded) {
+    const pct = ((s.total_score ?? 0) / (s.max_score ?? 1)) * 100;
+    const idx = Math.min(Math.floor(pct / 10), 9);
+    buckets[idx].count++;
+  }
+
+  return {
+    assignment_id: assignmentId,
+    title: assignment.title,
+    assignment_type: assignment.assignment_type,
+    due_at: assignment.due_at,
+    totalStudents,
+    submittedCount,
+    avgScore,
+    passRate,
+    maxScore,
+    scoreBuckets: buckets,
+    questions,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Audit logging
 // ---------------------------------------------------------------------------
 

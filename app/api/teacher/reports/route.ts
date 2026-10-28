@@ -11,9 +11,11 @@ import {
   getWeeklyTrends,
   getStemAnalysis,
   getErrorAnalysis,
+  getAssignmentDetailReport,
   createAuditLog,
   sendReportToParent,
 } from '@/services/reports';
+import { getTeacherAssignments } from '@/services/assignments';
 
 export async function GET(req: NextRequest) {
   const profile = await getCurrentProfile();
@@ -24,6 +26,7 @@ export async function GET(req: NextRequest) {
   const tab = req.nextUrl.searchParams.get('tab') ?? 'rooms';
   const roomId = req.nextUrl.searchParams.get('room') ?? undefined;
   const studentId = req.nextUrl.searchParams.get('student') ?? undefined;
+  const assignmentId = req.nextUrl.searchParams.get('assignment') ?? undefined;
 
   if (studentId) {
     await createAuditLog(
@@ -64,6 +67,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(await getStemAnalysis(profile.id, roomId));
     case 'errors':
       return NextResponse.json(await getErrorAnalysis(profile.id, roomId));
+    case 'room-assignments':
+      if (!roomId) return NextResponse.json({ error: 'room required' }, { status: 400 });
+      return NextResponse.json(await getTeacherAssignments(profile.id, roomId));
+    case 'assignment-detail':
+      if (!assignmentId) return NextResponse.json({ error: 'assignment required' }, { status: 400 });
+      return NextResponse.json(await getAssignmentDetailReport(profile.id, assignmentId));
     default:
       return NextResponse.json({ error: 'Invalid tab' }, { status: 400 });
   }
