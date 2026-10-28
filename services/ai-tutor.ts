@@ -101,7 +101,7 @@ export async function handleTutorMessage(req: TutorRequest): Promise<TutorRespon
     content: m.content,
   }));
 
-  const thinkingBudget = req.mode === 'companion' ? 1024 : 2048;
+  const thinkingBudget = req.mode === 'companion' ? 0 : 512;
 
   const response = await provider.generateText(sanitizeForAI(req.message), {
     systemPrompt,
@@ -168,10 +168,10 @@ export async function handleTutorStream(req: TutorRequest): Promise<TutorStreamR
     throw new TutorError('AI chưa được bật cho phòng học này.', 'AI_DISABLED');
   }
 
-  const { data: allowed } = await sb.rpc('increment_ai_usage', {
-    p_student_id: req.studentId,
-    p_daily_limit: dailyLimit,
-  });
+  const [{ data: allowed }, conversationId] = await Promise.all([
+    sb.rpc('increment_ai_usage', { p_student_id: req.studentId, p_daily_limit: dailyLimit }),
+    req.conversationId ? Promise.resolve(req.conversationId) : createConversation(sb, req),
+  ]);
   if (!allowed) {
     throw new TutorError(
       `Hôm nay em đã dùng hết ${dailyLimit} lượt hỏi AI. Quay lại ngày mai nhé!`,
@@ -179,9 +179,10 @@ export async function handleTutorStream(req: TutorRequest): Promise<TutorStreamR
     );
   }
 
-  const conversationId = req.conversationId ?? (await createConversation(sb, req));
-  const history: { role: string; content: string }[] = await getHistory(sb, conversationId);
-  const context = req.contextId ? await loadContext(sb, req.contextType, req.contextId) : undefined;
+  const [history, context] = await Promise.all([
+    getHistory(sb, conversationId),
+    req.contextId ? loadContext(sb, req.contextType, req.contextId) : Promise.resolve(undefined),
+  ]);
   const systemPrompt = getSystemPrompt(req.mode, context);
 
   const provider = getAIProvider();
@@ -190,7 +191,7 @@ export async function handleTutorStream(req: TutorRequest): Promise<TutorStreamR
     content: m.content,
   }));
 
-  const thinkingBudget = req.mode === 'companion' ? 1024 : 2048;
+  const thinkingBudget = req.mode === 'companion' ? 0 : 512;
 
   const innerStream = provider.generateStream(sanitizeForAI(req.message), {
     systemPrompt,
@@ -266,9 +267,9 @@ async function getHistory(
     .from('ai_messages')
     .select('role, content')
     .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: true })
-    .limit(20);
-  return data ?? [];
+    .order('created_at', { ascending: false })
+    .limit(12);
+  return (data ?? []).reverse();
 }
 
 async function getDailyLimit(
