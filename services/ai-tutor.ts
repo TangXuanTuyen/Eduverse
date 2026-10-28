@@ -3,6 +3,7 @@ import 'server-only';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getAIProvider } from '@/lib/ai/provider';
 import { getSystemPrompt } from '@/lib/ai/system-prompts';
+import { buildPedagogyDirective, classifyIntent, supportLevelFromHistory } from '@/lib/ai/pedagogy';
 import {
   filterInput,
   detectCrisis,
@@ -92,7 +93,7 @@ export async function handleTutorMessage(req: TutorRequest): Promise<TutorRespon
 
   // 6. Build context
   const context = req.contextId ? await loadContext(sb, req.contextType, req.contextId) : undefined;
-  const systemPrompt = getSystemPrompt(req.mode, context);
+  const systemPrompt = buildTutorSystemPrompt(req, history, context);
 
   // 7. Call AI
   const provider = getAIProvider();
@@ -133,6 +134,20 @@ export type TutorStreamResult = {
   conversationId: string;
   remainingQuota: number;
 };
+
+function buildTutorSystemPrompt(
+  req: TutorRequest,
+  history: { role: string; content: string }[],
+  context: string | undefined,
+): string {
+  const base = getSystemPrompt(req.mode, context);
+  if (req.mode === 'companion') return base;
+  const lastAssistant = [...history].reverse().find((m) => m.role === 'assistant');
+  const askedQuestion = lastAssistant ? lastAssistant.content.trim().endsWith('?') : false;
+  const intent = classifyIntent(req.message, askedQuestion);
+  const level = supportLevelFromHistory(history);
+  return base + buildPedagogyDirective(intent, level);
+}
 
 export async function handleTutorStream(req: TutorRequest): Promise<TutorStreamResult> {
   const sb = createAdminClient();
@@ -183,7 +198,7 @@ export async function handleTutorStream(req: TutorRequest): Promise<TutorStreamR
     getHistory(sb, conversationId),
     req.contextId ? loadContext(sb, req.contextType, req.contextId) : Promise.resolve(undefined),
   ]);
-  const systemPrompt = getSystemPrompt(req.mode, context);
+  const systemPrompt = buildTutorSystemPrompt(req, history, context);
 
   const provider = getAIProvider();
   const aiHistory: AIMessage[] = history.map((m) => ({
