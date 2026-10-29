@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { SignOutButton } from '@/components/auth/SignOutButton';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { LanguageSwitch } from '@/components/i18n/LanguageSwitch';
+import { EditNameButton } from '@/components/profile/EditNameButton';
 import { useLocale } from '@/components/i18n/LocaleProvider';
 import { ROLE_LABEL, type AppRole } from '@/lib/auth/roles';
 import type { DictKey } from '@/lib/i18n/dict';
@@ -143,6 +144,7 @@ export function RoleShell({
               <div className="text-sm font-medium text-white truncate">{displayName || t('shell.user.noName')}</div>
               <div className="text-[11px] text-slate-500">{ROLE_LABEL[role]}</div>
             </div>
+            <EditNameButton currentName={displayName} />
           </div>
           <LanguageSwitch className="mt-1 w-full justify-center" />
           <SignOutButton className="w-full mt-1 min-h-10 px-3 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/5 flex items-center gap-2 transition-colors" />

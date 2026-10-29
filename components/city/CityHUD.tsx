@@ -38,6 +38,7 @@ import {
 import { NotificationBell } from './NotificationBell';
 import { LanguageSwitch } from '@/components/i18n/LanguageSwitch';
 import { useLocale } from '@/components/i18n/LocaleProvider';
+import { EditNameButton } from '@/components/profile/EditNameButton';
 
 interface CityHUDProps {
   character: CharacterConfig;
@@ -109,6 +110,7 @@ export const CityHUD: React.FC<CityHUDProps> = ({
               <span className="font-bold text-xs sm:text-sm text-white truncate">
                 {character.name || t('hud.defaultName')}
               </span>
+              <EditNameButton currentName={character.name} />
               <span className="hidden sm:inline text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1 py-0.2 rounded font-semibold shrink-0">
                 {character.className}
               </span>
