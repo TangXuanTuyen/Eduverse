@@ -33,3 +33,4 @@ export const CONTEXT_PHRASES: Record<string, string[]> = {
 
 export const MAX_VISIBLE_AVATARS = 15;
 export const PRESENCE_BROADCAST_INTERVAL_MS = 200;
+export const PRESENCE_HEARTBEAT_MS = 2000;

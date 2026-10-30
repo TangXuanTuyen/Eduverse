@@ -21,6 +21,7 @@ export interface PeerState {
 interface InterpolatedPeer extends PeerState {
   targetX: number;
   targetY: number;
+  seenAt: number;
 }
 
 export function usePresence(roomId: string | null, userId: string | null, hideOnline: boolean) {
@@ -51,6 +52,7 @@ export function usePresence(roomId: string | null, userId: string | null, hideOn
           targetY: p.y,
           x: existing?.x ?? p.x,
           y: existing?.y ?? p.y,
+          seenAt: Date.now(),
         });
       })
       .on('broadcast', { event: 'leave' }, ({ payload }) => {
@@ -65,7 +67,7 @@ export function usePresence(roomId: string | null, userId: string | null, hideOn
       const now = Date.now();
       const staleThreshold = 10_000;
       for (const [id, peer] of peersMap.current) {
-        if (now - peer.timestamp > staleThreshold) {
+        if (now - peer.seenAt > staleThreshold) {
           peersMap.current.delete(id);
           continue;
         }

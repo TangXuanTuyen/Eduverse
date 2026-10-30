@@ -15,7 +15,7 @@ import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
 import { useListMode } from '@/lib/hooks/useListMode';
 import { useBuildingNotifications } from '@/lib/hooks/useBuildingNotifications';
 import { STUDENT_HOME, GUEST_HOME } from '@/lib/student-routes';
-import { PRESENCE_BROADCAST_INTERVAL_MS } from '@/game/config/town-map';
+import { PRESENCE_BROADCAST_INTERVAL_MS, PRESENCE_HEARTBEAT_MS } from '@/game/config/town-map';
 import Link from 'next/link';
 import { BreakReminder } from '@/components/ui/BreakReminder';
 import { LanguageSwitch } from '@/components/i18n/LanguageSwitch';
@@ -71,27 +71,49 @@ export function CityShell({ children }: { children: React.ReactNode }) {
   broadcastRef.current = broadcast;
   const lastBroadcastRef = useRef(0);
 
+  const gameRef = useRef(game);
+  gameRef.current = game;
+  const latestPosRef = useRef<{ pos: { x: number; y: number }; facing: string } | null>(null);
+
+  const broadcastPresence = useCallback((pos: { x: number; y: number }, facing: string) => {
+    const c = gameRef.current.character;
+    broadcastRef.current({
+      userId: c.id,
+      displayName: c.name,
+      x: pos.x,
+      y: pos.y,
+      facing,
+      outfit: c.outfit,
+      skinTone: c.skinTone,
+      hairStyle: c.hairStyle,
+      hairColor: c.hairColor,
+    });
+  }, []);
+
   const handlePositionChange = useCallback(
     (pos: { x: number; y: number }, facing: string) => {
       game.updatePosition(pos, facing as 'up' | 'down' | 'left' | 'right');
+      latestPosRef.current = { pos, facing };
       const now = Date.now();
       if (now - lastBroadcastRef.current < PRESENCE_BROADCAST_INTERVAL_MS) return;
       lastBroadcastRef.current = now;
-      const c = game.character;
-      broadcastRef.current({
-        userId: c.id,
-        displayName: c.name,
-        x: pos.x,
-        y: pos.y,
-        facing,
-        outfit: c.outfit,
-        skinTone: c.skinTone,
-        hairStyle: c.hairStyle,
-        hairColor: c.hairColor,
-      });
+      broadcastPresence(pos, facing);
     },
-    [game],
+    [game, broadcastPresence],
   );
+
+  // Phát vị trí định kỳ kể cả khi đứng yên, để bạn cùng lớp không thấy nhân vật biến mất
+  useEffect(() => {
+    if (game.isGuest) return;
+    const id = setInterval(() => {
+      const g = gameRef.current;
+      const latest = latestPosRef.current ?? (g.progress.lastPosition
+        ? { pos: g.progress.lastPosition, facing: g.progress.lastFacing ?? 'down' }
+        : null);
+      if (latest) broadcastPresence(latest.pos, latest.facing);
+    }, PRESENCE_HEARTBEAT_MS);
+    return () => clearInterval(id);
+  }, [game.isGuest, broadcastPresence]);
 
   // Broadcast leave khi unmount
   useEffect(() => () => broadcastLeave(), [broadcastLeave]);
