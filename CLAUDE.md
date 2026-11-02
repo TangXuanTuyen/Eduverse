@@ -26,6 +26,15 @@ Kiểm thử RLS (`tests/db/`) chạy migration thật trên Postgres nhúng PGl
 - `components/{city,character,learning}/` — component từ UI gốc, giữ nguyên style. `components/ui/` — `DialogFrame` (mọi hộp thoại phải dùng), `AnswerMark`.
 - `game/engine/` — va chạm, tìm đường, dữ liệu bản đồ, tiến độ. Engine bản đồ là Canvas 2D tự viết (đã quyết định không chuyển sang Phaser).
 
+## Bản đồ code nhanh (đọc mục này trước khi tìm file)
+
+- Báo cáo GV: `app/teacher/reports/TeacherReportsView.tsx` (rất lớn — chỉ đọc đúng khoảng dòng cần sửa); API `app/api/teacher/reports/` (`route.ts`, `insights/`, `student-comment/`); service `services/reports.ts`, `services/assignments.ts`, `services/assignment-insights.ts`, `services/student-comments.ts`; logic thuần + test `lib/reports/`, `tests/unit/`.
+- Vina (chatbot): `services/ai-tutor.ts`; sư phạm `lib/ai/pedagogy.ts`; prompt `lib/ai/system-prompts.ts`; sprite `components/companion/VinaSpriteCSS.tsx`.
+- Đa ngôn ngữ: từ điển `lib/i18n/dict.ts` (vi là gốc, en kiểu `Dict`); `lib/i18n/server.ts`; `components/i18n/LocaleProvider.tsx` (`useLocale`), `LanguageSwitch.tsx`. Thêm chữ mới: thêm khóa vào cả `vi` và `en`.
+- Thành phố HS: `components/student/CityShell.tsx`; HUD `components/city/CityHUD.tsx`; presence `lib/hooks/usePresence.ts`; hằng số `game/config/town-map.ts`.
+- Tên hiển thị: `app/profile/actions.ts`, `components/profile/EditNameButton.tsx`.
+- Trạng thái chi tiết và việc còn dở: memory `project-status-eduverse.md` (không lặp lại ở đây).
+
 ## Đăng nhập & phân quyền (Bước 1)
 
 - Học sinh: mã HS → email nội bộ `<mã>@hs.eduverse.local` (`lib/auth/identifier.ts`). Tài khoản chỉ tạo bằng service role (`services/accounts-core.ts`); Supabase phải TẮT tự đăng ký.
