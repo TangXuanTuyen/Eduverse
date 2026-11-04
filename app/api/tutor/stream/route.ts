@@ -4,6 +4,9 @@ import { getCurrentProfile } from '@/lib/auth/session';
 import { handleTutorStream, TutorError } from '@/services/ai-tutor';
 import { AIOverloadError } from '@/lib/ai/provider';
 
+// Stream có thể kéo dài hơn giới hạn mặc định của hàm serverless → bị cắt giữa chừng
+export const maxDuration = 60;
+
 const bodySchema = z.object({
   message: z.string().min(1).max(500),
   mode: z.enum(['lesson', 'assignment', 'review', 'companion']),
@@ -53,9 +56,10 @@ export async function POST(req: NextRequest) {
           }
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`));
         } catch (err) {
+          if (!(err instanceof AIOverloadError)) console.error('[tutor/stream] AI error:', err);
           const msg = err instanceof AIOverloadError
             ? err.message
-            : 'Lỗi hệ thống. Thử lại sau.';
+            : 'Vina đang chậm, em thử hỏi lại sau một chút nhé.';
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'error', error: msg })}\n\n`));
         }
         controller.close();

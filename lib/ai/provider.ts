@@ -25,13 +25,28 @@ export interface AIProvider {
 
 const MAX_RETRIES = 2;
 const BASE_DELAY_MS = 1000;
-const FALLBACK_MODEL = 'gemini-3.5-flash';
+// Có thể đổi trên Vercel bằng GEMINI_FALLBACK_MODEL khi cần, không cần sửa code
+const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL ?? 'gemini-3.6-flash';
 
 export class AIOverloadError extends Error {
   constructor() {
-    super('AI đang bận, vui lòng thử lại sau ít phút.');
+    super('Vina đang quá tải hoặc đã hết lượt trả lời hôm nay. Em thử lại sau nhé.');
     this.name = 'AIOverloadError';
   }
+}
+
+const STREAM_TIMEOUT_MS = 30000;
+
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('AI timeout')), ms);
+  });
+  return Promise.race([p, timeout]).finally(() => clearTimeout(timer));
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 class GeminiProvider implements AIProvider {
@@ -129,47 +144,68 @@ class GeminiProvider implements AIProvider {
     const thinkingBudget = opts.thinkingBudget ?? 2048;
 
     const modelsToTry = [this.model, FALLBACK_MODEL];
-    let lastErr: unknown;
+    const timeoutMs = opts.timeoutMs ?? STREAM_TIMEOUT_MS;
 
     for (const model of modelsToTry) {
-      try {
-        const stream = await this.ai.models.generateContentStream({
-          model,
-          contents,
-          config: {
-            systemInstruction: opts.systemPrompt,
-            maxOutputTokens: requestedTokens + thinkingBudget,
-            temperature: opts.temperature ?? 0.7,
-            thinkingConfig: { thinkingBudget },
-          },
-        });
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        let yielded = false;
+        try {
+          // Mỗi bước chờ đều có hạn: model treo không được làm học sinh chờ mãi
+          const stream = await withTimeout(
+            this.ai.models.generateContentStream({
+              model,
+              contents,
+              config: {
+                systemInstruction: opts.systemPrompt,
+                maxOutputTokens: requestedTokens + thinkingBudget,
+                temperature: opts.temperature ?? 0.7,
+                thinkingConfig: { thinkingBudget },
+              },
+            }),
+            timeoutMs,
+          );
 
-        let fullText = '';
-        let tokensUsed = 0;
+          let fullText = '';
+          let tokensUsed = 0;
+          const iterator = stream[Symbol.asyncIterator]();
+          let step = await withTimeout(iterator.next(), timeoutMs);
 
-        for await (const chunk of stream) {
-          const text = chunk.text ?? '';
-          if (text) {
-            fullText += text;
-            yield text;
+          while (!step.done) {
+            const chunk = step.value;
+            const text = chunk.text ?? '';
+            if (text) {
+              fullText += text;
+              yielded = true;
+              yield text;
+            }
+            if (chunk.usageMetadata?.totalTokenCount) {
+              tokensUsed = chunk.usageMetadata.totalTokenCount;
+            }
+            step = await withTimeout(iterator.next(), timeoutMs);
           }
-          if (chunk.usageMetadata?.totalTokenCount) {
-            tokensUsed = chunk.usageMetadata.totalTokenCount;
+
+          if (!fullText) throw new Error('AI trả về rỗng');
+
+          return { text: fullText, tokensUsed };
+        } catch (err: unknown) {
+          // Đã gửi một phần câu trả lời thì không thử lại, tránh lặp chữ trên màn hình
+          if (yielded) throw err;
+
+          const status = (err as { status?: number }).status;
+          const busy = status === 429 || status === 503;
+          const timedOut = err instanceof Error && err.message === 'AI timeout';
+
+          if (busy && attempt < MAX_RETRIES) {
+            await sleep(BASE_DELAY_MS * 2 ** attempt);
+            continue;
           }
+          if (busy || timedOut) break; // chuyển sang model dự phòng
+          throw err;
         }
-
-        if (!fullText) throw new Error('AI trả về rỗng');
-
-        return { text: fullText, tokensUsed };
-      } catch (err: unknown) {
-        lastErr = err;
-        const status = (err as { status?: number }).status;
-        if (status === 503 || status === 429) continue;
-        throw err;
       }
     }
 
-    throw lastErr instanceof Error ? lastErr : new AIOverloadError();
+    throw new AIOverloadError();
   }
 }
 

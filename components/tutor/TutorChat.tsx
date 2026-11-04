@@ -5,6 +5,8 @@ import type { TutorMode } from '@/services/ai-tutor';
 
 type Message = { id?: string; role: 'user' | 'assistant'; content: string; createdAt?: string };
 
+const CLIENT_TIMEOUT_MS = 75000;
+
 export function TutorChat({
   mode,
   contextType,
@@ -47,6 +49,10 @@ export function TutorChat({
     setMessages((prev) => [...prev, { role: 'user', content: text }]);
     setLoading(true);
 
+    // Hết giờ thì huỷ kết nối, tránh trạng thái đang chờ treo vô hạn
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), CLIENT_TIMEOUT_MS);
+
     try {
       const res = await fetch('/api/tutor/stream', {
         method: 'POST',
@@ -60,6 +66,7 @@ export function TutorChat({
           roomId,
           source: 'page',
         }),
+        signal: controller.signal,
       });
 
       if (!res.ok) {
@@ -74,6 +81,8 @@ export function TutorChat({
       const decoder = new TextDecoder();
       let assistantIdx: number | null = null;
       let buffer = '';
+      let gotReply = false;
+      let gotError = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -91,6 +100,7 @@ export function TutorChat({
               if (evt.conversationId) setConversationId(evt.conversationId);
               if (evt.remainingQuota != null) setRemaining(evt.remainingQuota);
             } else if (evt.type === 'text') {
+              gotReply = true;
               setMessages((prev) => {
                 if (assistantIdx === null) {
                   assistantIdx = prev.length;
@@ -104,14 +114,22 @@ export function TutorChat({
                 return updated;
               });
             } else if (evt.type === 'error') {
+              gotError = true;
               setError(evt.error);
             }
           } catch { /* skip malformed SSE */ }
         }
       }
+
+      if (!gotReply && !gotError) {
+        setError('Vina chưa trả lời được, em thử hỏi lại nhé.');
+      }
     } catch {
-      setError('Không thể kết nối.');
+      setError(controller.signal.aborted
+        ? 'Vina trả lời quá lâu, em thử lại nhé.'
+        : 'Không thể kết nối.');
     } finally {
+      clearTimeout(timer);
       setLoading(false);
     }
   }, [input, loading, conversationId, mode, contextType, contextId, roomId]);

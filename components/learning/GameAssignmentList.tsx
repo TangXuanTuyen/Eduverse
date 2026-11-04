@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { BookOpen, Play, Clock } from 'lucide-react';
 import { SoloGameClient } from './SoloGameClient';
+import { Portal } from '@/components/ui/Portal';
 
 type Assignment = {
   id: string;
@@ -63,15 +64,17 @@ export function GameAssignmentList() {
 
   if (soloState) {
     return (
-      <div className="fixed inset-0 z-50 bg-slate-950 overflow-auto">
-        <SoloGameClient
-          sessionId={soloState.sessionId}
-          initialQuestion={soloState.question as never}
-          totalQuestions={soloState.totalQuestions}
-          timePerQuestion={soloState.timePerQuestion}
-          onClose={() => setSoloState(null)}
-        />
-      </div>
+      <Portal>
+        <div className="fixed inset-0 z-50 bg-slate-950 overflow-auto">
+          <SoloGameClient
+            sessionId={soloState.sessionId}
+            initialQuestion={soloState.question as never}
+            totalQuestions={soloState.totalQuestions}
+            timePerQuestion={soloState.timePerQuestion}
+            onClose={() => setSoloState(null)}
+          />
+        </div>
+      </Portal>
     );
   }
 

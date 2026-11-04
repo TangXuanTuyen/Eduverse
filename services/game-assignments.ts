@@ -130,11 +130,13 @@ export async function startSoloSession(gameId: string, userId: string, displayNa
   if (sErr) throw new Error(sErr.message);
 
   // Auto-join as player
-  await admin.from('game_players').insert({
+  // Không có người chơi thì mọi câu trả lời đều lỗi "Chưa tham gia" → báo lỗi ngay
+  const { error: pErr } = await admin.from('game_players').insert({
     session_id: session.id,
     user_id: userId,
-    display_name: displayName,
+    display_name: displayName.trim().slice(0, 50) || 'Học sinh',
   });
+  if (pErr) throw new Error(pErr.message);
 
   // Get first question (without correct_answer for client)
   const { data: question } = await admin

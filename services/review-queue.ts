@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createAdminClient } from '@/lib/supabase/admin';
+import type { QuestionBlock } from '@/lib/lessons/schema';
 
 const INTERVALS = [1, 3, 7, 14, 30] as const;
 
@@ -28,7 +29,15 @@ export async function addToReviewQueue(
 
   if (!q) return;
 
-  await admin.from('review_queue').upsert(
+  // Đếm số lần sai cộng dồn, không để về 1 mỗi lần làm sai lại
+  const { data: existing } = await admin
+    .from('review_queue')
+    .select('wrong_count')
+    .eq('student_id', studentId)
+    .eq('source_question_id', sourceQuestionId)
+    .maybeSingle();
+
+  const { error } = await admin.from('review_queue').upsert(
     {
       student_id: studentId,
       source_question_id: sourceQuestionId,
@@ -38,6 +47,7 @@ export async function addToReviewQueue(
       explanation: q.explanation ?? '',
       skill_tags: q.skill_tags ?? [],
       difficulty: q.difficulty,
+      wrong_count: (existing?.wrong_count ?? 0) + 1,
       interval_days: 1,
       next_review_at: new Date().toISOString(),
       correct_streak: 0,
@@ -49,9 +59,7 @@ export async function addToReviewQueue(
       ignoreDuplicates: false,
     },
   );
-
-  // The upsert above handles insert. For existing rows, reset interval.
-  // (The upsert with ignoreDuplicates:false replaces the row, so we're done.)
+  if (error) console.error('[review-queue] addToReviewQueue:', error.message);
 }
 
 export async function markReviewCorrect(
@@ -102,11 +110,19 @@ export async function markReviewWrong(
   const nextDate = new Date();
   nextDate.setDate(nextDate.getDate() + 1);
 
+  const { data: item } = await admin
+    .from('review_queue')
+    .select('wrong_count')
+    .eq('id', reviewId)
+    .eq('student_id', studentId)
+    .maybeSingle();
+
   await admin
     .from('review_queue')
     .update({
       interval_days: 1,
       correct_streak: 0,
+      wrong_count: (item?.wrong_count ?? 0) + 1,
       next_review_at: nextDate.toISOString(),
       last_reviewed_at: new Date().toISOString(),
     })
@@ -116,7 +132,9 @@ export async function markReviewWrong(
 
 export type ReviewItem = {
   id: string;
-  sourceQuestionId: string;
+  sourceQuestionId: string | null;
+  sourceLessonId: string | null;
+  sourceBlockKey: string | null;
   questionContent: string;
   questionOptions: unknown;
   questionType: string;
@@ -145,6 +163,8 @@ export async function getDueReviews(
   return (data ?? []).map((r) => ({
     id: r.id,
     sourceQuestionId: r.source_question_id,
+    sourceLessonId: r.source_lesson_id,
+    sourceBlockKey: r.source_block_key,
     questionContent: r.question_content,
     questionOptions: r.question_options,
     questionType: r.question_type,
@@ -155,6 +175,36 @@ export async function getDueReviews(
     intervalDays: r.interval_days,
     nextReviewAt: r.next_review_at,
   }));
+}
+
+/** Lấy một dòng ôn tập của đúng học sinh đó, hoặc null nếu không phải của họ. */
+export async function getReviewItemForStudent(
+  reviewId: string,
+  studentId: string,
+): Promise<ReviewItem | null> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from('review_queue')
+    .select('*')
+    .eq('id', reviewId)
+    .eq('student_id', studentId)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    id: data.id,
+    sourceQuestionId: data.source_question_id,
+    sourceLessonId: data.source_lesson_id,
+    sourceBlockKey: data.source_block_key,
+    questionContent: data.question_content,
+    questionOptions: data.question_options,
+    questionType: data.question_type,
+    explanation: data.explanation,
+    skillTags: data.skill_tags,
+    difficulty: data.difficulty,
+    wrongCount: data.wrong_count,
+    intervalDays: data.interval_days,
+    nextReviewAt: data.next_review_at,
+  };
 }
 
 export async function getReviewStats(studentId: string): Promise<{
@@ -187,4 +237,45 @@ export async function getReviewStats(studentId: string): Promise<{
     dueNow: dueNow ?? 0,
     masteredThisWeek: stats?.reviews_fixed ?? 0,
   };
+}
+
+/** Đưa một câu trắc nghiệm trong bài học vào Trạm Sửa Lỗi của học sinh, nếu chưa có. */
+export async function addLessonReviewItem(
+  studentId: string,
+  lessonId: string,
+  stepIndex: number,
+  blockIndex: number,
+  block: QuestionBlock,
+): Promise<void> {
+  const admin = createAdminClient();
+  const blockKey = `${stepIndex}:${blockIndex}`;
+
+  const { data: existing } = await admin
+    .from('review_queue')
+    .select('id, wrong_count')
+    .eq('student_id', studentId)
+    .eq('source_lesson_id', lessonId)
+    .eq('source_block_key', blockKey)
+    .maybeSingle();
+
+  const row = {
+    student_id: studentId,
+    source_lesson_id: lessonId,
+    source_block_key: blockKey,
+    question_content: block.content,
+    question_options: block.options ?? null,
+    question_type: block.questionType,
+    explanation: block.explanation ?? '',
+    skill_tags: [],
+    difficulty: 1,
+    wrong_count: (existing?.wrong_count ?? 0) + 1,
+    interval_days: 1,
+    next_review_at: new Date().toISOString(),
+    correct_streak: 0,
+  };
+
+  const { error } = existing
+    ? await admin.from('review_queue').update(row).eq('id', existing.id)
+    : await admin.from('review_queue').insert(row);
+  if (error) console.error('[review-queue] addLessonReviewItem:', error.message);
 }

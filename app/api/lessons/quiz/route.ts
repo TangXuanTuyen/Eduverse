@@ -2,6 +2,8 @@ import { getCurrentProfile } from '@/lib/auth/session';
 import { NextResponse } from 'next/server';
 import { getLessonDetail, recordLessonEvent } from '@/services/lessons';
 import type { QuestionBlock } from '@/lib/lessons/schema';
+import { gradeLessonQuestion, isReviewableLessonQuestion } from '@/lib/lessons/grade';
+import { addLessonReviewItem } from '@/services/review-queue';
 
 export async function POST(req: Request) {
   const profile = await getCurrentProfile();
@@ -22,23 +24,18 @@ export async function POST(req: Request) {
     }
 
     const qBlock = block as QuestionBlock;
-    let correct = false;
-
-    if (qBlock.questionType === 'single_choice') {
-      correct = answer === qBlock.correctAnswer;
-    } else if (qBlock.questionType === 'short_answer') {
-      const normalize = (v: unknown) => String(v ?? '').trim().toLowerCase();
-      const accepted = Array.isArray(qBlock.correctAnswer)
-        ? (qBlock.correctAnswer as string[]).map(normalize)
-        : [normalize(qBlock.correctAnswer)];
-      correct = accepted.includes(normalize(answer));
-    }
+    const correct = gradeLessonQuestion(qBlock, answer);
 
     await recordLessonEvent(profile.id, lessonId, 'quiz_attempt', stepIndex, {
       blockIndex,
       answer,
       correct,
     });
+
+    // Câu sai đưa vào Trạm Sửa Lỗi của chính học sinh này
+    if (!correct && isReviewableLessonQuestion(qBlock)) {
+      await addLessonReviewItem(profile.id, lessonId, stepIndex, blockIndex, qBlock);
+    }
 
     return NextResponse.json({
       correct,
