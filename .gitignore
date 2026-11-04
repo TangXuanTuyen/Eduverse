@@ -24,3 +24,8 @@ _ui-goc/
 supabase/.temp/
 supabase/.branches/
 src/
+
+# Mã nguồn/bản gốc thí nghiệm, STEM, mô phỏng 3D (đã build sẵn vào public/) — chỉ để đối chiếu
+/STEM/
+/Mo phong 3D/
+/Thi nghiem ao GG AI studio/

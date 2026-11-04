@@ -36,6 +36,7 @@ export function SoloGameClient({ sessionId, initialQuestion, totalQuestions, tim
   const [totalScore, setTotalScore] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -59,6 +60,7 @@ export function SoloGameClient({ sessionId, initialQuestion, totalQuestions, tim
     if (submitting || selectedAnswer || !question) return;
     setSelectedAnswer(answerId);
     setSubmitting(true);
+    setError(null);
 
     try {
       const res = await fetch(`/api/game/${sessionId}/submit`, {
@@ -67,16 +69,21 @@ export function SoloGameClient({ sessionId, initialQuestion, totalQuestions, tim
         body: JSON.stringify({ questionId: question.id, answer: answerId }),
       });
       const data = await res.json();
-      if (!data.error) {
-        setAnswerResult(data);
-        setTotalScore((s) => s + (data.score ?? 0));
-        if (data.isCorrect) setCorrectCount((c) => c + 1);
+      if (data.error || !res.ok) {
+        // Cho học sinh chọn lại thay vì kẹt ở màn hình không có nút tiếp
+        setSelectedAnswer(null);
+        setError(data.error ?? 'Không gửi được đáp án, em thử lại nhé.');
+        return;
       }
+      setAnswerResult(data);
+      setTotalScore((s) => s + (data.score ?? 0));
+      if (data.isCorrect) setCorrectCount((c) => c + 1);
+      setPhase('feedback');
     } catch {
-      // ignore
+      setSelectedAnswer(null);
+      setError('Mất kết nối, em thử lại nhé.');
     } finally {
       setSubmitting(false);
-      setPhase('feedback');
     }
   }, [submitting, selectedAnswer, question, sessionId]);
 
@@ -89,18 +96,23 @@ export function SoloGameClient({ sessionId, initialQuestion, totalQuestions, tim
       });
       const data = await res.json();
 
-      if (data.finished) {
+      if (data.error || !res.ok) {
+        setError(data.error ?? 'Không tải được câu tiếp theo, em thử lại nhé.');
+      } else if (data.finished) {
         setPhase('finished');
       } else if (data.question) {
+        setError(null);
         setQuestion({ ...data.question, totalQuestions });
         setQuestionIndex((i) => i + 1);
         setTimeLeft(timePerQuestion);
         setSelectedAnswer(null);
         setAnswerResult(null);
         setPhase('question');
+      } else {
+        setError('Không tải được câu tiếp theo, em thử lại nhé.');
       }
     } catch {
-      // ignore
+      setError('Mất kết nối, em thử lại nhé.');
     }
   }, [sessionId, totalQuestions, timePerQuestion]);
 
@@ -174,6 +186,10 @@ export function SoloGameClient({ sessionId, initialQuestion, totalQuestions, tim
             </div>
           )}
         </>
+      )}
+
+      {error && (
+        <p role="alert" className="text-center text-sm text-red-400">{error}</p>
       )}
 
       {phase === 'feedback' && answerResult && (

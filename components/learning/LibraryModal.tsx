@@ -12,6 +12,7 @@ import { RoomInteriorScene } from './RoomInteriorScene';
 import { LessonViewer } from './LessonViewer';
 import { DialogFrame } from '@/components/ui/DialogFrame';
 import { AnswerMark } from '@/components/ui/AnswerMark';
+import { Portal } from '@/components/ui/Portal';
 
 type DynamicLesson = {
   id: string;
@@ -192,7 +193,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
     <DialogFrame onClose={onClose} labelledBy="dialog-title-library" className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md">
       {/* Dynamic lesson viewer overlay */}
       {viewingLesson && lessonData && (lessonData as { lesson?: unknown }).lesson ? (
-        <div className="fixed inset-0 z-[60] bg-slate-950 overflow-auto">
+        <Portal><div className="fixed inset-0 z-[60] bg-slate-950 overflow-auto">
           <div className="sticky top-0 z-10 bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
             <h2 className="text-sm font-bold text-white">Bài học trực quan</h2>
             <button
@@ -211,7 +212,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
             notes={(lessonData as { notes?: Record<number, { prediction: string; observation: string; explanation: string }> }).notes}
             recommendation={(lessonData as { recommendation?: string }).recommendation}
           />
-        </div>
+        </div></Portal>
       ) : null}
 
       <div className="w-full max-w-4xl bg-slate-900 border-2 border-sky-500/50 rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden text-slate-100">

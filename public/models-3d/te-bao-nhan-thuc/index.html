@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mô phỏng 3D Tế bào nhân thực - Tác giả: Tăng Thị Xuân Tuyền</title>
+  <script src="three.min.js"></script>
+  <script src="OrbitControls.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; background: #ffffff; font-family: system-ui, -apple-system, sans-serif; }
+    #canvas-container { width: 100vw; height: calc(100vh - 56px); position: relative; }
+    .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); border: 1px solid #e2e8f0; }
+    /* Giao diện tự chứa (không dùng Tailwind CDN vì CSP của ứng dụng chặn) */
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .h-screen { height: 100vh; }
+    .h-14 { height: 56px; }
+    .h-8 { height: 32px; }
+    .h-2\.5, .w-2\.5 { height: 10px; width: 10px; }
+    .w-8 { width: 32px; }
+    .h-8.w-8 { height: 32px; }
+    .w-full { width: 100%; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .justify-center { justify-content: center; }
+    .gap-1\.5 { gap: 6px; }
+    .gap-2 { gap: 8px; }
+    .px-3 { padding-left: 12px; padding-right: 12px; }
+    .px-4 { padding-left: 16px; padding-right: 16px; }
+    .py-1\.5 { padding-top: 6px; padding-bottom: 6px; }
+    .p-1 { padding: 4px; }
+    .p-2 { padding: 8px; }
+    .p-3 { padding: 12px; }
+    .p-4 { padding: 16px; }
+    .pb-1 { padding-bottom: 4px; }
+    .mb-1 { margin-bottom: 4px; }
+    .mb-1\.5 { margin-bottom: 6px; }
+    .mb-2 { margin-bottom: 8px; }
+    .border { border: 1px solid #e2e8f0; }
+    .border-b { border-bottom: 1px solid #e2e8f0; }
+    .border-t { border-top: 1px solid #e2e8f0; }
+    .border-slate-100 { border-color: #f1f5f9; }
+    .border-slate-200 { border-color: #e2e8f0; }
+    .border-sky-100 { border: 1px solid #e0f2fe; }
+    .rounded-xl { border-radius: 12px; }
+    .rounded-2xl { border-radius: 16px; }
+    .rounded-full { border-radius: 9999px; }
+    .shadow-md { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .shadow-xl { box-shadow: 0 20px 25px rgba(0,0,0,0.15); }
+    .bg-white { background: #ffffff; }
+    .bg-slate-100 { background: #f1f5f9; }
+    .bg-sky-50 { background: #f0f9ff; }
+    .bg-sky-500 { background: #0ea5e9; }
+    .text-white { color: #ffffff; }
+    .text-slate-400 { color: #94a3b8; }
+    .text-slate-500 { color: #64748b; }
+    .text-slate-600 { color: #475569; }
+    .text-slate-700 { color: #334155; }
+    .text-slate-800 { color: #1e293b; }
+    .text-slate-900 { color: #0f172a; }
+    .text-sky-600 { color: #0284c7; }
+    .text-sky-700 { color: #0369a1; }
+    .text-sky-800 { color: #075985; }
+    .text-emerald-600 { color: #059669; }
+    .text-xs { font-size: 12px; }
+    .text-sm { font-size: 14px; }
+    .text-base { font-size: 16px; }
+    .text-\[11px\] { font-size: 11px; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+    .leading-tight { line-height: 1.25; }
+    .leading-relaxed { line-height: 1.625; }
+    .select-none { user-select: none; }
+    .absolute { position: absolute; }
+    .relative { position: relative; }
+    .top-4 { top: 16px; }
+    .right-4 { right: 16px; }
+    .bottom-4 { bottom: 16px; }
+    .left-4 { left: 16px; }
+    .z-20 { z-index: 20; }
+    .max-w-sm { max-width: 24rem; }
+    .max-w-md { max-width: 28rem; }
+    .hidden { display: none; }
+    .sm\:block { display: none; }
+    @media (min-width: 640px) { .sm\:block { display: block; } }
+    .min-w-0 { min-width: 0; }
+    button { cursor: pointer; border: 0; font: inherit; }
+    button:hover { filter: brightness(0.97); }
+    .hover\:bg-sky-600:hover { background: #0284c7; }
+    .hover\:bg-slate-200:hover { background: #e2e8f0; }
+    .hover\:text-slate-700:hover { color: #334155; }
+    body { display: flex; flex-direction: column; height: 100vh; }
+    header { height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: #fff; border-bottom: 1px solid #e2e8f0; position: relative; z-index: 20; }
+    footer { height: 32px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #64748b; background: #fff; border-top: 1px solid #e2e8f0; }
+    header button { padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    header button[id="cutaway-btn"], header button.bg-sky-500 { background: #0ea5e9; color: #fff; }
+    header button.bg-slate-100 { background: #f1f5f9; color: #334155; }
+    #info-box .flex { display: flex; }
+    #info-box .justify-between { justify-content: space-between; }
+    #info-box .items-center { align-items: center; }
+    #info-box .mb-2 { margin-bottom: 8px; }
+    #info-box .text-base { font-size: 16px; }
+    #info-box .font-bold { font-weight: 700; }
+    #info-box button { background: none; color: #94a3b8; padding: 4px; font-weight: 700; }
+    #info-box #info-tip { background: #f0f9ff; border: 1px solid #e0f2fe; border-radius: 12px; padding: 8px; font-size: 11px; color: #075985; }
+  </style>
+</head>
+<body class="flex flex-col h-screen select-none text-slate-800">
+  <!-- Header -->
+  <header class="h-14 bg-white border-b border-slate-200 px-4 flex items-center justify-between z-20">
+    <div class="flex items-center gap-2">
+      <span class="w-8 h-8 rounded-xl bg-sky-500 text-white flex items-center justify-center font-bold text-sm">3D</span>
+      <div>
+        <h1 class="text-sm font-bold text-slate-900 leading-tight">MÔ PHỎNG 3D TẾ BÀO NHÂN THỰC</h1>
+        <p class="text-[11px] text-slate-500">Môn Khoa học tự nhiên 6 • Vina-Eduverse</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 text-xs">
+      <button onclick="resetCamera()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl">Đặt lại góc nhìn</button>
+      <button onclick="toggleCutaway()" class="px-3 py-1.5 bg-sky-500 hover:bg-sky-600 text-white font-semibold rounded-xl" id="cutaway-btn">Mở cắt lớp: BẬT</button>
+    </div>
+  </header>
+
+  <!-- Main View -->
+  <div id="canvas-container">
+    <!-- Info Overlay -->
+    <div id="info-box" class="absolute top-4 right-4 max-w-sm w-full glass-card rounded-2xl p-4 shadow-xl z-20 hidden">
+      <div class="flex justify-between items-center mb-2 pb-1 border-b border-slate-100">
+        <h3 id="info-name" class="font-bold text-sky-700 text-base">Tên bào quan</h3>
+        <button onclick="closeInfo()" class="text-slate-400 hover:text-slate-700 font-bold p-1">✕</button>
+      </div>
+      <p id="info-role" class="text-xs font-semibold text-emerald-600 mb-1">Chức năng chính</p>
+      <p id="info-desc" class="text-xs text-slate-600 leading-relaxed mb-2">Mô tả chi tiết bào quan...</p>
+      <div class="bg-sky-50 border border-sky-100 rounded-xl p-2 text-[11px] text-sky-800" id="info-tip">
+        Gợi ý học tập KHTN 6
+      </div>
+    </div>
+
+    <!-- Quick Legend -->
+    <div class="absolute bottom-4 left-4 glass-card rounded-2xl p-3 shadow-md z-20 max-w-md hidden sm:block text-xs">
+      <div class="font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+        <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> Hướng dẫn quan sát 3D:
+      </div>
+      <p class="text-[11px] text-slate-500">
+        • Kéo chuột trái để xoay mô hình 360°<br>
+        • Cuộn chuột để phóng to / thu nhỏ<br>
+        • Bấm chuột vào các bào quan hoặc điểm đánh dấu để xem chi tiết
+      </p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="h-8 bg-white border-t border-slate-200 px-4 flex items-center justify-center text-xs text-slate-500">
+    <span>Tác giả: <strong class="text-sky-600">Tăng Thị Xuân Tuyền</strong> | SĐT: 0964022270 | Email: xuantuyen96@gmail.com</span>
+  </footer>
+
+  <script>
+    const organelles = [
+      { id: 'membrane', name: 'Màng tế bào', role: 'Lớp màng bảo vệ & Cổng kiểm soát trao đổi chất', desc: 'Bao bọc tế bào, điều chỉnh có chọn lọc các chất đi vào và đi ra khỏi tế bào.' },
+      { id: 'cytoplasm', name: 'Tế bào chất', role: 'Môi trường sống của các bào quan', desc: 'Chất dịch bán lỏng trong suốt chứa nước, ion khoáng, là nơi diễn ra các phản ứng trao đổi chất.' },
+      { id: 'nucleus', name: 'Nhân tế bào', role: 'Trung tâm điều khiển mọi hoạt động sống', desc: 'Bào quan lớn nhất, chứa thông tin di truyền (DNA) quy định đặc điểm và hoạt động tế bào.' },
+      { id: 'envelope', name: 'Màng nhân & Lỗ nhân', role: 'Vỏ bọc bảo vệ vật chất di truyền', desc: 'Màng kép có các lỗ nhỏ li ti cho phép trao đổi chất giữa nhân và tế bào chất.' },
+      { id: 'nucleolus', name: 'Nhân con', role: 'Nơi sản xuất ribosome', desc: 'Nằm bên trong nhân, tổng hợp các hạt ribosome trước khi đưa ra tế bào chất.' },
+      { id: 'chromatin', name: 'Chất nhiễm sắc (DNA)', role: 'Lưu giữ thông tin di truyền', desc: 'Dạng sợi mảnh chứa DNA liên kết protein, mang mã di truyền của cơ thể sinh vật.' },
+      { id: 'mitochondria', name: 'Ti thể', role: 'Nhà máy năng lượng (Tạo ATP)', desc: 'Thực hiện hô hấp tế bào, phân giải chất hữu cơ để cung cấp năng lượng cho tế bào.' },
+      { id: 'rer', name: 'Lưới nội chất hạt', role: 'Xưởng tổng hợp & chế biến protein', desc: 'Hệ thống túi màng dẹp có đính các hạt ribosome trên bề mặt.' },
+      { id: 'ser', name: 'Lưới nội chất trơn', role: 'Tổng hợp lipid & giải độc', desc: 'Hệ thống ống màng phân nhánh, không đính ribosome.' },
+      { id: 'golgi', name: 'Bộ máy Golgi', role: 'Trạm đóng gói & phân phối phân tử', desc: 'Xếp chồng các túi màng dẹp nhận sản phẩm từ lưới nội chất để hoàn thiện và gửi đi.' },
+      { id: 'lysosome', name: 'Lysosome', role: 'Túi phân giải & dọn dẹp tế bào', desc: 'Túi nhỏ chứa enzyme tiêu hóa giúp phân hủy chất thải và bào quan già cỗi.' },
+      { id: 'centrosome', name: 'Trung thể', role: 'Tham gia vào quá trình phân chia tế bào', desc: 'Gồm 2 trung tử xếp vuông góc, điều phối thoi phân bào khi tế bào nhân đôi.' },
+      { id: 'ribosome', name: 'Ribosome', role: 'Xưởng lắp ráp chuỗi protein', desc: 'Bào quan nhỏ li ti không màng bao bọc, rải rác tự do trong tế bào chất.' }
+    ];
+
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xffffff);
+
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+    camera.position.set(0, 4, 11);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxDistance = 25;
+    controls.minDistance = 3;
+
+    // Lighting
+    scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.9);
+    dirLight1.position.set(8, 12, 10);
+    scene.add(dirLight1);
+    const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 0.4);
+    dirLight2.position.set(-8, -6, -6);
+    scene.add(dirLight2);
+
+    const cellGroup = new THREE.Group();
+    scene.add(cellGroup);
+
+    // 1. Membrane (Cutaway)
+    let cutawayActive = true;
+    const membraneGeo = new THREE.SphereGeometry(3.6, 64, 32, 0, Math.PI * 1.5, 0, Math.PI);
+    const membraneMat = new THREE.MeshPhysicalMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.35,
+      roughness: 0.1,
+      metalness: 0.1,
+      side: THREE.DoubleSide
+    });
+    const membraneMesh = new THREE.Mesh(membraneGeo, membraneMat);
+    membraneMesh.userData = { id: 'membrane' };
+    cellGroup.add(membraneMesh);
+
+    // 2. Nucleus
+    const nucGroup = new THREE.Group();
+    nucGroup.position.set(-0.3, 0.3, 0);
+    cellGroup.add(nucGroup);
+
+    const nucGeo = new THREE.SphereGeometry(1.35, 48, 24, 0, Math.PI * 1.6, 0, Math.PI);
+    const nucMat = new THREE.MeshStandardMaterial({
+      color: 0x9333ea,
+      roughness: 0.4,
+      metalness: 0.2,
+      side: THREE.DoubleSide
+    });
+    const nucMesh = new THREE.Mesh(nucGeo, nucMat);
+    nucMesh.userData = { id: 'nucleus' };
+    nucGroup.add(nucMesh);
+
+    // Nucleolus
+    const nucleolusGeo = new THREE.SphereGeometry(0.55, 32, 16);
+    const nucleolusMat = new THREE.MeshStandardMaterial({ color: 0xdb2777, roughness: 0.3 });
+    const nucleolusMesh = new THREE.Mesh(nucleolusGeo, nucleolusMat);
+    nucleolusMesh.userData = { id: 'nucleolus' };
+    nucGroup.add(nucleolusMesh);
+
+    // 3. Mitochondria
+    // r128 chưa có CapsuleGeometry (ra từ r140), dùng hình trụ
+    const mitoGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.7, 16);
+    const mitoMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3 });
+    const mitoPos = [
+      [1.7, -1.2, 0.8, 0.5, 0.3],
+      [-1.8, -1.5, 0.9, -0.4, 0.8],
+      [1.4, 1.6, -0.6, 0.8, -0.5]
+    ];
+    mitoPos.forEach(p => {
+      const m = new THREE.Mesh(mitoGeo, mitoMat);
+      m.position.set(p[0], p[1], p[2]);
+      m.rotation.set(p[3], p[4], 0);
+      m.userData = { id: 'mitochondria' };
+      cellGroup.add(m);
+    });
+
+    // 4. Golgi Apparatus
+    const golgiMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.35 });
+    for(let i = 0; i < 4; i++) {
+      const gGeo = new THREE.TorusGeometry(0.9 + i*0.12, 0.08, 12, 32, Math.PI * 0.7);
+      const g = new THREE.Mesh(gGeo, golgiMat);
+      g.position.set(-1.8, 1.1, 0.4);
+      g.rotation.set(1.2, 0.3, i * 0.1);
+      g.userData = { id: 'golgi' };
+      cellGroup.add(g);
+    }
+
+    // 5. Lysosomes
+    const lysoGeo = new THREE.SphereGeometry(0.28, 24, 16);
+    const lysoMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.2 });
+    [[1.9, 0.4, 1.2], [-1.2, 2.0, -0.4], [0.8, -2.1, 0.7]].forEach(p => {
+      const l = new THREE.Mesh(lysoGeo, lysoMat);
+      l.position.set(p[0], p[1], p[2]);
+      l.userData = { id: 'lysosome' };
+      cellGroup.add(l);
+    });
+
+    // Raycaster for clicking
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    window.addEventListener('click', (e) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) return;
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(cellGroup.children, true);
+      if (intersects.length > 0) {
+        let obj = intersects[0].object;
+        while(obj && !obj.userData?.id && obj.parent !== cellGroup) {
+          obj = obj.parent;
+        }
+        if (obj && obj.userData?.id) {
+          showInfo(obj.userData.id);
+        }
+      }
+    });
+
+    function showInfo(id) {
+      const item = organelles.find(o => o.id === id);
+      if (!item) return;
+      document.getElementById('info-name').innerText = item.name;
+      document.getElementById('info-role').innerText = item.role;
+      document.getElementById('info-desc').innerText = item.desc;
+      document.getElementById('info-tip').innerText = 'Thuộc cấu tạo tế bào nhân thực (Động vật).';
+      document.getElementById('info-box').classList.remove('hidden');
+    }
+
+    function closeInfo() {
+      document.getElementById('info-box').classList.add('hidden');
+    }
+
+    function resetCamera() {
+      camera.position.set(0, 4, 11);
+      controls.target.set(0, 0, 0);
+      controls.update();
+    }
+
+    function toggleCutaway() {
+      cutawayActive = !cutawayActive;
+      document.getElementById('cutaway-btn').innerText = 'Mở cắt lớp: ' + (cutawayActive ? 'BẬT' : 'TẮT');
+      membraneMesh.geometry.dispose();
+      membraneMesh.geometry = new THREE.SphereGeometry(
+        3.6, 64, 32, 0, cutawayActive ? Math.PI * 1.5 : Math.PI * 2, 0, Math.PI
+      );
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>

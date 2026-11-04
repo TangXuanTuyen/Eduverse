@@ -37,6 +37,9 @@
   ],
   "exclude": [
     "node_modules",
-    "_ui-goc"
+    "_ui-goc",
+    "STEM",
+    "Mo phong 3D",
+    "Thi nghiem ao GG AI studio"
   ]
 }

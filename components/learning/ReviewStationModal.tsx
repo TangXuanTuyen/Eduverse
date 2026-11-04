@@ -9,7 +9,9 @@ import { AnswerMark } from '@/components/ui/AnswerMark';
 
 type ReviewItem = {
   id: string;
-  sourceQuestionId: string;
+  sourceQuestionId: string | null;
+  sourceLessonId: string | null;
+  sourceBlockKey: string | null;
   questionContent: string;
   questionOptions: { id: string; text: string }[] | null;
   questionType: string;
@@ -39,6 +41,7 @@ export const ReviewStationModal: React.FC<ReviewStationModalProps> = ({ onClose 
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [phase, setPhase] = useState<Phase>('explain');
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [typedAnswer, setTypedAnswer] = useState('');
   const [feedback, setFeedback] = useState<{ isCorrect: boolean; explanation: string; xpAwarded: number } | null>(null);
   const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set());
 
@@ -67,11 +70,17 @@ export const ReviewStationModal: React.FC<ReviewStationModalProps> = ({ onClose 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           reviewId: current.id,
-          sourceQuestionId: current.sourceQuestionId,
           answer: optionId,
         }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error) {
+        // Lỗi máy chủ không phải câu trả lời sai: cho thử lại, không trừ gì
+        setSelectedAnswer(null);
+        setFeedback({ isCorrect: false, explanation: data.error ?? 'Không gửi được đáp án, em thử lại nhé.', xpAwarded: 0 });
+        setPhase('result');
+        return;
+      }
       setFeedback(data);
       setPhase('result');
 
@@ -92,12 +101,14 @@ export const ReviewStationModal: React.FC<ReviewStationModalProps> = ({ onClose 
     setSelectedIdx(idx);
     setPhase('explain');
     setSelectedAnswer(null);
+    setTypedAnswer('');
     setFeedback(null);
   };
 
   const goToRetry = () => {
     setPhase('retry');
     setSelectedAnswer(null);
+    setTypedAnswer('');
     setFeedback(null);
   };
 
@@ -221,17 +232,48 @@ export const ReviewStationModal: React.FC<ReviewStationModalProps> = ({ onClose 
               {/* Phase: Retry */}
               {phase === 'retry' && (
                 <div className="space-y-3">
-                  <div className="text-xs font-bold text-amber-300 uppercase tracking-wider">
-                    Hãy chọn đáp án đúng:
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {(current.questionOptions ?? []).map((opt: { id: string; text: string }) => (
-                      <button key={opt.id} type="button" onClick={() => handleRetry(opt.id)} disabled={selectedAnswer !== null} className="min-h-11 p-3 text-xs text-left rounded-xl border transition cursor-pointer bg-slate-800 hover:bg-slate-700/80 border-slate-700 text-slate-200 disabled:opacity-60">
-                        <span className="font-bold text-cyan-400 mr-2">{opt.id.toUpperCase()}.</span>
-                        {opt.text}
+                  {current.questionOptions && current.questionOptions.length > 0 ? (
+                    <>
+                      <div className="text-xs font-bold text-amber-300 uppercase tracking-wider">
+                        Hãy chọn đáp án đúng:
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {current.questionOptions.map((opt: { id: string; text: string }) => (
+                          <button key={opt.id} type="button" onClick={() => handleRetry(opt.id)} disabled={selectedAnswer !== null} className="min-h-11 p-3 text-xs text-left rounded-xl border transition cursor-pointer bg-slate-800 hover:bg-slate-700/80 border-slate-700 text-slate-200 disabled:opacity-60">
+                            <span className="font-bold text-cyan-400 mr-2">{opt.id.toUpperCase()}.</span>
+                            {opt.text}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    // Câu trả lời ngắn (ví dụ từ bài học): không có lựa chọn, học sinh tự gõ
+                    <form
+                      className="space-y-2.5"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const value = typedAnswer.trim();
+                        if (value) handleRetry(value);
+                      }}
+                    >
+                      <label htmlFor="review-short-answer" className="block text-xs font-bold text-amber-300 uppercase tracking-wider">
+                        Em hãy gõ câu trả lời:
+                      </label>
+                      <input
+                        id="review-short-answer"
+                        type="text"
+                        value={typedAnswer}
+                        onChange={(e) => setTypedAnswer(e.target.value)}
+                        maxLength={200}
+                        autoComplete="off"
+                        disabled={selectedAnswer !== null}
+                        className="w-full min-h-11 px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-orange-400"
+                      />
+                      <button type="submit" disabled={selectedAnswer !== null || !typedAnswer.trim()} className="w-full min-h-11 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-sm text-white font-bold transition disabled:opacity-60">
+                        Gửi câu trả lời
                       </button>
-                    ))}
-                  </div>
+                    </form>
+                  )}
                 </div>
               )}
 

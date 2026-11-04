@@ -5,7 +5,7 @@ export async function proxy(request: NextRequest) {
   const response = await updateSession(request);
 
   const path = request.nextUrl.pathname;
-  if (path.startsWith('/experiments/') || path.startsWith('/models-3d/')) {
+  if (path.startsWith('/experiments/') || path.startsWith('/models-3d/') || path.startsWith('/stem/')) {
     response.headers.set('X-Frame-Options', 'SAMEORIGIN');
   } else {
     response.headers.set('X-Frame-Options', 'DENY');

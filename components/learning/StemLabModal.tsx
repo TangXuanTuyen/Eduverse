@@ -6,6 +6,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { Portal } from '@/components/ui/Portal';
 import { sound } from '@/lib/audio';
 import { FlaskConical, Zap, Eye, CheckCircle2, X, Sparkles, Award, ArrowLeft, Clock, Box, Wrench } from 'lucide-react';
 import { RoomInteriorScene } from './RoomInteriorScene';
@@ -350,7 +351,7 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
         </div>
 
         {/* STEM Maker fullscreen viewer */}
-        {viewingStemProject && (() => {
+        <Portal>{viewingStemProject && (() => {
           const project = STEM_PROJECTS.find((p) => p.id === viewingStemProject);
           if (!project) return null;
           return (
@@ -376,8 +377,9 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
               </div>
             </div>
           );
-        })()}
+        })()}</Portal>
 
+        <Portal>
         {/* Experiment Viewer overlay */}
         {viewingExperimentId && (
           <ExperimentViewer
@@ -412,6 +414,7 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
             </div>
           );
         })()}
+        </Portal>
 
         {/* RESEARCH MISSIONS & REWARD PROGRESS BOARD */}
         <div className="bg-slate-950/60 border-b border-slate-800 px-6 py-3 flex flex-wrap items-center justify-between gap-3">
