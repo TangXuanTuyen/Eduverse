@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Portal } from '@/components/ui/Portal';
 import { sound } from '@/lib/audio';
-import { FlaskConical, Zap, Eye, CheckCircle2, X, Sparkles, Award, ArrowLeft, Clock, Box, Wrench } from 'lucide-react';
+import { FlaskConical, Zap, Eye, CheckCircle2, X, Sparkles, Award, ArrowLeft, Clock } from 'lucide-react';
 import { RoomInteriorScene } from './RoomInteriorScene';
 import { DialogFrame } from '@/components/ui/DialogFrame';
 import { ExperimentViewer } from './ExperimentViewer';
@@ -20,6 +20,33 @@ type StemProject = {
   grade: number;
   url: string;
   icon: string;
+  thumb: string;
+};
+
+type GalleryKind = 'maker' | 'model3d' | 'experiment';
+
+type GalleryItem = {
+  key: string;
+  kind: GalleryKind;
+  title: string;
+  description: string;
+  thumb: string | null;
+  icon: string;
+  meta?: string;
+  task?: { completed?: boolean };
+  open: () => void;
+};
+
+const GALLERY_KINDS: Record<GalleryKind, { label: string; badge: string; ring: string; gradient: string }> = {
+  maker: { label: 'STEM Maker', badge: 'bg-amber-500/90 text-amber-950', ring: 'hover:border-amber-400/70', gradient: 'from-amber-900/60 to-slate-900' },
+  model3d: { label: 'Mô hình 3D', badge: 'bg-purple-400/90 text-purple-950', ring: 'hover:border-purple-400/70', gradient: 'from-purple-900/60 to-slate-900' },
+  experiment: { label: 'Thí nghiệm ảo', badge: 'bg-cyan-400/90 text-cyan-950', ring: 'hover:border-cyan-400/70', gradient: 'from-cyan-900/60 to-slate-900' },
+};
+
+// Ảnh xem nhanh cho mô hình 3D lấy từ cơ sở dữ liệu (chưa có thumbnail_url)
+const MODEL_THUMBS: Record<string, string> = {
+  '/models-3d/te-bao-nhan-so/index.html': '/stem/thumbs/te-bao-nhan-so.jpg',
+  '/models-3d/te-bao-nhan-thuc/index.html': '/stem/thumbs/te-bao-nhan-thuc.jpg',
 };
 
 const STEM_PROJECTS: StemProject[] = [
@@ -30,6 +57,7 @@ const STEM_PROJECTS: StemProject[] = [
     grade: 9,
     url: '/stem/pin-volta/index.html',
     icon: '🔋',
+    thumb: '/stem/thumbs/pin-volta.jpg',
   },
   {
     id: 'xe-dap-phat-dien',
@@ -38,6 +66,7 @@ const STEM_PROJECTS: StemProject[] = [
     grade: 9,
     url: '/stem/xe-dap-phat-dien/index.html',
     icon: '🚲',
+    thumb: '/stem/thumbs/xe-dap-phat-dien.jpg',
   },
   {
     id: 'thuy-dien',
@@ -46,6 +75,7 @@ const STEM_PROJECTS: StemProject[] = [
     grade: 6,
     url: '/stem/thuy-dien/index.html',
     icon: '💧',
+    thumb: '/stem/thumbs/thuy-dien.jpg',
   },
 ];
 
@@ -77,7 +107,7 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
   const [models3d, setModels3d] = useState<{ id: string; title: string; embed_url: string; thumbnail_url: string | null }[]>([]);
   const [viewing3dModelId, setViewing3dModelId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<{ id: string; resource_id: string; title: string; completed?: boolean }[]>([]);
-  const [stemGrade, setStemGrade] = useState(9);
+  const [galleryFilter, setGalleryFilter] = useState<'all' | GalleryKind>('all');
   const [viewingStemProject, setViewingStemProject] = useState<string | null>(null);
   const [completingTask, setCompletingTask] = useState<string | null>(null);
 
@@ -206,9 +236,48 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
     }
   };
 
+  const galleryItems: GalleryItem[] = [
+    ...STEM_PROJECTS.map((p): GalleryItem => ({
+      key: `maker-${p.id}`,
+      kind: 'maker',
+      title: p.title,
+      description: p.description,
+      thumb: p.thumb,
+      icon: p.icon,
+      task: tasks.find((t) => t.resource_id === p.id),
+      open: () => { sound.playClick(); setViewingStemProject(p.id); },
+    })),
+    ...models3d.map((m): GalleryItem => ({
+      key: `model-${m.id}`,
+      kind: 'model3d',
+      title: m.title,
+      description: 'Xoay, phóng to và bấm vào từng bộ phận để khám phá.',
+      thumb: m.thumbnail_url ?? MODEL_THUMBS[m.embed_url] ?? null,
+      icon: '🧬',
+      open: () => {
+        sound.playClick();
+        setViewing3dModelId(m.id);
+        fetch(`/api/models/${m.id}/view`, { method: 'POST' }).catch(() => {});
+      },
+    })),
+    ...dynamicExperiments.map((e): GalleryItem => ({
+      key: `exp-${e.id}`,
+      kind: 'experiment',
+      title: e.title,
+      description: e.description,
+      thumb: e.thumbnail_url,
+      icon: '🔬',
+      meta: `${e.duration_minutes} phút`,
+      open: () => { sound.playClick(); setViewingExperimentId(e.id); },
+    })),
+  ];
+  const kindCounts: Record<GalleryKind, number> = { maker: 0, model3d: 0, experiment: 0 };
+  galleryItems.forEach((g) => { kindCounts[g.kind]++; });
+  const visibleItems = galleryFilter === 'all' ? galleryItems : galleryItems.filter((g) => g.kind === galleryFilter);
+
   return (
     <DialogFrame onClose={onClose} labelledBy="dialog-title-stem" className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md">
-      <div className="w-full max-w-4xl bg-slate-900 border-2 border-emerald-500/50 rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden text-slate-100">
+      <div className="w-full max-w-5xl bg-slate-900 border-2 border-emerald-500/50 rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden text-slate-100">
         {/* HEADER */}
         <div className="px-6 py-4 bg-gradient-to-r from-emerald-950/90 via-slate-900 to-teal-950/80 border-b border-emerald-500/30 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -262,109 +331,80 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
           npcDialogue="STEM-E: 'Chào bạn! Nhấp trực tiếp vào Bàn Hóa Học, Bàn Mạch Điện hoặc Kính Hiển Vi để bắt đầu nghiên cứu nhé!'"
         />
 
-        {/* DYNAMIC EXPERIMENTS FROM DATABASE */}
-        {dynamicExperiments.length > 0 && (
-          <div className="px-6 py-3 bg-slate-950/40 border-b border-slate-800">
-            <h3 className="text-xs font-bold text-cyan-400 mb-2 flex items-center gap-1.5">
-              <FlaskConical size={14} /> Thí nghiệm ảo
-            </h3>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {dynamicExperiments.map((exp) => (
-                <button
-                  key={exp.id}
-                  onClick={() => { sound.playClick(); setViewingExperimentId(exp.id); }}
-                  className="shrink-0 w-36 bg-slate-800/80 border border-slate-700 rounded-lg p-2 text-left hover:border-cyan-500/30 transition min-h-[44px]"
-                >
-                  <p className="text-[11px] font-medium text-white truncate">{exp.title}</p>
-                  <div className="flex items-center gap-1 mt-1 text-[9px] text-slate-400">
-                    <Clock size={9} /> {exp.duration_minutes}p
-                  </div>
-                </button>
-              ))}
+        {/* THƯ VIỆN THỰC HÀNH: STEM Maker, mô hình 3D và thí nghiệm ảo, không chia theo khối */}
+        <section aria-labelledby="stem-gallery-title" className="px-6 py-5 bg-slate-950/40 border-b border-slate-800">
+          <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
+            <div>
+              <h3 id="stem-gallery-title" className="text-sm font-bold text-white">Thư viện thực hành</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Bấm vào một thẻ để xem trực tiếp và thực hành ngay.</p>
+            </div>
+            <div role="group" aria-label="Lọc theo loại hoạt động" className="flex flex-wrap gap-1.5">
+              {([['all', 'Tất cả', galleryItems.length], ['maker', 'STEM Maker', kindCounts.maker], ['model3d', 'Mô hình 3D', kindCounts.model3d], ['experiment', 'Thí nghiệm ảo', kindCounts.experiment]] as const)
+                .filter(([id, , count]) => id === 'all' || count > 0)
+                .map(([id, label, count]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-pressed={galleryFilter === id}
+                    onClick={() => { sound.playClick(); setGalleryFilter(id); }}
+                    className={`min-h-11 px-3 rounded-xl text-xs font-bold border transition ${
+                      galleryFilter === id
+                        ? 'bg-emerald-600/30 border-emerald-400/60 text-emerald-100'
+                        : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    {label} <span className="opacity-70">({count})</span>
+                  </button>
+                ))}
             </div>
           </div>
-        )}
 
-        {/* 3D MODELS FROM DATABASE */}
-        {models3d.length > 0 && (
-          <div className="px-6 py-3 bg-slate-950/40 border-b border-slate-800">
-            <h3 className="text-xs font-bold text-purple-400 mb-2 flex items-center gap-1.5">
-              <Box size={14} /> Mô hình 3D
-            </h3>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {models3d.map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => {
-                    sound.playClick();
-                    setViewing3dModelId(m.id);
-                    fetch(`/api/models/${m.id}/view`, { method: 'POST' }).catch(() => {});
-                  }}
-                  className="shrink-0 w-36 bg-slate-800/80 border border-slate-700 rounded-lg p-2 text-left hover:border-purple-500/30 transition min-h-[44px]"
-                >
-                  <p className="text-[11px] font-medium text-white truncate">{m.title}</p>
-                  <p className="text-[9px] text-purple-400 mt-0.5">Xoay & khám phá</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* STEM MAKER — Grade tabs */}
-        <div className="px-6 py-3 bg-slate-950/40 border-b border-slate-800">
-          <h3 className="text-xs font-bold text-amber-400 mb-2 flex items-center gap-1.5">
-            <Wrench size={14} /> STEM Maker
-          </h3>
-          <div className="flex gap-1.5 mb-2">
-            {[6, 7, 8, 9].map((g) => (
-              <button
-                key={g}
-                onClick={() => { sound.playClick(); setStemGrade(g); }}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition min-h-[36px] ${
-                  stemGrade === g
-                    ? 'bg-amber-600/30 border border-amber-500/50 text-amber-200'
-                    : 'bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                Khối {g}
-              </button>
-            ))}
-          </div>
-          {(() => {
-            const projects = STEM_PROJECTS.filter((p) => p.grade === stemGrade);
-            if (projects.length === 0) {
-              return (
-                <p className="text-[11px] text-slate-500 py-2">
-                  Chưa có dự án STEM Maker cho khối {stemGrade}. Sắp ra mắt!
-                </p>
-              );
-            }
-            return (
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {projects.map((p) => {
-                  const task = tasks.find((t) => t.resource_id === p.id);
-                  return (
+          {visibleItems.length === 0 ? (
+            <p className="text-xs text-slate-500 py-4 text-center">Chưa có hoạt động nào trong mục này.</p>
+          ) : (
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {visibleItems.map((g) => {
+                const kind = GALLERY_KINDS[g.kind];
+                return (
+                  <li key={g.key}>
                     <button
-                      key={p.id}
-                      onClick={() => { sound.playClick(); setViewingStemProject(p.id); }}
-                      className="shrink-0 w-48 bg-slate-800/80 border border-slate-700 rounded-lg p-2.5 text-left hover:border-amber-500/30 transition min-h-[44px]"
+                      type="button"
+                      onClick={g.open}
+                      className={`group w-full h-full text-left rounded-xl overflow-hidden border border-slate-700 bg-slate-800/70 ${kind.ring} hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 transition motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-emerald-400 cursor-pointer flex flex-col`}
                     >
-                      <p className="text-xs font-medium text-white flex items-center gap-1.5">
-                        <span>{p.icon}</span> {p.title}
-                      </p>
-                      <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">{p.description}</p>
-                      {task && (
-                        <span className={`inline-block mt-1 text-[9px] px-1.5 py-0.5 rounded font-bold ${task.completed ? 'bg-green-900 text-green-300' : 'bg-blue-900 text-blue-300'}`}>
-                          {task.completed ? '✓ Hoàn thành' : '📋 Nhiệm vụ GV'}
+                      <div className={`relative aspect-video bg-gradient-to-br ${kind.gradient} overflow-hidden`}>
+                        {g.thumb ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={g.thumb} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                        ) : (
+                          <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center text-5xl">{g.icon}</span>
+                        )}
+                        <span className={`absolute top-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-bold ${kind.badge}`}>{kind.label}</span>
+                        {g.meta && (
+                          <span className="absolute top-2 right-2 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-950/80 text-slate-200 flex items-center gap-1">
+                            <Clock size={10} /> {g.meta}
+                          </span>
+                        )}
+                        <span className="absolute inset-x-0 bottom-0 px-3 py-2 text-xs font-bold text-white bg-gradient-to-t from-slate-950/90 to-transparent opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition motion-reduce:transition-none">
+                          Mở và thực hành →
                         </span>
-                      )}
+                      </div>
+                      <div className="p-3 flex-1 flex flex-col gap-1">
+                        <p className="text-sm font-bold text-white leading-snug">{g.title}</p>
+                        <p className="text-xs text-slate-400 line-clamp-2">{g.description}</p>
+                        {g.task && (
+                          <span className={`self-start mt-1 text-[10px] px-2 py-0.5 rounded font-bold ${g.task.completed ? 'bg-green-900 text-green-300' : 'bg-blue-900 text-blue-300'}`}>
+                            {g.task.completed ? '✓ Hoàn thành' : '📋 Nhiệm vụ GV'}
+                          </span>
+                        )}
+                      </div>
                     </button>
-                  );
-                })}
-              </div>
-            );
-          })()}
-        </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
 
         {/* STEM Maker fullscreen viewer */}
         <Portal>{viewingStemProject && (() => {
