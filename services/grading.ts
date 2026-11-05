@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createAdminClient } from '@/lib/supabase/admin';
+import { addToReviewQueue } from '@/services/review-queue';
 
 export type GradingQueueItem = {
   submission_id: string;
@@ -123,6 +124,21 @@ export async function gradeAttempt(
     })
     .eq('id', attemptId);
   if (error) throw new Error(error.message);
+
+  // Giáo viên chấm tay câu sai → đưa vào Trạm Sửa Lỗi của học sinh (như chấm tự động)
+  if (score <= 0) {
+    const { data: row } = await admin
+      .from('question_attempts')
+      .select('submissions!inner(student_id), assignment_questions!inner(source_question_id)')
+      .eq('id', attemptId)
+      .single();
+    const sourceId = (row as { assignment_questions?: { source_question_id?: string | null } } | null)
+      ?.assignment_questions?.source_question_id;
+    const studentId = (row as { submissions?: { student_id?: string } } | null)?.submissions?.student_id;
+    if (sourceId && studentId) {
+      await addToReviewQueue(studentId, sourceId).catch(() => {});
+    }
+  }
 }
 
 export async function finalizeGrading(submissionId: string, teacherId: string) {
