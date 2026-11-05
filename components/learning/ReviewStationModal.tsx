@@ -105,7 +105,7 @@ export const ReviewStationModal: React.FC<ReviewStationModalProps> = ({ onClose 
         group = {
           key,
           title: item.lessonTitle ?? 'Bài giao & trò chơi',
-          chapter: item.sourceLessonId ? (item.chapter ?? 'Khác') : item.sourceStemProject ? 'STEM Maker' : 'Bài giao & trò chơi',
+          chapter: item.sourceLessonId ? (item.chapter ?? 'Khác') : item.sourceStemProject ? (item.chapter ?? 'STEM Maker') : 'Bài giao & trò chơi',
           entries: [],
         };
         map.set(key, group);

@@ -21,6 +21,20 @@ describe('gradeStemAnswer', () => {
     expect(gradeStemAnswer(q, 'Cu_to_Zn')).toBe(false);
   });
 
+  it('chấm câu nhập số của bài lò xo theo sai số cho phép', () => {
+    const q = getStemQuestion('lo-xo-dan-hoi', 'q5')!;
+    expect(gradeStemAnswer(q, '75')).toBe(true);
+    expect(gradeStemAnswer(q, '72,5')).toBe(true);
+    expect(gradeStemAnswer(q, '81')).toBe(false);
+    expect(gradeStemAnswer(q, 'abc')).toBe(false);
+  });
+
+  it('chấm câu trắc nghiệm của bài lò xo', () => {
+    const q = getStemQuestion('lo-xo-dan-hoi', 'q2')!;
+    expect(gradeStemAnswer(q, 'B')).toBe(true);
+    expect(gradeStemAnswer(q, 'A')).toBe(false);
+  });
+
   it('không có câu hỏi ngoài kho', () => {
     expect(getStemQuestion('pin-volta', 'q9')).toBeNull();
     expect(getStemQuestion('thuy-dien', 'q9')).toBeNull();
@@ -29,6 +43,7 @@ describe('gradeStemAnswer', () => {
   it('đáp án đúng luôn nằm trong các lựa chọn', () => {
     for (const quiz of Object.values(STEM_QUIZZES)) {
       for (const q of quiz.questions) {
+        if (q.numeric) continue;
         const ids = q.options.map((o) => o.id);
         expect(q.correct.every((c) => ids.includes(c))).toBe(true);
       }

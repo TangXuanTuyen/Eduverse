@@ -339,7 +339,7 @@ export async function getReviewQueue(studentId: string, limit = 200): Promise<Re
       isDue: new Date(r.next_review_at).getTime() <= now,
       source: r.source_lesson_id ? 'lesson' : r.source_stem_project ? 'stem' : 'bank',
       lessonTitle: lesson?.title ?? (r.source_stem_project ? (STEM_QUIZZES[r.source_stem_project]?.title ?? null) : null),
-      chapter: lesson?.chapter ?? (r.source_stem_project ? 'STEM Maker' : null),
+      chapter: lesson?.chapter ?? (r.source_stem_project ? (STEM_QUIZZES[r.source_stem_project]?.kind === 'lab' ? 'Thí nghiệm ảo' : 'STEM Maker') : null),
     };
   });
 }
@@ -368,8 +368,8 @@ export async function addStemReviewItem(
     source_stem_project: projectId,
     source_stem_question: questionId,
     question_content: q.content,
-    question_options: q.options,
-    question_type: q.multiple ? 'multiple_choice' : 'single_choice',
+    question_options: q.numeric ? null : q.options,
+    question_type: q.multiple ? 'multiple_choice' : q.numeric ? 'short_answer' : 'single_choice',
     explanation: q.explanation,
     skill_tags: [],
     difficulty: 1,

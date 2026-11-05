@@ -11,12 +11,57 @@ export type StemQuizQuestion = {
   /** Mã các đáp án đúng; một phần tử với câu chọn một. */
   correct: string[];
   multiple?: boolean;
+  /** Câu nhập số: đúng khi sai lệch không quá tolerance so với value. */
+  numeric?: { value: number; tolerance: number };
   explanation: string;
 };
 
-export type StemQuiz = { title: string; questions: StemQuizQuestion[] };
+/** kind: 'lab' là thí nghiệm ảo, mặc định là bài STEM Maker. */
+export type StemQuiz = { title: string; kind?: 'stem' | 'lab'; questions: StemQuizQuestion[] };
 
 export const STEM_QUIZZES: Record<string, StemQuiz> = {
+  'lo-xo-dan-hoi': {
+    title: 'Bài 42: Biến dạng của lò xo',
+    kind: 'lab',
+    questions: [
+      {
+        id: "q1",
+        content: "Trong các trường hợp sau, trường hợp nào xuất hiện hiện tượng biến dạng đàn hồi?",
+        options: [{ id: "A", text: "Nặn một mẩu đất sét thành hình con gà" }, { id: "B", text: "Kéo dãn một lò xo vừa phải rồi thả tay ra, lò xo co lại về chiều dài ban đầu" }, { id: "C", text: "Uốn cong một sợi dây đồng dẻo" }, { id: "D", text: "Đập vỡ một chiếc cốc thuỷ tinh" }],
+        correct: ["B"],
+        explanation: "Chính xác! Lò xo có tính đàn hồi vì sau khi dãn hoặc nén trong giới hạn đàn hồi, nếu buông tay ra thì lò xo sẽ tự động trở về chiều dài và hình dạng ban đầu.",
+      },
+      {
+        id: "q2",
+        content: "Một lò xo có chiều dài tự nhiên ban đầu l₀ = 10 cm. Khi móc quả nặng vào lò xo 2 thì đo được chiều dài l = 13 cm. Độ dãn Δl của lò xo là:",
+        options: [{ id: "A", text: "Δl = 23 cm" }, { id: "B", text: "Δl = 3 cm" }, { id: "C", text: "Δl = 13 cm" }, { id: "D", text: "Δl = 1.3 cm" }],
+        correct: ["B"],
+        explanation: "Đúng rồi! Độ dãn Δl = l - l₀ = 13 cm - 10 cm = 3 cm.",
+      },
+      {
+        id: "q3",
+        content: "Kết luận nào sau đây về độ dãn của lò xo treo thẳng đứng là đúng?",
+        options: [{ id: "A", text: "Độ dãn của lò xo tỉ lệ nghịch với khối lượng quả nặng" }, { id: "B", text: "Độ dãn của lò xo tỉ lệ thuận với khối lượng quả nặng" }, { id: "C", text: "Khối lượng càng lớn thì lò xo dãn càng ít" }, { id: "D", text: "Độ dãn của lò xo không phụ thuộc vào trọng lượng của vật treo" }],
+        correct: ["B"],
+        explanation: "Chính xác! Thí nghiệm Bài 42 KHTN 6 chứng minh: Độ dãn của lò xo treo thẳng đứng tỉ lệ thuận với khối lượng của vật treo.",
+      },
+      {
+        id: "q4",
+        content: "Một lò xo có chiều dài ban đầu l₀ = 10 cm. Khi treo quả nặng 100 g thì chiều dài là 12 cm (dãn 2 cm). Hỏi khi treo quả nặng 200 g (gấp đôi) thì lò xo có chiều dài bao nhiêu?",
+        options: [{ id: "A", text: "13 cm" }, { id: "B", text: "14 cm" }, { id: "C", text: "16 cm" }, { id: "D", text: "24 cm" }],
+        correct: ["B"],
+        explanation: "Rất giỏi! Khối lượng tăng gấp đôi (200g) thì độ dãn tăng gấp đôi: Δl₂ = 2 × 2 = 4 cm. Chiều dài mới của lò xo là l = 10 + 4 = 14 cm.",
+      },
+      {
+        id: "q5",
+        content: "Hãy sang tab Thí nghiệm ảo, nhấp vào \"Vật bí ẩn X\" trên bàn để móc vào Lò xo 2. Quan sát độ dãn trên mũi tên so sánh với Lò xo 1 đối chứng. Khối lượng của Vật X là bao nhiêu gam?",
+        options: [],
+        correct: ["75"],
+        numeric: { value: 75, tolerance: 5 },
+        explanation: "Tuyệt vời! Khối lượng chính xác của Vật bí ẩn X là 75 g. Khi treo vào Lò xo 2, vật X làm dãn 1.84 cm, đúng bằng 3/4 độ dãn của quả 100g.",
+      },
+    ],
+  },
   'pin-volta': {
     title: 'Lắp ráp pin Volta (Zn-Cu)',
     questions: [
@@ -109,6 +154,10 @@ export function getStemQuestion(projectId: string, questionId: string): StemQuiz
 
 /** Chấm một câu theo kho; câu chọn nhiều đúng khi chọn đủ và chỉ chọn các đáp án đúng. */
 export function gradeStemAnswer(question: StemQuizQuestion, answer: unknown): boolean {
+  if (question.numeric) {
+    const n = parseFloat(String(answer ?? '').replace(',', '.'));
+    return !Number.isNaN(n) && Math.abs(n - question.numeric.value) <= question.numeric.tolerance;
+  }
   const chosen = (Array.isArray(answer) ? answer : [answer]).map((v) => String(v)).sort();
   const correct = [...question.correct].sort();
   return chosen.length === correct.length && chosen.every((v, i) => v === correct[i]);
