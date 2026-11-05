@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { sound } from '@/lib/audio';
 import { Wrench, CheckCircle2, AlertTriangle, RotateCcw, X, Sparkles, ShieldCheck, ArrowLeft } from 'lucide-react';
 import { RoomInteriorScene } from './RoomInteriorScene';
@@ -20,7 +20,19 @@ type ReviewItem = {
   difficulty: number;
   wrongCount: number;
   intervalDays: number;
+  nextReviewAt: string;
+  isDue?: boolean;
+  lessonTitle?: string | null;
+  chapter?: string | null;
 };
+
+const TODAY_LIMIT = 10;
+const VIEW_STORAGE_KEY = 'eduverse.review.view';
+type ReviewView = 'today' | 'byLesson';
+
+function formatReviewDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('vi-VN', { day: 'numeric', month: 'numeric' });
+}
 
 type ReviewStats = {
   totalItems: number;
@@ -59,6 +71,73 @@ export const ReviewStationModal: React.FC<ReviewStationModalProps> = ({ onClose 
   useEffect(() => { fetchReviews(); }, [fetchReviews]);
 
   const current = items[selectedIdx];
+
+  const [view, setView] = useState<ReviewView>('today');
+
+  // Nhớ cách xem của học sinh; đọc sau khi mount để tránh lệch khi render phía server
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(VIEW_STORAGE_KEY) === 'byLesson') setView('byLesson');
+    } catch { /* trình duyệt chặn lưu trữ: vẫn dùng mặc định */ }
+  }, []);
+
+  const changeView = (next: ReviewView) => {
+    sound.playClick();
+    setView(next);
+    try { localStorage.setItem(VIEW_STORAGE_KEY, next); } catch { /* bỏ qua */ }
+  };
+
+  // Ôn hôm nay: các câu đến hạn, giữ chỉ số gốc để chọn đúng câu
+  const dueItems = useMemo(
+    () => items.map((item, index) => ({ item, index })).filter((x) => x.item.isDue),
+    [items],
+  );
+
+  // Theo bài: nhóm theo chương rồi theo bài; câu không thuộc bài học nằm trong nhóm riêng
+  const groups = useMemo(() => {
+    const map = new Map<string, { key: string; title: string; chapter: string | null; entries: { item: ReviewItem; index: number }[] }>();
+    items.forEach((item, index) => {
+      const key = item.sourceLessonId ?? 'bank';
+      let group = map.get(key);
+      if (!group) {
+        group = {
+          key,
+          title: item.lessonTitle ?? 'Bài giao & trò chơi',
+          chapter: item.sourceLessonId ? (item.chapter ?? 'Khác') : 'Bài giao & trò chơi',
+          entries: [],
+        };
+        map.set(key, group);
+      }
+      group.entries.push({ item, index });
+    });
+    return [...map.values()];
+  }, [items]);
+
+  const renderItem = (m: ReviewItem, i: number) => {
+    const isSelected = i === selectedIdx;
+    const isFixed = resolvedIds.has(m.id);
+    return (
+      <button key={m.id} type="button" onClick={() => selectItem(i)} className={`w-full text-left p-3 rounded-xl border transition cursor-pointer ${isSelected ? 'bg-orange-600/20 border-orange-400 text-white' : 'bg-slate-800/60 border-slate-700/60 text-slate-300 hover:bg-slate-800'}`}>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] font-bold text-orange-400 truncate">
+            {m.lessonTitle ? `Từ: ${m.lessonTitle}` : 'Từ: Bài giao & trò chơi'}
+          </span>
+          {isFixed ? (
+            <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold shrink-0">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Đã sửa
+            </span>
+          ) : m.isDue ? (
+            <span className="flex items-center gap-1 text-[10px] text-amber-400 font-semibold shrink-0">
+              <AlertTriangle className="w-3.5 h-3.5" /> Đến hạn
+            </span>
+          ) : (
+            <span className="text-[10px] text-slate-400 shrink-0">Ôn lại {formatReviewDate(m.nextReviewAt)}</span>
+          )}
+        </div>
+        <div className="font-semibold text-xs mt-1 line-clamp-2">{m.questionContent}</div>
+      </button>
+    );
+  };
 
   const handleRetry = async (optionId: string) => {
     if (!current || phase !== 'retry') return;
@@ -145,13 +224,22 @@ export const ReviewStationModal: React.FC<ReviewStationModalProps> = ({ onClose 
 
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
           {/* LEFT: ITEMS LIST */}
-          <div className="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-slate-800 p-4 overflow-y-auto space-y-2 bg-slate-900/60">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
-              <span>Câu cần ôn ({items.length})</span>
-              <span className="text-emerald-400 font-mono text-[11px]">
-                Đã sửa: {resolvedIds.size}
-              </span>
+          <div className="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-slate-800 p-4 overflow-y-auto space-y-3 bg-slate-900/60">
+            <div role="tablist" aria-label="Cách xem câu cần ôn" className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-800/80">
+              {(['today', 'byLesson'] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  role="tab"
+                  aria-selected={view === v}
+                  onClick={() => changeView(v)}
+                  className={`min-h-11 rounded-lg text-xs font-bold transition ${view === v ? 'bg-orange-600/40 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  {v === 'today' ? `Ôn hôm nay (${dueItems.length})` : `Theo bài (${items.length})`}
+                </button>
+              ))}
             </div>
+            <div className="text-[11px] text-emerald-400 font-mono text-right">Đã sửa: {resolvedIds.size}</div>
 
             {loading && <div className="text-xs text-slate-500 animate-pulse py-4 text-center">Đang tải...</div>}
 
@@ -163,29 +251,28 @@ export const ReviewStationModal: React.FC<ReviewStationModalProps> = ({ onClose 
               </div>
             )}
 
-            {items.map((m, i) => {
-              const isSelected = i === selectedIdx;
-              const isFixed = resolvedIds.has(m.id);
-              return (
-                <button key={m.id} type="button" onClick={() => selectItem(i)} className={`w-full text-left p-3 rounded-xl border transition cursor-pointer ${isSelected ? 'bg-orange-600/20 border-orange-400 text-white' : 'bg-slate-800/60 border-slate-700/60 text-slate-300 hover:bg-slate-800'}`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase text-orange-400">
-                      #{i + 1} · Sai {m.wrongCount} lần
-                    </span>
-                    {isFixed ? (
-                      <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Đã sửa
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-[10px] text-amber-400 font-semibold">
-                        <AlertTriangle className="w-3.5 h-3.5" /> Cần sửa
-                      </span>
-                    )}
-                  </div>
-                  <div className="font-semibold text-xs mt-1 line-clamp-2">{m.questionContent}</div>
-                </button>
-              );
-            })}
+            {!loading && items.length > 0 && view === 'today' && dueItems.length === 0 && (
+              <div className="text-center py-6 space-y-2">
+                <CheckCircle2 className="w-7 h-7 text-emerald-400 mx-auto" />
+                <p className="text-sm text-emerald-300 font-medium">Hôm nay không có câu nào đến hạn</p>
+                <p className="text-xs text-slate-400">Xem tab "Theo bài" để biết khi nào mỗi câu sẽ được ôn lại.</p>
+              </div>
+            )}
+
+            {view === 'today' && dueItems.length > 0 && (
+              <p className="text-[11px] text-slate-400">Hôm nay em nên ôn {Math.min(dueItems.length, TODAY_LIMIT)} câu.</p>
+            )}
+            {view === 'today' && dueItems.slice(0, TODAY_LIMIT).map(({ item, index }) => renderItem(item, index))}
+
+            {view === 'byLesson' && groups.map((g) => (
+              <div key={g.key} className="space-y-1.5">
+                <div className="text-[11px] font-bold text-sky-300 uppercase tracking-wider pt-2">{g.chapter}</div>
+                <div className="text-xs font-semibold text-slate-200">
+                  {g.title} <span className="text-slate-500 font-normal">· {g.entries.length} câu</span>
+                </div>
+                {g.entries.map(({ item, index }) => renderItem(item, index))}
+              </div>
+            ))}
           </div>
 
           {/* RIGHT: REVIEW FLOW */}

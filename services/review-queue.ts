@@ -279,3 +279,58 @@ export async function addLessonReviewItem(
     : await admin.from('review_queue').insert(row);
   if (error) console.error('[review-queue] addLessonReviewItem:', error.message);
 }
+
+export type ReviewQueueItem = ReviewItem & {
+  isDue: boolean;
+  source: 'lesson' | 'bank';
+  lessonTitle: string | null;
+  chapter: string | null;
+};
+
+/** Toàn bộ hàng đợi của học sinh, kèm tên bài và chương để nhóm theo bài. */
+export async function getReviewQueue(studentId: string, limit = 200): Promise<ReviewQueueItem[]> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from('review_queue')
+    .select('*')
+    .eq('student_id', studentId)
+    .order('next_review_at', { ascending: true })
+    .limit(limit);
+
+  const rows = data ?? [];
+  const lessonIds = [...new Set(rows.map((r) => r.source_lesson_id).filter((v): v is string => !!v))];
+  const lessons = new Map<string, { title: string; chapter: string | null }>();
+  if (lessonIds.length > 0) {
+    const { data: lessonRows } = await admin
+      .from('lessons')
+      .select('id, title, chapter')
+      .in('id', lessonIds);
+    for (const l of lessonRows ?? []) {
+      lessons.set(l.id, { title: l.title, chapter: l.chapter ?? null });
+    }
+  }
+
+  const now = Date.now();
+  return rows.map((r) => {
+    const lesson = r.source_lesson_id ? lessons.get(r.source_lesson_id) : undefined;
+    return {
+      id: r.id,
+      sourceQuestionId: r.source_question_id,
+      sourceLessonId: r.source_lesson_id,
+      sourceBlockKey: r.source_block_key,
+      questionContent: r.question_content,
+      questionOptions: r.question_options,
+      questionType: r.question_type,
+      explanation: r.explanation,
+      skillTags: r.skill_tags,
+      difficulty: r.difficulty,
+      wrongCount: r.wrong_count,
+      intervalDays: r.interval_days,
+      nextReviewAt: r.next_review_at,
+      isDue: new Date(r.next_review_at).getTime() <= now,
+      source: r.source_lesson_id ? 'lesson' : 'bank',
+      lessonTitle: lesson?.title ?? null,
+      chapter: lesson?.chapter ?? null,
+    };
+  });
+}
