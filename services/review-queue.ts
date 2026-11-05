@@ -2,6 +2,7 @@ import 'server-only';
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { QuestionBlock } from '@/lib/lessons/schema';
+import { STEM_QUIZZES, getStemQuestion } from '@/lib/stem/quizzes';
 
 const INTERVALS = [1, 3, 7, 14, 30] as const;
 
@@ -135,6 +136,8 @@ export type ReviewItem = {
   sourceQuestionId: string | null;
   sourceLessonId: string | null;
   sourceBlockKey: string | null;
+  sourceStemProject: string | null;
+  sourceStemQuestion: string | null;
   questionContent: string;
   questionOptions: unknown;
   questionType: string;
@@ -165,6 +168,8 @@ export async function getDueReviews(
     sourceQuestionId: r.source_question_id,
     sourceLessonId: r.source_lesson_id,
     sourceBlockKey: r.source_block_key,
+    sourceStemProject: r.source_stem_project,
+    sourceStemQuestion: r.source_stem_question,
     questionContent: r.question_content,
     questionOptions: r.question_options,
     questionType: r.question_type,
@@ -195,6 +200,8 @@ export async function getReviewItemForStudent(
     sourceQuestionId: data.source_question_id,
     sourceLessonId: data.source_lesson_id,
     sourceBlockKey: data.source_block_key,
+    sourceStemProject: data.source_stem_project,
+    sourceStemQuestion: data.source_stem_question,
     questionContent: data.question_content,
     questionOptions: data.question_options,
     questionType: data.question_type,
@@ -282,7 +289,7 @@ export async function addLessonReviewItem(
 
 export type ReviewQueueItem = ReviewItem & {
   isDue: boolean;
-  source: 'lesson' | 'bank';
+  source: 'lesson' | 'bank' | 'stem';
   lessonTitle: string | null;
   chapter: string | null;
 };
@@ -318,6 +325,8 @@ export async function getReviewQueue(studentId: string, limit = 200): Promise<Re
       sourceQuestionId: r.source_question_id,
       sourceLessonId: r.source_lesson_id,
       sourceBlockKey: r.source_block_key,
+      sourceStemProject: r.source_stem_project,
+      sourceStemQuestion: r.source_stem_question,
       questionContent: r.question_content,
       questionOptions: r.question_options,
       questionType: r.question_type,
@@ -328,9 +337,50 @@ export async function getReviewQueue(studentId: string, limit = 200): Promise<Re
       intervalDays: r.interval_days,
       nextReviewAt: r.next_review_at,
       isDue: new Date(r.next_review_at).getTime() <= now,
-      source: r.source_lesson_id ? 'lesson' : 'bank',
-      lessonTitle: lesson?.title ?? null,
-      chapter: lesson?.chapter ?? null,
+      source: r.source_lesson_id ? 'lesson' : r.source_stem_project ? 'stem' : 'bank',
+      lessonTitle: lesson?.title ?? (r.source_stem_project ? (STEM_QUIZZES[r.source_stem_project]?.title ?? null) : null),
+      chapter: lesson?.chapter ?? (r.source_stem_project ? 'STEM Maker' : null),
     };
   });
+}
+
+
+/** Đưa một câu sai trong bài STEM Maker vào Trạm Sửa Lỗi của học sinh. Nội dung lấy từ kho câu hỏi của máy chủ. */
+export async function addStemReviewItem(
+  studentId: string,
+  projectId: string,
+  questionId: string,
+): Promise<void> {
+  const q = getStemQuestion(projectId, questionId);
+  if (!q) return;
+  const admin = createAdminClient();
+
+  const { data: existing } = await admin
+    .from('review_queue')
+    .select('id, wrong_count')
+    .eq('student_id', studentId)
+    .eq('source_stem_project', projectId)
+    .eq('source_stem_question', questionId)
+    .maybeSingle();
+
+  const row = {
+    student_id: studentId,
+    source_stem_project: projectId,
+    source_stem_question: questionId,
+    question_content: q.content,
+    question_options: q.options,
+    question_type: q.multiple ? 'multiple_choice' : 'single_choice',
+    explanation: q.explanation,
+    skill_tags: [],
+    difficulty: 1,
+    wrong_count: (existing?.wrong_count ?? 0) + 1,
+    interval_days: 1,
+    next_review_at: new Date().toISOString(),
+    correct_streak: 0,
+  };
+
+  const { error } = existing
+    ? await admin.from('review_queue').update(row).eq('id', existing.id)
+    : await admin.from('review_queue').insert(row);
+  if (error) console.error('[review-queue] addStemReviewItem:', error.message);
 }

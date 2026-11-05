@@ -12,6 +12,7 @@ type ReviewItem = {
   sourceQuestionId: string | null;
   sourceLessonId: string | null;
   sourceBlockKey: string | null;
+  sourceStemProject?: string | null;
   questionContent: string;
   questionOptions: { id: string; text: string }[] | null;
   questionType: string;
@@ -54,6 +55,7 @@ export const ReviewStationModal: React.FC<ReviewStationModalProps> = ({ onClose 
   const [phase, setPhase] = useState<Phase>('explain');
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [typedAnswer, setTypedAnswer] = useState('');
+  const [multiAnswers, setMultiAnswers] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<{ isCorrect: boolean; explanation: string; xpAwarded: number } | null>(null);
   const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set());
 
@@ -97,13 +99,13 @@ export const ReviewStationModal: React.FC<ReviewStationModalProps> = ({ onClose 
   const groups = useMemo(() => {
     const map = new Map<string, { key: string; title: string; chapter: string | null; entries: { item: ReviewItem; index: number }[] }>();
     items.forEach((item, index) => {
-      const key = item.sourceLessonId ?? 'bank';
+      const key = item.sourceLessonId ?? item.sourceStemProject ?? 'bank';
       let group = map.get(key);
       if (!group) {
         group = {
           key,
           title: item.lessonTitle ?? 'Bài giao & trò chơi',
-          chapter: item.sourceLessonId ? (item.chapter ?? 'Khác') : 'Bài giao & trò chơi',
+          chapter: item.sourceLessonId ? (item.chapter ?? 'Khác') : item.sourceStemProject ? 'STEM Maker' : 'Bài giao & trò chơi',
           entries: [],
         };
         map.set(key, group);
@@ -139,9 +141,9 @@ export const ReviewStationModal: React.FC<ReviewStationModalProps> = ({ onClose 
     );
   };
 
-  const handleRetry = async (optionId: string) => {
+  const handleRetry = async (answer: string | string[]) => {
     if (!current || phase !== 'retry') return;
-    setSelectedAnswer(optionId);
+    setSelectedAnswer(Array.isArray(answer) ? answer.join(',') : answer);
 
     try {
       const res = await fetch('/api/review/submit', {
@@ -149,7 +151,7 @@ export const ReviewStationModal: React.FC<ReviewStationModalProps> = ({ onClose 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           reviewId: current.id,
-          answer: optionId,
+          answer,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -179,6 +181,7 @@ export const ReviewStationModal: React.FC<ReviewStationModalProps> = ({ onClose 
     sound.playClick();
     setSelectedIdx(idx);
     setPhase('explain');
+    setMultiAnswers([]);
     setSelectedAnswer(null);
     setTypedAnswer('');
     setFeedback(null);
@@ -186,6 +189,7 @@ export const ReviewStationModal: React.FC<ReviewStationModalProps> = ({ onClose 
 
   const goToRetry = () => {
     setPhase('retry');
+    setMultiAnswers([]);
     setSelectedAnswer(null);
     setTypedAnswer('');
     setFeedback(null);
@@ -319,7 +323,38 @@ export const ReviewStationModal: React.FC<ReviewStationModalProps> = ({ onClose 
               {/* Phase: Retry */}
               {phase === 'retry' && (
                 <div className="space-y-3">
-                  {current.questionOptions && current.questionOptions.length > 0 ? (
+                  {current.questionType === 'multiple_choice' && current.questionOptions && current.questionOptions.length > 0 ? (
+                    <div className="space-y-2.5">
+                      <div className="text-xs font-bold text-amber-300 uppercase tracking-wider">
+                        Hãy chọn tất cả đáp án đúng:
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {current.questionOptions.map((opt: { id: string; text: string }) => {
+                          const checked = multiAnswers.includes(opt.id);
+                          return (
+                            <label key={opt.id} className={`min-h-11 p-3 text-xs rounded-xl border flex items-start gap-2 cursor-pointer transition ${checked ? 'bg-orange-600/20 border-orange-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700/80'}`}>
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                disabled={selectedAnswer !== null}
+                                onChange={() => setMultiAnswers((prev) => checked ? prev.filter((v) => v !== opt.id) : [...prev, opt.id])}
+                                className="mt-0.5"
+                              />
+                              <span>{opt.text}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRetry(multiAnswers)}
+                        disabled={selectedAnswer !== null || multiAnswers.length === 0}
+                        className="w-full min-h-11 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-sm text-white font-bold transition disabled:opacity-60"
+                      >
+                        Gửi câu trả lời
+                      </button>
+                    </div>
+                  ) : current.questionOptions && current.questionOptions.length > 0 ? (
                     <>
                       <div className="text-xs font-bold text-amber-300 uppercase tracking-wider">
                         Hãy chọn đáp án đúng:

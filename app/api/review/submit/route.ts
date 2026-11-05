@@ -4,6 +4,7 @@ import { gradeAnswer } from '@/services/adaptive-questions';
 import { getLessonDetail } from '@/services/lessons';
 import { gradeLessonQuestion } from '@/lib/lessons/grade';
 import type { QuestionBlock } from '@/lib/lessons/schema';
+import { getStemQuestion, gradeStemAnswer } from '@/lib/stem/quizzes';
 import { getReviewItemForStudent, markReviewCorrect, markReviewWrong } from '@/services/review-queue';
 import { awardXp } from '@/services/xp';
 
@@ -36,6 +37,13 @@ export async function POST(req: Request) {
     const qBlock = block as QuestionBlock;
     isCorrect = gradeLessonQuestion(qBlock, answer);
     explanation = qBlock.explanation ?? '';
+  } else if (item.sourceStemProject && item.sourceStemQuestion) {
+    const stemQuestion = getStemQuestion(item.sourceStemProject, item.sourceStemQuestion);
+    if (!stemQuestion) {
+      return NextResponse.json({ error: 'Câu hỏi không còn trong bài' }, { status: 410 });
+    }
+    isCorrect = gradeStemAnswer(stemQuestion, answer);
+    explanation = stemQuestion.explanation;
   } else {
     return NextResponse.json({ error: 'Câu hỏi không hợp lệ' }, { status: 400 });
   }
