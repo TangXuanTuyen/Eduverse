@@ -15,8 +15,14 @@ describe('gradeStemAnswer', () => {
     expect(gradeStemAnswer(q, ['H', 'Q', 'eta', 'weather'])).toBe(false);
   });
 
+  it('chấm câu của bài pin Volta', () => {
+    const q = getStemQuestion('pin-volta', 'q1')!;
+    expect(gradeStemAnswer(q, 'Zn_to_Cu')).toBe(true);
+    expect(gradeStemAnswer(q, 'Cu_to_Zn')).toBe(false);
+  });
+
   it('không có câu hỏi ngoài kho', () => {
-    expect(getStemQuestion('pin-volta', 'q1')).toBeNull();
+    expect(getStemQuestion('pin-volta', 'q9')).toBeNull();
     expect(getStemQuestion('thuy-dien', 'q9')).toBeNull();
   });
 

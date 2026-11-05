@@ -17,6 +17,21 @@ export type StemQuizQuestion = {
 export type StemQuiz = { title: string; questions: StemQuizQuestion[] };
 
 export const STEM_QUIZZES: Record<string, StemQuiz> = {
+  'pin-volta': {
+    title: 'Lắp ráp pin Volta (Zn-Cu)',
+    questions: [
+      {
+        id: 'q1',
+        content: 'Trong pin Zn - Cu, electron ở mạch ngoài chạy theo chiều nào?',
+        options: [
+          { id: 'Zn_to_Cu', text: 'Từ Zn sang Cu' },
+          { id: 'Cu_to_Zn', text: 'Từ Cu sang Zn' },
+        ],
+        correct: ['Zn_to_Cu'],
+        explanation: 'Ở mạch ngoài, electron chạy từ cực âm (Zn) sang cực dương (Cu), ngược chiều quy ước của dòng điện.',
+      },
+    ],
+  },
   'xe-dap-phat-dien': {
     title: 'Xe đạp phát điện (Dynamo)',
     questions: [
