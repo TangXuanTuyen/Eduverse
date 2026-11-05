@@ -20,6 +20,7 @@ type SoloState = {
   question: Record<string, unknown> | null;
   totalQuestions: number;
   timePerQuestion: number;
+  mode: string;
 };
 
 export function GameAssignmentList() {
@@ -36,7 +37,7 @@ export function GameAssignmentList() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function handleStart(gameId: string) {
+  async function handleStart(gameId: string, mode: string) {
     setStarting(gameId);
     try {
       const res = await fetch('/api/game/solo/start', {
@@ -54,12 +55,38 @@ export function GameAssignmentList() {
         question: data.question,
         totalQuestions: data.totalQuestions,
         timePerQuestion: data.timePerQuestion,
+        mode,
       });
     } catch {
       alert('Lỗi kết nối');
     } finally {
       setStarting(null);
     }
+  }
+
+  if (soloState && soloState.mode === 'me_cung') {
+    return (
+      <Portal>
+        <div className="fixed inset-0 z-50 flex flex-col bg-slate-950">
+          <div className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 shrink-0">
+            <h2 className="text-white font-bold text-sm">Mê cung tri thức</h2>
+            <button
+              type="button"
+              onClick={() => setSoloState(null)}
+              aria-label="Đóng trò chơi"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+            >
+              ✕
+            </button>
+          </div>
+          <iframe
+            src={`/games/me-cung/index.html?session=${encodeURIComponent(soloState.sessionId)}`}
+            className="flex-1 w-full border-0"
+            title="Mê cung tri thức"
+          />
+        </div>
+      </Portal>
+    );
   }
 
   if (soloState) {
@@ -110,12 +137,12 @@ export function GameAssignmentList() {
               </div>
             </div>
             <button
-              onClick={() => handleStart(a.game_id)}
+              onClick={() => handleStart(a.game_id, a.mode)}
               disabled={starting === a.game_id}
               className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-2 text-xs text-white font-medium flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
             >
               <Play size={14} />
-              {starting === a.game_id ? '...' : 'Luyện'}
+              {starting === a.game_id ? '...' : a.mode === 'me_cung' ? 'Chơi' : 'Luyện'}
             </button>
           </div>
         ))}

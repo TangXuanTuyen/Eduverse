@@ -16,7 +16,7 @@ type Room = { id: string; name: string };
 export function GameDetail({ game, questions }: Props) {
   const router = useRouter();
   const { t } = useLocale();
-  const MODE_LABELS: Record<string, string> = { tu_luyen: t('gm.modeSelf'), thi_dau: t('gm.modeLive') };
+  const MODE_LABELS: Record<string, string> = { tu_luyen: t('gm.modeSelf'), thi_dau: t('gm.modeLive'), me_cung: t('gm.modeMaze') };
   const [starting, setStarting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showAssign, setShowAssign] = useState(false);

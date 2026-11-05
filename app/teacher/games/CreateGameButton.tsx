@@ -66,6 +66,7 @@ export function CreateGameButton() {
             <select name="mode" className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white">
               <option value="thi_dau">{t('gm.modeLiveOpt')}</option>
               <option value="tu_luyen">{t('gm.modeSelfOpt')}</option>
+              <option value="me_cung">{t('gm.modeMazeOpt')}</option>
             </select>
           </label>
           <label className="block">

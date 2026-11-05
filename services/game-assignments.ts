@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createAdminClient } from '@/lib/supabase/admin';
+import { submitAnswer } from '@/services/game-sessions';
 
 export type GameAssignmentRow = {
   id: string;
@@ -208,4 +209,56 @@ export async function soloNextQuestion(sessionId: string, userId: string) {
       : null,
     totalQuestions: count ?? 0,
   };
+}
+
+async function assertSoloSessionOwner(sessionId: string, userId: string) {
+  const admin = createAdminClient();
+  const { data: session } = await admin
+    .from('game_sessions')
+    .select('id, game_id, created_by')
+    .eq('id', sessionId)
+    .single();
+  if (!session) throw new Error('Phiên không tồn tại');
+  if (session.created_by !== userId) throw new Error('Không có quyền');
+  return session as { id: string; game_id: string; created_by: string };
+}
+
+/** Toàn bộ câu hỏi của một phiên solo (không kèm đáp án) cho trò chơi Mê cung. */
+export async function getSoloQuestions(sessionId: string, userId: string) {
+  const admin = createAdminClient();
+  const session = await assertSoloSessionOwner(sessionId, userId);
+  const { data } = await admin
+    .from('game_questions')
+    .select('id, sort_order, type, content, options, points')
+    .eq('game_id', session.game_id)
+    .eq('type', 'single_choice')
+    .order('sort_order', { ascending: true });
+  return (data ?? []).filter((q) => Array.isArray(q.options) && q.options.length >= 2);
+}
+
+/** Chấm một câu của phiên solo (ghi câu sai vào Trạm Sửa Lỗi) và trả giải thích để hiện sau khi trả lời. */
+export async function answerSoloQuestion(sessionId: string, userId: string, questionId: string, answer: unknown) {
+  const admin = createAdminClient();
+  await assertSoloSessionOwner(sessionId, userId);
+  const result = await submitAnswer(sessionId, userId, questionId, answer);
+  const { data: q } = await admin
+    .from('game_questions')
+    .select('correct_answer, explanation')
+    .eq('id', questionId)
+    .single();
+  return {
+    isCorrect: result.isCorrect,
+    score: result.score,
+    explanation: q?.explanation ?? '',
+    correctAnswer: q?.correct_answer ?? null,
+  };
+}
+
+export async function finishSoloSession(sessionId: string, userId: string) {
+  const admin = createAdminClient();
+  await assertSoloSessionOwner(sessionId, userId);
+  await admin
+    .from('game_sessions')
+    .update({ status: 'finished', finished_at: new Date().toISOString() })
+    .eq('id', sessionId);
 }
