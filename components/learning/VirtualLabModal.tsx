@@ -24,6 +24,21 @@ const GRADE_LABELS: Record<number, string> = {
   9: 'Khối 9',
 };
 
+// Cơ sở dữ liệu lưu môn học dạng mã (vat_ly...), bản mẫu dùng chữ có dấu
+const SUBJECT_LABELS: Record<string, string> = {
+  vat_ly: 'Vật lý',
+  hoa_hoc: 'Hóa học',
+  sinh_hoc: 'Sinh học',
+};
+const subjectLabel = (s: string) => SUBJECT_LABELS[s] ?? s;
+const SUBJECT_ICONS: Record<string, string> = { 'Vật lý': '⚛️', 'Hóa học': '🧪', 'Sinh học': '🔬' };
+
+// Ảnh xem nhanh cho thí nghiệm có bản web (chưa có thumbnail_url trong cơ sở dữ liệu)
+const EXPERIMENT_THUMBS: Record<string, string> = {
+  '/experiments/vat-dan-dien-cach-dien/index.html': '/experiments/thumbs/vat-dan-dien-cach-dien.jpg',
+  '/experiments/mach-dien-don-gian/index.html': '/experiments/thumbs/mach-dien-don-gian.jpg',
+};
+
 const DEMO_EXPERIMENTS: Experiment[] = [
   {
     id: 'vat_dan_dien_cach_dien',
@@ -145,8 +160,12 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
     setCompletingTask(null);
   }, []);
 
-  const filtered = filter === 'all' ? experiments : experiments.filter((e) => e.grade_level === filter);
   const grades = [6, 7, 8, 9] as const;
+  const filtered = filter === 'all' ? experiments : experiments.filter((e) => e.grade_level === filter);
+  // Chia theo khối: mỗi khối một nhóm có tiêu đề, bên trong là thẻ thí nghiệm
+  const sections = (filter === 'all' ? grades : [filter])
+    .map((g) => ({ g, items: filtered.filter((e) => e.grade_level === g) }))
+    .filter((x) => x.items.length > 0);
 
   if (activeExp) {
     return (
@@ -162,7 +181,7 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
             </button>
             <div className="flex-1 min-w-0">
               <h2 className="font-bold text-lg truncate">{activeExp.title}</h2>
-              <p className="text-sm text-orange-300">Khối {activeExp.grade_level} · {activeExp.subject}</p>
+              <p className="text-sm text-orange-300">Khối {activeExp.grade_level} · {subjectLabel(activeExp.subject)}</p>
             </div>
           </div>
           <div className="flex-1 overflow-auto p-4">
@@ -262,50 +281,73 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
           </div>
         </div>
 
-        {/* Experiment list */}
-        <div className="flex-1 overflow-auto p-4 space-y-3">
+        {/* Danh sách thí nghiệm: thẻ có ảnh xem nhanh và tên, lọc theo khối */}
+        <div className="flex-1 overflow-auto p-4">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-6 h-6 animate-spin text-orange-400" />
             </div>
           ) : filtered.length === 0 ? (
-            <p className="text-center text-orange-400 py-8">Chưa có thí nghiệm nào cho môn này.</p>
+            <p className="text-center text-orange-400 py-8">Chưa có thí nghiệm nào cho khối này.</p>
           ) : (
-            filtered.map((exp) => {
-              const task = tasks.find((t) => t.resource_id === exp.id);
-              return (
-                <button
-                  key={exp.id}
-                  onClick={() => setActiveExp(exp)}
-                  className={`w-full text-left p-4 rounded-xl border hover:bg-orange-900/50 hover:border-orange-600/50 transition group min-h-[44px] ${
-                    task ? 'bg-blue-900/20 border-blue-500/30' : 'bg-orange-900/30 border-orange-800/30'
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-orange-900/60 flex items-center justify-center shrink-0 mt-0.5 text-sm font-bold text-orange-300">
-                      {exp.grade_level}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-white group-hover:text-orange-200 transition">{exp.title}</h3>
-                        {task && (
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${task.completed ? 'bg-green-900 text-green-300' : 'bg-blue-900 text-blue-300'}`}>
-                            {task.completed ? '✓ Xong' : 'Nhiệm vụ GV'}
+            <div className="space-y-5">
+              {sections.map(({ g, items }) => (
+                <section key={g} aria-labelledby={`lab-grade-${g}`}>
+                  <h2 id={`lab-grade-${g}`} className="text-sm font-bold text-orange-200 mb-2">{GRADE_LABELS[g] ?? `Khối ${g}`}</h2>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {items.map((exp) => {
+                const task = tasks.find((t) => t.resource_id === exp.id);
+                const thumb = exp.thumbnail_url ?? (exp.embed_url ? EXPERIMENT_THUMBS[exp.embed_url] : undefined) ?? null;
+                const subject = subjectLabel(exp.subject);
+                return (
+                  <li key={exp.id}>
+                    <button
+                      type="button"
+                      onClick={() => setActiveExp(exp)}
+                      className={`group w-full h-full text-left rounded-xl overflow-hidden border hover:border-orange-500/70 hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 transition motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-orange-400 cursor-pointer flex flex-col ${
+                        task ? 'bg-blue-900/20 border-blue-500/30' : 'bg-orange-900/30 border-orange-800/40'
+                      }`}
+                    >
+                      <div className="relative aspect-video bg-gradient-to-br from-orange-900/60 to-slate-900 overflow-hidden">
+                        {thumb ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={thumb} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                        ) : (
+                          <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center text-5xl">
+                            {SUBJECT_ICONS[subject] ?? '🧪'}
                           </span>
                         )}
+                        <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-500/90 text-orange-950">
+                          Khối {exp.grade_level}
+                        </span>
+                        <span className="absolute top-2 right-2 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-950/80 text-slate-200 flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> {exp.duration_minutes} phút
+                        </span>
+                        <span className="absolute inset-x-0 bottom-0 px-3 py-2 text-xs font-bold text-white bg-gradient-to-t from-slate-950/90 to-transparent opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition motion-reduce:transition-none flex items-center gap-1.5">
+                          <Play className="w-3.5 h-3.5" /> Mở thí nghiệm
+                        </span>
                       </div>
-                      <p className="text-sm text-orange-300/80 mt-0.5 line-clamp-2">{exp.description}</p>
-                      <div className="flex items-center gap-3 mt-2 text-xs text-orange-400">
-                        <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {exp.duration_minutes} phút</span>
-                        <span>Khối {exp.grade_level} · {exp.subject}</span>
-                        <span>{'⭐'.repeat(exp.difficulty)}</span>
+                      <div className="p-3 flex-1 flex flex-col gap-1">
+                        <h3 className="text-sm font-bold text-white leading-snug">{exp.title}</h3>
+                        <p className="text-xs text-orange-300/80 line-clamp-2">{exp.description}</p>
+                        <div className="mt-auto pt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-orange-400">
+                          <span>{subject}</span>
+                          <span aria-label={`Độ khó ${exp.difficulty} trên 3`}>{'⭐'.repeat(exp.difficulty)}</span>
+                          {task && (
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${task.completed ? 'bg-green-900 text-green-300' : 'bg-blue-900 text-blue-300'}`}>
+                              {task.completed ? '✓ Xong' : 'Nhiệm vụ GV'}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <Play className="w-5 h-5 text-orange-500 group-hover:text-orange-300 transition shrink-0 mt-2" />
-                  </div>
-                </button>
-              );
-            })
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+                </section>
+              ))}
+            </div>
           )}
         </div>
       </div>
