@@ -27,6 +27,16 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Chỉ trò chơi Xe đạp phát điện cần camera (nhận diện chuyển động chạy tại chỗ, xử lý ngay trên máy,
+      // không gửi hình ảnh đi đâu). Các trang khác vẫn chặn camera.
+      {
+        source: '/stem/:path*',
+        headers: [{ key: 'Permissions-Policy', value: 'camera=(self), microphone=(), geolocation=()' }],
+      },
+      {
+        source: '/student/stem',
+        headers: [{ key: 'Permissions-Policy', value: 'camera=(self), microphone=(), geolocation=()' }],
+      },
     ];
   },
 };

@@ -31,6 +31,22 @@ const STEM_PROJECTS: StemProject[] = [
     url: '/stem/pin-volta/index.html',
     icon: '🔋',
   },
+  {
+    id: 'xe-dap-phat-dien',
+    title: 'Xe đạp phát điện (Dynamo)',
+    description: 'Đạp xe để chuyển cơ năng thành điện năng và quang năng. Điều khiển bằng bàn phím, chuột hoặc camera nhận diện chuyển động chạy tại chỗ.',
+    grade: 9,
+    url: '/stem/xe-dap-phat-dien/index.html',
+    icon: '🚲',
+  },
+  {
+    id: 'thuy-dien',
+    title: 'Thiết kế nhà máy thủy điện mini',
+    description: 'Thiết kế, thử nghiệm và cải tiến mô hình thủy điện mini: biến đổi năng lượng để giải bài toán cấp điện thực tế.',
+    grade: 6,
+    url: '/stem/thuy-dien/index.html',
+    icon: '💧',
+  },
 ];
 
 type DynamicExperiment = {
@@ -371,7 +387,7 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
                 <iframe
                   src={project.url}
                   className="w-full h-full border-0"
-                  allow="webgl; webgl2"
+                  allow="webgl; webgl2; camera"
                   title={project.title}
                 />
               </div>

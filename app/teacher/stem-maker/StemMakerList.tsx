@@ -15,6 +15,24 @@ const STEM_PROJECTS = [
     url: '/stem/pin-volta/index.html',
     icon: '🔋',
   },
+  {
+    id: 'xe-dap-phat-dien',
+    titleKey: 'stem.bikeTitle',
+    descriptionKey: 'stem.bikeDesc',
+    title: 'Xe đạp phát điện (Dynamo)',
+    grade: 9,
+    url: '/stem/xe-dap-phat-dien/index.html',
+    icon: '🚲',
+  },
+  {
+    id: 'thuy-dien',
+    titleKey: 'stem.hydroTitle',
+    descriptionKey: 'stem.hydroDesc',
+    title: 'Thiết kế nhà máy thủy điện mini',
+    grade: 6,
+    url: '/stem/thuy-dien/index.html',
+    icon: '💧',
+  },
 ] as const;
 
 export function StemMakerList({ teacherId }: { teacherId: string }) {
@@ -32,7 +50,7 @@ export function StemMakerList({ teacherId }: { teacherId: string }) {
       .catch(() => {});
   }, []);
 
-  async function handleAssign(project: typeof STEM_PROJECTS[0]) {
+  async function handleAssign(project: typeof STEM_PROJECTS[number]) {
     if (!selectedRoom) return;
     setSubmitting(true);
     setMessage('');
@@ -61,7 +79,7 @@ export function StemMakerList({ teacherId }: { teacherId: string }) {
     setSubmitting(false);
   }
 
-  function handleOpenInClass(project: typeof STEM_PROJECTS[0]) {
+  function handleOpenInClass(project: typeof STEM_PROJECTS[number]) {
     window.open(project.url, '_blank');
   }
 
