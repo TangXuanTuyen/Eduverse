@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { DialogFrame } from '@/components/ui/DialogFrame';
+import { experimentThumb } from '@/lib/experiments/thumbs';
 import { Atom, Play, Clock, ArrowLeft, Loader2, ExternalLink, CheckCircle2 } from 'lucide-react';
 
 type Experiment = {
@@ -32,12 +33,6 @@ const SUBJECT_LABELS: Record<string, string> = {
 };
 const subjectLabel = (s: string) => SUBJECT_LABELS[s] ?? s;
 const SUBJECT_ICONS: Record<string, string> = { 'Vật lý': '⚛️', 'Hóa học': '🧪', 'Sinh học': '🔬' };
-
-// Ảnh xem nhanh cho thí nghiệm có bản web (chưa có thumbnail_url trong cơ sở dữ liệu)
-const EXPERIMENT_THUMBS: Record<string, string> = {
-  '/experiments/vat-dan-dien-cach-dien/index.html': '/experiments/thumbs/vat-dan-dien-cach-dien.jpg',
-  '/experiments/mach-dien-don-gian/index.html': '/experiments/thumbs/mach-dien-don-gian.jpg',
-};
 
 const DEMO_EXPERIMENTS: Experiment[] = [
   {
@@ -297,7 +292,7 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {items.map((exp) => {
                 const task = tasks.find((t) => t.resource_id === exp.id);
-                const thumb = exp.thumbnail_url ?? (exp.embed_url ? EXPERIMENT_THUMBS[exp.embed_url] : undefined) ?? null;
+                const thumb = experimentThumb(exp);
                 const subject = subjectLabel(exp.subject);
                 return (
                   <li key={exp.id}>

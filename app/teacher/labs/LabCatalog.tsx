@@ -5,6 +5,7 @@ import { FlaskConical, Clock, Send, Play } from 'lucide-react';
 import type { ExperimentRow } from '@/services/experiments';
 import { assignExperimentAction } from './actions';
 import { useLocale } from '@/components/i18n/LocaleProvider';
+import { experimentThumb } from '@/lib/experiments/thumbs';
 
 const DIFF_COLORS: Record<number, string> = {
   1: 'bg-green-900/50 text-green-400',
@@ -23,7 +24,7 @@ export function LabCatalog({ experiments }: { experiments: ExperimentRow[] }) {
     khtn_chung: t('lab.subjGeneral'),
   };
   const DIFF_LABELS: Record<number, string> = { 1: t('qf.diffEasy'), 2: t('qs.diffMediumShort'), 3: t('qf.diffHard') };
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState<number | 'all'>('all');
   const [assigningId, setAssigningId] = useState<string | null>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [selectedRoom, setSelectedRoom] = useState('');
@@ -37,9 +38,14 @@ export function LabCatalog({ experiments }: { experiments: ExperimentRow[] }) {
       .catch(() => {});
   }, []);
 
+  const GRADES = [6, 7, 8, 9] as const;
   const filtered = filter === 'all'
     ? experiments
-    : experiments.filter((e) => e.subject === filter);
+    : experiments.filter((e) => e.grade_level === filter);
+  // Chia theo khối: mỗi khối một nhóm có tiêu đề
+  const sections = (filter === 'all' ? GRADES : [filter])
+    .map((g) => ({ g, items: filtered.filter((e) => e.grade_level === g) }))
+    .filter((x) => x.items.length > 0);
 
   async function handleAssign(experimentId: string) {
     if (!selectedRoom) return;
@@ -59,17 +65,15 @@ export function LabCatalog({ experiments }: { experiments: ExperimentRow[] }) {
   return (
     <div className="space-y-4">
       <div className="flex gap-2 flex-wrap">
-        {[
-          { key: 'all', label: t('lab.all') },
-          { key: 'vat_ly', label: t('lab.subjPhysics') },
-          { key: 'hoa_hoc', label: t('lab.subjChem') },
-          { key: 'sinh_hoc', label: t('lab.subjBio') },
-          { key: 'khtn_chung', label: t('lab.subjGeneral') },
-        ].map((f) => (
+        {([
+          { key: 'all' as const, label: t('lab.all') },
+          ...GRADES.map((g) => ({ key: g, label: `${t('ai.gradeWord')} ${g}` })),
+        ]).map((f) => (
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium min-h-[36px] ${
+            aria-pressed={filter === f.key}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium min-h-[44px] ${
               filter === f.key
                 ? 'bg-cyan-600 text-white'
                 : 'bg-slate-800 text-slate-400 hover:text-white'
@@ -86,16 +90,23 @@ export function LabCatalog({ experiments }: { experiments: ExperimentRow[] }) {
           <p>{t('lab.empty')}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((exp) => (
+        <div className="space-y-6">
+          {sections.map(({ g, items }) => (
+            <section key={g} aria-labelledby={`teacher-lab-grade-${g}`}>
+              <h2 id={`teacher-lab-grade-${g}`} className="text-sm font-bold text-slate-300 mb-3">
+                {t('ai.gradeWord')} {g}
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {items.map((exp) => (
             <div
               key={exp.id}
               className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-slate-700 transition"
             >
-              {exp.thumbnail_url ? (
-                <img src={exp.thumbnail_url} alt="" className="w-full h-32 object-cover" />
+              {experimentThumb(exp) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={experimentThumb(exp)!} alt="" loading="lazy" className="w-full aspect-video object-cover" />
               ) : (
-                <div className="w-full h-32 bg-gradient-to-br from-cyan-900/30 to-purple-900/30 flex items-center justify-center">
+                <div className="w-full aspect-video bg-gradient-to-br from-cyan-900/30 to-purple-900/30 flex items-center justify-center">
                   <FlaskConical className="w-10 h-10 text-cyan-500/50" />
                 </div>
               )}
@@ -168,6 +179,9 @@ export function LabCatalog({ experiments }: { experiments: ExperimentRow[] }) {
                 )}
               </div>
             </div>
+          ))}
+              </div>
+            </section>
           ))}
         </div>
       )}
