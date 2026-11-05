@@ -60,6 +60,18 @@ const DEMO_EXPERIMENTS: Experiment[] = [
     difficulty: 1,
   },
   {
+    id: 'lo_xo_dan_hoi',
+    title: 'Bài 42: Biến dạng của lò xo',
+    description: 'Bài 42 · Khối 6: Biến dạng của lò xo — Đối chứng hai lò xo, treo quả nặng, đo độ dãn, ghi bảng số liệu, vẽ đồ thị và trả lời câu hỏi.',
+    subject: 'Vật lý',
+    grade_level: 6,
+    thumbnail_url: null,
+    embed_url: '/experiments/lo-xo-dan-hoi/index.html',
+    component_key: 'lo_xo_dan_hoi',
+    duration_minutes: 20,
+    difficulty: 2,
+  },
+  {
     id: 'demo_acid_base',
     title: 'Phản ứng axit – bazơ',
     description: 'Nhỏ dung dịch axit và bazơ lên quỳ tím, quan sát sự đổi màu và ghi nhận kết quả.',
