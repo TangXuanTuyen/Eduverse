@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createAdminClient } from '@/lib/supabase/admin';
+import { addToReviewQueue } from '@/services/review-queue';
 
 export type GameAssignmentRow = {
   id: string;
@@ -208,4 +209,57 @@ export async function soloNextQuestion(sessionId: string, userId: string) {
       : null,
     totalQuestions: count ?? 0,
   };
+}
+
+
+/**
+ * Ghi nhận một câu học sinh vừa trả lời trong trò chơi Mê cung (bài giao dạng trò chơi).
+ * Máy chủ tự chấm theo đáp án của bài giao; câu sai được đưa vào Trạm Sửa Lỗi của học sinh.
+ */
+export async function recordMazeAnswer(
+  studentId: string,
+  assignmentId: string,
+  questionId: string,
+  selectedIndex: number,
+): Promise<{ isCorrect: boolean }> {
+  const admin = createAdminClient();
+
+  const { data: assignment } = await admin
+    .from('assignments')
+    .select('id, room_id')
+    .eq('id', assignmentId)
+    .single();
+  if (!assignment) throw new Error('Không tìm thấy bài tập');
+
+  const { data: member } = await admin
+    .from('room_members')
+    .select('room_id')
+    .eq('room_id', assignment.room_id)
+    .eq('user_id', studentId)
+    .eq('is_active', true)
+    .maybeSingle();
+  if (!member) throw new Error('Bạn không thuộc lớp này');
+
+  const { data: aq } = await admin
+    .from('assignment_questions')
+    .select('id, options, correct_answer, source_question_id')
+    .eq('id', questionId)
+    .eq('assignment_id', assignmentId)
+    .single();
+  if (!aq) throw new Error('Không tìm thấy câu hỏi');
+
+  const options = Array.isArray(aq.options) ? (aq.options as { id?: string; text?: string }[]) : [];
+  const chosen = options[selectedIndex];
+  if (!chosen) throw new Error('Đáp án không hợp lệ');
+
+  const correct = aq.correct_answer;
+  const isCorrect =
+    typeof correct === 'number'
+      ? correct === selectedIndex
+      : correct === chosen.id || correct === chosen.text;
+
+  if (!isCorrect && aq.source_question_id) {
+    await addToReviewQueue(studentId, aq.source_question_id as string);
+  }
+  return { isCorrect };
 }

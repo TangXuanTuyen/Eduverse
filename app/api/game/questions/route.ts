@@ -66,19 +66,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Bạn không thuộc lớp này' }, { status: 403 });
   }
 
+  // Đáp án nằm ngay trong bản chụp câu hỏi của bài giao (question_answers chỉ chứa đáp án của ngân hàng câu hỏi)
   const { data: questions } = await admin
     .from('assignment_questions')
-    .select('id, sort_order, type, content, options, explanation, points')
+    .select('id, sort_order, type, content, options, explanation, points, correct_answer')
     .eq('assignment_id', assignmentId)
     .order('sort_order');
 
-  const questionIds = (questions ?? []).map((q) => q.id);
-  const { data: answers } = await admin
-    .from('question_answers')
-    .select('question_id, correct_answer')
-    .in('question_id', questionIds.length > 0 ? questionIds : ['_none_']);
-
-  const answerMap = buildAnswerMap(answers);
+  const answerMap = new Map<string, unknown>(
+    (questions ?? []).map((q) => [q.id as string, q.correct_answer])
+  );
   const formatted = (questions ?? []).map((q) => formatQuestion(q, answerMap));
   return NextResponse.json({ questions: formatted });
 }

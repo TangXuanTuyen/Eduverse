@@ -3100,6 +3100,22 @@
       if (!cp) return;
 
       const correct = idx === cp.question.correctIndex;
+
+      // Báo máy chủ câu trả lời sai (một lần mỗi câu) để câu đó vào Trạm Sửa Lỗi của học sinh
+      if (!correct && _EDUVERSE_ASSIGNMENT_ID && !cp.wrongReported) {
+        cp.wrongReported = true;
+        fetch('/api/game/maze-answer', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            assignmentId: _EDUVERSE_ASSIGNMENT_ID,
+            questionId: cp.question.id,
+            selectedIndex: idx,
+          }),
+        }).catch(() => {});
+      }
+
       questionModalState.selectedIndex = idx;
       questionModalState.isAnswered = true;
       questionModalState.isCorrect = correct;
