@@ -23,7 +23,7 @@ type StemProject = {
   thumb: string;
 };
 
-type GalleryKind = 'maker' | 'model3d' | 'experiment';
+type GalleryKind = 'maker' | 'experiment';
 
 type GalleryItem = {
   key: string;
@@ -39,14 +39,7 @@ type GalleryItem = {
 
 const GALLERY_KINDS: Record<GalleryKind, { label: string; badge: string; ring: string; gradient: string }> = {
   maker: { label: 'STEM Maker', badge: 'bg-amber-500/90 text-amber-950', ring: 'hover:border-amber-400/70', gradient: 'from-amber-900/60 to-slate-900' },
-  model3d: { label: 'Mô hình 3D', badge: 'bg-purple-400/90 text-purple-950', ring: 'hover:border-purple-400/70', gradient: 'from-purple-900/60 to-slate-900' },
   experiment: { label: 'Thí nghiệm ảo', badge: 'bg-cyan-400/90 text-cyan-950', ring: 'hover:border-cyan-400/70', gradient: 'from-cyan-900/60 to-slate-900' },
-};
-
-// Ảnh xem nhanh cho mô hình 3D lấy từ cơ sở dữ liệu (chưa có thumbnail_url)
-const MODEL_THUMBS: Record<string, string> = {
-  '/models-3d/te-bao-nhan-so/index.html': '/stem/thumbs/te-bao-nhan-so.jpg',
-  '/models-3d/te-bao-nhan-thuc/index.html': '/stem/thumbs/te-bao-nhan-thuc.jpg',
 };
 
 const STEM_PROJECTS: StemProject[] = [
@@ -104,8 +97,6 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
   const [activeTab, setActiveTab] = useState<'litmus' | 'circuit' | 'microscope'>('litmus');
   const [dynamicExperiments, setDynamicExperiments] = useState<DynamicExperiment[]>([]);
   const [viewingExperimentId, setViewingExperimentId] = useState<string | null>(null);
-  const [models3d, setModels3d] = useState<{ id: string; title: string; embed_url: string; thumbnail_url: string | null }[]>([]);
-  const [viewing3dModelId, setViewing3dModelId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<{ id: string; resource_id: string; title: string; completed?: boolean }[]>([]);
   const [galleryFilter, setGalleryFilter] = useState<'all' | GalleryKind>('all');
   const [viewingStemProject, setViewingStemProject] = useState<string | null>(null);
@@ -119,10 +110,6 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
           setDynamicExperiments(data.filter((e: DynamicExperiment) => !e.component_key));
         }
       })
-      .catch(() => {});
-    fetch('/api/models')
-      .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setModels3d(data); })
       .catch(() => {});
     fetch('/api/student-assignments')
       .then((r) => r.json())
@@ -247,19 +234,6 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
       task: tasks.find((t) => t.resource_id === p.id),
       open: () => { sound.playClick(); setViewingStemProject(p.id); },
     })),
-    ...models3d.map((m): GalleryItem => ({
-      key: `model-${m.id}`,
-      kind: 'model3d',
-      title: m.title,
-      description: 'Xoay, phóng to và bấm vào từng bộ phận để khám phá.',
-      thumb: m.thumbnail_url ?? MODEL_THUMBS[m.embed_url] ?? null,
-      icon: '🧬',
-      open: () => {
-        sound.playClick();
-        setViewing3dModelId(m.id);
-        fetch(`/api/models/${m.id}/view`, { method: 'POST' }).catch(() => {});
-      },
-    })),
     ...dynamicExperiments.map((e): GalleryItem => ({
       key: `exp-${e.id}`,
       kind: 'experiment',
@@ -271,7 +245,7 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
       open: () => { sound.playClick(); setViewingExperimentId(e.id); },
     })),
   ];
-  const kindCounts: Record<GalleryKind, number> = { maker: 0, model3d: 0, experiment: 0 };
+  const kindCounts: Record<GalleryKind, number> = { maker: 0, experiment: 0 };
   galleryItems.forEach((g) => { kindCounts[g.kind]++; });
   const visibleItems = galleryFilter === 'all' ? galleryItems : galleryItems.filter((g) => g.kind === galleryFilter);
 
@@ -331,7 +305,7 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
           npcDialogue="STEM-E: 'Chào bạn! Nhấp trực tiếp vào Bàn Hóa Học, Bàn Mạch Điện hoặc Kính Hiển Vi để bắt đầu nghiên cứu nhé!'"
         />
 
-        {/* THƯ VIỆN THỰC HÀNH: STEM Maker, mô hình 3D và thí nghiệm ảo, không chia theo khối */}
+        {/* THƯ VIỆN THỰC HÀNH: STEM Maker và thí nghiệm ảo, không chia theo khối */}
         <section aria-labelledby="stem-gallery-title" className="px-6 py-5 bg-slate-950/40 border-b border-slate-800">
           <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
             <div>
@@ -339,7 +313,7 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
               <p className="text-xs text-slate-400 mt-0.5">Bấm vào một thẻ để xem trực tiếp và thực hành ngay.</p>
             </div>
             <div role="group" aria-label="Lọc theo loại hoạt động" className="flex flex-wrap gap-1.5">
-              {([['all', 'Tất cả', galleryItems.length], ['maker', 'STEM Maker', kindCounts.maker], ['model3d', 'Mô hình 3D', kindCounts.model3d], ['experiment', 'Thí nghiệm ảo', kindCounts.experiment]] as const)
+              {([['all', 'Tất cả', galleryItems.length], ['maker', 'STEM Maker', kindCounts.maker], ['experiment', 'Thí nghiệm ảo', kindCounts.experiment]] as const)
                 .filter(([id, , count]) => id === 'all' || count > 0)
                 .map(([id, label, count]) => (
                   <button
@@ -444,32 +418,6 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
           />
         )}
 
-        {/* 3D Model Viewer overlay */}
-        {viewing3dModelId && (() => {
-          const model = models3d.find((m) => m.id === viewing3dModelId);
-          if (!model) return null;
-          return (
-            <div className="fixed inset-0 z-50 flex flex-col bg-slate-950">
-              <div className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 shrink-0">
-                <h2 className="text-white font-bold text-sm">{model.title}</h2>
-                <button
-                  onClick={() => setViewing3dModelId(null)}
-                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="flex-1">
-                <iframe
-                  src={model.embed_url}
-                  className="w-full h-full border-0"
-                  allow="webgl; webgl2"
-                  title={model.title}
-                />
-              </div>
-            </div>
-          );
-        })()}
         </Portal>
 
         {/* RESEARCH MISSIONS & REWARD PROGRESS BOARD */}
