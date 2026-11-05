@@ -20,6 +20,82 @@ export type StemQuizQuestion = {
 export type StemQuiz = { title: string; kind?: 'stem' | 'lab'; questions: StemQuizQuestion[] };
 
 export const STEM_QUIZZES: Record<string, StemQuiz> = {
+  'te-bao-nhan-thuc-3d': {
+    title: 'Tế bào nhân thực 3D',
+    kind: 'lab',
+    questions: [
+      {
+        id: "q1",
+        content: "Bào quan nào được ví như \"Bộ não\" hay \"Trung tâm chỉ huy\" của tế bào nhân thực?",
+        options: [{ id: "A", text: "Nhân tế bào" }, { id: "B", text: "Ti thể" }, { id: "C", text: "Ribosome" }, { id: "D", text: "Màng tế bào" }],
+        correct: ["A"],
+        explanation: "Nhân tế bào chứa vật chất di truyền (DNA), chỉ đạo mọi hoạt động sống và sinh trưởng của tế bào.",
+      },
+      {
+        id: "q2",
+        content: "Bào quan nào được xem là \"Nhà máy năng lượng\", cung cấp ATP cho tế bào hoạt động?",
+        options: [{ id: "A", text: "Ti thể" }, { id: "B", text: "Bộ máy Golgi" }, { id: "C", text: "Lysosome" }, { id: "D", text: "Trung thể" }],
+        correct: ["A"],
+        explanation: "Ti thể thực hiện hô hấp tế bào để chuyển hóa chất dinh dưỡng thành năng lượng ATP nuôi tế bào.",
+      },
+      {
+        id: "q3",
+        content: "Thành phần nào có vai trò bao bọc, bảo vệ và kiểm soát các chất ra vào tế bào?",
+        options: [{ id: "A", text: "Màng tế bào" }, { id: "B", text: "Tế bào chất" }, { id: "C", text: "Nhân con" }, { id: "D", text: "Trung tử" }],
+        correct: ["A"],
+        explanation: "Màng tế bào ngăn cách tế bào với môi trường và có tính thấm chọn lọc các chất qua lại.",
+      },
+      {
+        id: "q4",
+        content: "Ribosome là bào quan thực hiện chức năng sinh học chính nào sau đây?",
+        options: [{ id: "A", text: "Tổng hợp protein" }, { id: "B", text: "Tạo ra oxy" }, { id: "C", text: "Tiêu hóa vi khuẩn" }, { id: "D", text: "Phân chia tế bào" }],
+        correct: ["A"],
+        explanation: "Ribosome là \"xưởng sản xuất\" lắp ráp các phân tử protein thiết yếu cho tế bào.",
+      },
+      {
+        id: "q5",
+        content: "Đặc điểm quan trọng nhất giúp phân biệt tế bào nhân thực với tế bào nhân sơ là gì?",
+        options: [{ id: "A", text: "Có nhân hoàn chỉnh được bao bọc bởi màng nhân" }, { id: "B", text: "Có màng tế bào bao quanh" }, { id: "C", text: "Có chứa chất tế bào" }, { id: "D", text: "Có kích thước siêu nhỏ nhìn qua kính hiển vi" }],
+        correct: ["A"],
+        explanation: "Tế bào nhân thực có nhân được bọc bởi màng nhân kép và có nhiều bào quan có màng bọc, còn tế bào nhân sơ chỉ có vùng nhân trần.",
+      },
+      {
+        id: "q6",
+        content: "Bộ máy Golgi có nhiệm vụ tương tự như bộ phận nào trong đời sống hàng ngày?",
+        options: [{ id: "A", text: "Bưu điện tiếp nhận, đóng gói và gửi bưu kiện" }, { id: "B", text: "Nhà máy phát điện thắp sáng" }, { id: "C", text: "Bức tường bảo vệ ngôi nhà" }, { id: "D", text: "Bình chứa nước uống" }],
+        correct: ["A"],
+        explanation: "Bộ máy Golgi nhận protein từ lưới nội chất, hoàn thiện và đóng gói vào các túi bưu kiện vận chuyển đến nơi cần thiết.",
+      },
+      {
+        id: "q7",
+        content: "Nếu màng của toàn bộ lysosome trong một tế bào bị vỡ, điều gì sẽ xảy ra?",
+        options: [{ id: "A", text: "Enzyme tiêu hóa tràn ra ngoài và tự phân hủy chính tế bào đó" }, { id: "B", text: "Tế bào sẽ tạo ra nhiều năng lượng hơn" }, { id: "C", text: "Tế bào sẽ biến thành tế bào thực vật" }, { id: "D", text: "Tế bào không bị ảnh hưởng gì" }],
+        correct: ["A"],
+        explanation: "Lysosome chứa nhiều enzyme tiêu hóa mạnh; nếu màng vỡ, enzyme tràn ra sẽ phân hủy chính các bào quan của tế bào.",
+      },
+      {
+        id: "q8",
+        content: "Tế bào cơ tim đập liên tục cần nhiều năng lượng thì bào quan nào sẽ phát triển nhiều nhất?",
+        options: [{ id: "A", text: "Ti thể" }, { id: "B", text: "Lysosome" }, { id: "C", text: "Trung thể" }, { id: "D", text: "Bộ máy Golgi" }],
+        correct: ["A"],
+        explanation: "Cơ tim cần lượng ATP khổng lồ để co bóp liên tục cả đời, vì vậy mỗi tế bào cơ tim chứa hàng nghìn ti thể.",
+      },
+      {
+        id: "q9",
+        content: "Ba thành phần cơ bản bắt buộc phải có ở mọi tế bào nhân thực gồm những gì?",
+        options: [{ id: "A", text: "Màng tế bào, tế bào chất và nhân tế bào" }, { id: "B", text: "Thành cellulose, lục lạp và không bào lớn" }, { id: "C", text: "Vỏ nhầy, plasmid và roi vi khuẩn" }, { id: "D", text: "Chỉ cần màng tế bào và lông bám" }],
+        correct: ["A"],
+        explanation: "Ba thành phần cấu tạo cốt lõi của tế bào nhân thực (chuẩn SGK KHTN 6) là: Màng tế bào, Tế bào chất và Nhân tế bào.",
+      },
+      {
+        id: "q10",
+        content: "Vì sao trong mô hình 3D tế bào động vật, chúng ta KHÔNG vẽ thành tế bào cứng bằng cellulose và lục lạp?",
+        options: [{ id: "A", text: "Vì thành cellulose và lục lạp chỉ có ở tế bào thực vật" }, { id: "B", text: "Vì tế bào động vật không đủ chỗ chứa" }, { id: "C", text: "Vì động vật không bao giờ cần năng lượng" }, { id: "D", text: "Vì tác giả quên không vẽ" }],
+        correct: ["A"],
+        explanation: "Thành cellulose cứng và lục lạp quang hợp là đặc trưng riêng của tế bào thực vật; tế bào động vật mềm dẻo và dị dưỡng.",
+      },
+    ],
+  },
   'lo-xo-dan-hoi': {
     title: 'Bài 42: Biến dạng của lò xo',
     kind: 'lab',

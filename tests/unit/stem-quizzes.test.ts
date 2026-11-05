@@ -35,6 +35,13 @@ describe('gradeStemAnswer', () => {
     expect(gradeStemAnswer(q, 'A')).toBe(false);
   });
 
+  it('chấm câu của bài tế bào nhân thực 3D', () => {
+    const q = getStemQuestion('te-bao-nhan-thuc-3d', 'q1')!;
+    expect(gradeStemAnswer(q, 'A')).toBe(true);
+    expect(gradeStemAnswer(q, 'B')).toBe(false);
+    expect(STEM_QUIZZES['te-bao-nhan-thuc-3d'].questions).toHaveLength(10);
+  });
+
   it('không có câu hỏi ngoài kho', () => {
     expect(getStemQuestion('pin-volta', 'q9')).toBeNull();
     expect(getStemQuestion('thuy-dien', 'q9')).toBeNull();
