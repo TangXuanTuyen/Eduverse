@@ -6,7 +6,7 @@ import { useLocale } from '@/components/i18n/LocaleProvider';
 
 export function GameList({ games }: { games: GameRow[] }) {
   const { t } = useLocale();
-  const MODE_LABELS: Record<string, string> = { tu_luyen: t('gm.modeSelf'), thi_dau: t('gm.modeLive'), me_cung: t('gm.modeMaze') };
+  const MODE_LABELS: Record<string, string> = { tu_luyen: t('gm.modeSelf'), thi_dau: t('gm.modeLive') };
   const STATUS_LABELS: Record<string, { label: string; color: string }> = {
     draft: { label: t('as.draft'), color: 'text-slate-400' },
     ready: { label: t('gm.statusReady'), color: 'text-green-400' },

@@ -31,7 +31,7 @@ export async function createGameAction(
     const gameId = await createGame(profile.id, {
       name,
       question_set_id: questionSetId,
-      mode: mode as 'tu_luyen' | 'thi_dau' | 'me_cung',
+      mode: mode as 'tu_luyen' | 'thi_dau',
       time_per_question: Math.min(120, Math.max(5, timePerQuestion)),
       points_per_question: Math.min(1000, Math.max(1, pointsPerQuestion)),
       shuffle_questions: shuffleQuestions,

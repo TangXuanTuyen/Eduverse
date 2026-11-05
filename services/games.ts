@@ -7,7 +7,7 @@ export type GameRow = {
   owner_id: string;
   question_set_id: string;
   name: string;
-  mode: 'tu_luyen' | 'thi_dau' | 'me_cung';
+  mode: 'tu_luyen' | 'thi_dau';
   time_per_question: number;
   points_per_question: number;
   shuffle_questions: boolean;
@@ -33,7 +33,7 @@ export type GameQuestionRow = {
 export type CreateGameData = {
   question_set_id: string;
   name: string;
-  mode: 'tu_luyen' | 'thi_dau' | 'me_cung';
+  mode: 'tu_luyen' | 'thi_dau';
   time_per_question?: number;
   points_per_question?: number;
   shuffle_questions?: boolean;
