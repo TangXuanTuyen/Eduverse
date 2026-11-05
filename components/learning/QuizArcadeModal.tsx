@@ -6,13 +6,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Zap, Swords, FlaskConical, Trophy, X, ArrowLeft, FileText, Clock, AlertCircle } from 'lucide-react';
+import { X, ArrowLeft, FileText, Clock, AlertCircle } from 'lucide-react';
 import { GameJoinSection } from './GameJoinSection';
 import { GameAssignmentList } from './GameAssignmentList';
 import { RoomInteriorScene } from './RoomInteriorScene';
 import { DialogFrame } from '@/components/ui/DialogFrame';
-import { QuickChallengeClient } from '@/components/games/QuickChallengeClient';
-import { BossBattle } from '@/components/games/BossBattle';
 import { AssignmentQuizTaker } from '@/components/games/AssignmentQuizTaker';
 
 interface QuizArcadeModalProps {
@@ -20,7 +18,7 @@ interface QuizArcadeModalProps {
   assignmentId?: string | null;
 }
 
-type ArcadeScreen = 'menu' | 'quick_challenge' | 'boss_battle' | 'assignment_quiz';
+type ArcadeScreen = 'menu' | 'assignment_quiz';
 
 type QuizAssignment = {
   id: string;
@@ -48,29 +46,6 @@ export const QuizArcadeModal: React.FC<QuizArcadeModalProps> = ({
       })
       .catch(() => {});
   }, []);
-
-  const GAME_MODES = [
-    {
-      id: 'quick_challenge' as const,
-      icon: Zap,
-      title: 'Thử Thách Nhanh',
-      desc: '5 câu hỏi thích ứng, không giới hạn thời gian',
-      color: 'purple',
-      border: 'border-purple-500/50',
-      bg: 'bg-purple-600/20',
-      iconColor: 'text-purple-400',
-    },
-    {
-      id: 'boss_battle' as const,
-      icon: Swords,
-      title: 'Đấu Trùm',
-      desc: 'Đánh boss bằng kiến thức, streak = chiêu đặc biệt',
-      color: 'red',
-      border: 'border-red-500/50',
-      bg: 'bg-red-600/20',
-      iconColor: 'text-red-400',
-    },
-  ];
 
   return (
     <DialogFrame onClose={onClose} labelledBy="dialog-title-arcade" className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md">
@@ -168,33 +143,7 @@ export const QuizArcadeModal: React.FC<QuizArcadeModalProps> = ({
                   </div>
                 </div>
               )}
-
-              {/* Game modes */}
-              <div className="grid gap-3">
-                {GAME_MODES.map((mode) => (
-                  <button
-                    key={mode.id}
-                    type="button"
-                    onClick={() => setScreen(mode.id)}
-                    className={`w-full p-4 rounded-xl border ${mode.border} ${mode.bg} hover:bg-opacity-40 flex items-center gap-4 transition cursor-pointer text-left min-h-[64px]`}
-                  >
-                    <mode.icon className={`w-8 h-8 ${mode.iconColor} shrink-0`} />
-                    <div>
-                      <div className="text-sm font-bold text-white">{mode.title}</div>
-                      <div className="text-xs text-slate-400 mt-0.5">{mode.desc}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
             </div>
-          )}
-
-          {screen === 'quick_challenge' && (
-            <QuickChallengeClient onClose={() => setScreen('menu')} />
-          )}
-
-          {screen === 'boss_battle' && (
-            <BossBattle onClose={() => setScreen('menu')} />
           )}
 
           {screen === 'assignment_quiz' && activeAssignmentId && (
