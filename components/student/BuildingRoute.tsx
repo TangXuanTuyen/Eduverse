@@ -51,7 +51,7 @@ export function BuildingRoute({ id, assignmentId }: { id: BuildingId; assignment
         />
       );
     case 'stem_lab':
-      return <StemLabModal onClose={game.closeBuilding} onCompleteExperiment={game.completeStemExperiment} />;
+      return <StemLabModal onClose={game.closeBuilding} />;
     case 'school':
       return <SchoolModal progress={game.progress} onClose={game.closeBuilding} onClaimQuest={game.claimQuest} />;
     case 'achievement_plaza':
