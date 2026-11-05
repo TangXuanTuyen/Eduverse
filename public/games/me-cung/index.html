@@ -886,11 +886,13 @@
       letter-spacing: 0.05em;
     }
   </style>
-</head>
+<script src="/_aistudio-iframe.js?v=6634132a"></script></head>
 <body>
   <div id="app-root">
     <!-- Content injected via JS -->
   </div>
+  <div id="overlay-root"></div>
+  <canvas id="maze-canvas" style="display:none;"></canvas>
 
   <!-- Audio Context Synthesizer & Game Logic Script -->
   <script>
@@ -1126,7 +1128,12 @@
       { x: 7, y: 11 },
     ];
 
-    const QUESTION_BANK = [
+    let QUESTION_BANK = [];
+    const _EDUVERSE_PARAMS = new URLSearchParams(window.location.search);
+    const _EDUVERSE_ASSIGNMENT_ID = _EDUVERSE_PARAMS.get('assignmentId');
+    const _EDUVERSE_SET_ID = _EDUVERSE_PARAMS.get('setId');
+
+    const _DEFAULT_QUESTION_BANK = [
       {
         id: 'q1',
         subject: 'Toán Học - Chu Vi Hình Chữ Nhật',
@@ -1259,47 +1266,32 @@
       },
     ];
 
-    /* Chế độ học sinh trong EDUVERSE: câu hỏi lấy từ bộ đề giáo viên giao, chấm ở máy chủ */
-    const SERVER_SESSION = new URLSearchParams(location.search).get('session');
-    let SERVER_QUESTIONS = null;
-    let serverLoadError = null;
+    QUESTION_BANK = _DEFAULT_QUESTION_BANK;
 
-    function escapeHtml(v) {
-      return String(v == null ? '' : v)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    }
-
-    async function loadServerQuestions() {
+    async function _loadAssignmentQuestions() {
+      if (!_EDUVERSE_ASSIGNMENT_ID && !_EDUVERSE_SET_ID) return;
+      const url = _EDUVERSE_ASSIGNMENT_ID
+        ? `/api/game/questions?assignmentId=${encodeURIComponent(_EDUVERSE_ASSIGNMENT_ID)}`
+        : `/api/game/questions?setId=${encodeURIComponent(_EDUVERSE_SET_ID)}`;
       try {
-        const res = await fetch('/api/game/solo/questions?sessionId=' + encodeURIComponent(SERVER_SESSION));
+        const res = await fetch(url, {
+          credentials: 'include',
+        });
+        if (!res.ok) return;
         const data = await res.json();
-        if (!res.ok || data.error) throw new Error(data.error || 'Không tải được câu hỏi');
-        const list = (data.questions || []).map(q => ({
-          id: q.id,
-          subject: '',
-          question: escapeHtml(q.content),
-          options: q.options.slice(0, 4).map(o => escapeHtml(o.text)),
-          optionIds: q.options.slice(0, 4).map(o => o.id),
-          correctIndex: -1,
-          explanation: '',
-          points: q.points || 100,
-          visualType: undefined,
-        }));
-        if (list.length === 0) throw new Error('Bộ đề chưa có câu trắc nghiệm phù hợp cho trò chơi này');
-        SERVER_QUESTIONS = list;
-      } catch (e) {
-        serverLoadError = e && e.message ? e.message : 'Không tải được câu hỏi';
-      }
-    }
-
-    function finishServerSession() {
-      if (!SERVER_SESSION) return;
-      fetch('/api/game/solo/finish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: SERVER_SESSION }),
-      }).catch(() => {});
+        if (Array.isArray(data.questions) && data.questions.length > 0) {
+          QUESTION_BANK = data.questions.map((q, i) => ({
+            id: q.id || `q${i + 1}`,
+            subject: q.skill_tags || 'KHTN',
+            question: q.question_text,
+            options: q.options,
+            correctIndex: q.correct_index,
+            explanation: q.explanation || '',
+            points: 100,
+            visualType: q.visual_type || null,
+          }));
+        }
+      } catch {}
     }
 
     function shuffleArray(arr) {
@@ -1327,8 +1319,7 @@
         selectedCoords = [...CANDIDATE_STATION_COORDS];
       }
 
-      if (SERVER_QUESTIONS) selectedCoords = selectedCoords.slice(0, SERVER_QUESTIONS.length);
-      const shuffledQ = shuffleArray(SERVER_QUESTIONS || QUESTION_BANK);
+      const shuffledQ = shuffleArray(QUESTION_BANK);
       selectedCoords.forEach((coord, idx) => {
         questionCheckpoints.push({
           id: `station-${coord.x}-${coord.y}`,
@@ -1374,6 +1365,47 @@
     /* ============================================================= */
     /* 3. SVG VISUAL DIAGRAM GENERATOR                               */
     /* ============================================================= */
+    function renderLatex(text) {
+      if (!text || typeof text !== 'string') return text || '';
+      return text
+        .replace(/\$([^$]+)\$/g, (_, expr) => {
+          let h = expr
+            .replace(/\\text\{([^}]*)\}/g, '$1')
+            .replace(/\\textbf\{([^}]*)\}/g, '<b>$1</b>')
+            .replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, '<sup>$1</sup>&frasl;<sub>$2</sub>')
+            .replace(/\{,\}/g, ',')
+            .replace(/\\times/g, '×')
+            .replace(/\\div/g, '÷')
+            .replace(/\\pm/g, '±')
+            .replace(/\\leq/g, '≤')
+            .replace(/\\geq/g, '≥')
+            .replace(/\\neq/g, '≠')
+            .replace(/\\approx/g, '≈')
+            .replace(/\\infty/g, '∞')
+            .replace(/\\pi/g, 'π')
+            .replace(/\\alpha/g, 'α')
+            .replace(/\\beta/g, 'β')
+            .replace(/\\gamma/g, 'γ')
+            .replace(/\\delta/g, 'δ')
+            .replace(/\\theta/g, 'θ')
+            .replace(/\\lambda/g, 'λ')
+            .replace(/\\mu/g, 'μ')
+            .replace(/\\Omega/g, 'Ω')
+            .replace(/\\omega/g, 'ω')
+            .replace(/\\degree/g, '°')
+            .replace(/\\circ/g, '°')
+            .replace(/\\rightarrow/g, '→')
+            .replace(/\\leftarrow/g, '←')
+            .replace(/\\cdot/g, '·')
+            .replace(/\^{([^}]*)}/g, '<sup>$1</sup>')
+            .replace(/\^(\w)/g, '<sup>$1</sup>')
+            .replace(/_{([^}]*)}/g, '<sub>$1</sub>')
+            .replace(/_(\w)/g, '<sub>$1</sub>')
+            .replace(/[{}]/g, '');
+          return `<span style="font-style:italic;font-family:serif;">${h}</span>`;
+        });
+    }
+
     function renderQuestionVisualSVG(type) {
       switch (type) {
         case 'geometry':
@@ -2416,7 +2448,6 @@
           } catch (e) {}
         }
         gameState.status = 'completed';
-        finishServerSession();
         soundManager.playVictory();
         renderApp();
         return;
@@ -2493,7 +2524,8 @@
     /* ============================================================= */
     /* 7. APP CONTROLLER ACTIONS                                     */
     /* ============================================================= */
-    function startGame(mode = 5) {
+    async function startGame(mode = 5) {
+      await _loadAssignmentQuestions();
       gameState.questionMode = mode;
       const fresh = parseMapEntities(mode);
       gameState.questionCheckpoints = fresh.questionCheckpoints;
@@ -2544,7 +2576,13 @@
     function toggleMute() {
       gameState.isMuted = !gameState.isMuted;
       soundManager.enabled = !gameState.isMuted;
-      renderApp();
+      const btn = document.getElementById('mute-btn');
+      if (btn) {
+        btn.title = gameState.isMuted ? 'Bật âm thanh' : 'Tắt âm thanh';
+        btn.innerHTML = gameState.isMuted
+          ? `<svg class="icon" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`
+          : `<svg class="icon" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`;
+      }
     }
 
     function formatTime(secs) {
@@ -2571,14 +2609,53 @@
     /* ============================================================= */
     /* 8. HTML UI RENDERING                                          */
     /* ============================================================= */
+    let _lastRenderedScreen = null;
+
     function renderApp() {
       const root = document.getElementById('app-root');
+      const overlayRoot = document.getElementById('overlay-root');
       if (!root) return;
 
       const itemsCollectedCount = gameState.goldItems.filter(i => i.isCollected).length;
       const questionsAnsweredCount = gameState.questionCheckpoints.filter(c => c.isAnswered).length;
       const questionsCorrectCount = gameState.questionCheckpoints.filter(c => c.isCorrect).length;
       const isGoalUnlocked = gameState.questionCheckpoints.length > 0 && questionsAnsweredCount >= gameState.questionCheckpoints.length;
+
+      const currentScreen = gameState.status === 'intro' ? 'intro' : 'game';
+
+      if (_lastRenderedScreen === 'game' && currentScreen === 'game') {
+        updateHUDStats();
+        const bannerArea = document.getElementById('banner-area');
+        if (bannerArea) {
+          let bannerHtml = '';
+          if (gameState.unlockCelebration) {
+            bannerHtml += `<div class="banner-celebration animate-bounce"><span>★ TẤT CẢ TRẠM TRI THỨC ĐÃ GIẢI MÃ! CỔNG ĐÍCH ĐÃ MỞ! ★</span></div>`;
+          }
+          if (gameState.lockAlert) {
+            bannerHtml += `<div class="banner-lock animate-fadeIn"><svg class="icon" style="color: #f87171;" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>${gameState.lockAlert}</span></div>`;
+          }
+          bannerArea.innerHTML = bannerHtml;
+        }
+        const gateEl = document.getElementById('gate-badge');
+        if (gateEl) {
+          gateEl.className = isGoalUnlocked ? 'hud-stat-pill gate-badge-open' : 'hud-stat-pill gate-badge-locked';
+          gateEl.innerHTML = `<span>${isGoalUnlocked ? '★' : '🔒'}</span><span>${isGoalUnlocked ? 'CỔNG MỞ' : `Khóa (${gameState.questionCheckpoints.length - questionsAnsweredCount})`}</span>`;
+        }
+
+        let modalHtml = '';
+        if (gameState.activeCheckpoint) {
+          modalHtml = renderQuestionModalHTML(gameState.activeCheckpoint);
+        } else if (gameState.status === 'completed') {
+          modalHtml = renderVictoryModalHTML(questionsCorrectCount);
+        } else if (gameState.showHelp) {
+          modalHtml = renderHelpModalHTML();
+        }
+        if (overlayRoot) overlayRoot.innerHTML = modalHtml;
+        return;
+      }
+
+      _lastRenderedScreen = currentScreen;
+      if (overlayRoot) overlayRoot.innerHTML = '';
 
       let html = '';
 
@@ -2672,11 +2749,6 @@
               <span>BẮT ĐẦU KHÁM PHÁ (${gameState.questionMode} CÂU)</span>
             </button>
 
-            <!-- Download Button -->
-            <button class="btn" style="margin-top: 12px; padding: 10px 20px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(6, 182, 212, 0.4); color: #67e8f9; font-size: 13px;" onclick="downloadThisGameHTML()">
-              <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              <span>Tải file HTML này về máy (.html)</span>
-            </button>
 
             ${gameState.highScore > 0 ? `
               <div class="highscore-badge font-mono-numbers">
@@ -2723,7 +2795,7 @@
                   <strong id="hud-questions" class="font-mono-numbers">${questionsAnsweredCount}/${gameState.questionCheckpoints.length}</strong>
                 </div>
 
-                <div class="hud-stat-pill ${isGoalUnlocked ? 'gate-badge-open' : 'gate-badge-locked'}">
+                <div id="gate-badge" class="hud-stat-pill ${isGoalUnlocked ? 'gate-badge-open' : 'gate-badge-locked'}">
                   <span>${isGoalUnlocked ? '★' : '🔒'}</span>
                   <span>${isGoalUnlocked ? 'CỔNG MỞ' : `Khóa (${gameState.questionCheckpoints.length - questionsAnsweredCount})`}</span>
                 </div>
@@ -2739,7 +2811,7 @@
                 <button class="btn btn-icon" onclick="goHome()" title="Về màn hình chính (Đổi chế độ)">
                   <svg class="icon" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 </button>
-                <button class="btn btn-icon" onclick="toggleMute()" title="${gameState.isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}">
+                <button id="mute-btn" class="btn btn-icon" onclick="toggleMute()" title="${gameState.isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}">
                   ${gameState.isMuted
                     ? `<svg class="icon" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`
                     : `<svg class="icon" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`
@@ -2755,23 +2827,10 @@
             </header>
 
             <!-- Banners -->
-            ${gameState.unlockCelebration ? `
-              <div class="banner-celebration animate-bounce">
-                <span>★ TẤT CẢ TRẠM TRI THỨC ĐÃ GIẢI MÃ! CỔNG ĐÍCH ĐÃ MỞ! ★</span>
-              </div>
-            ` : ''}
-
-            ${gameState.lockAlert ? `
-              <div class="banner-lock animate-fadeIn">
-                <svg class="icon" style="color: #f87171;" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                <span>${gameState.lockAlert}</span>
-              </div>
-            ` : ''}
+            <div id="banner-area"></div>
 
             <!-- Canvas Viewport -->
-            <div class="canvas-container">
-              <canvas id="maze-canvas"></canvas>
-            </div>
+            <div class="canvas-container" id="canvas-slot"></div>
 
             <!-- Virtual Controls -->
             <div class="controls-wrapper">
@@ -2805,15 +2864,6 @@
         `;
       }
 
-      // Modals
-      if (gameState.activeCheckpoint) {
-        html += renderQuestionModalHTML(gameState.activeCheckpoint);
-      } else if (gameState.status === 'completed') {
-        html += renderVictoryModalHTML(questionsCorrectCount);
-      } else if (gameState.showHelp) {
-        html += renderHelpModalHTML();
-      }
-
       // Footer
       html += `
         <footer class="app-footer">
@@ -2828,7 +2878,18 @@
         </footer>
       `;
 
+      const canvas = document.getElementById('maze-canvas');
+      if (canvas && canvas.parentElement !== document.body) {
+        document.body.appendChild(canvas);
+      }
       root.innerHTML = html;
+      const slot = document.getElementById('canvas-slot');
+      if (slot && canvas) {
+        canvas.style.display = '';
+        slot.appendChild(canvas);
+      } else if (canvas) {
+        canvas.style.display = 'none';
+      }
     }
 
     function selectMode(m) {
@@ -2930,13 +2991,10 @@
               ` : ''}
             </div>
 
-            <!-- Visual diagram -->
-            <div class="qm-visual-box">
-              ${renderQuestionVisualSVG(q.visualType)}
-            </div>
+            <!-- Visual diagram removed: API questions don't have matching visuals -->
 
             <!-- Question Prompt -->
-            <div class="qm-prompt">${q.question}</div>
+            <div class="qm-prompt">${renderLatex(q.question)}</div>
 
             <!-- Options List -->
             <div class="qm-options-list">
@@ -2964,7 +3022,7 @@
                   >
                     <div style="display: flex; align-items: center; gap: 12px;">
                       <span class="qm-opt-label">${optionLabels[idx]}</span>
-                      <span>${opt}</span>
+                      <span>${renderLatex(opt)}</span>
                     </div>
                     ${feedbackTag}
                   </button>
@@ -2977,17 +3035,17 @@
               isCorr ? `
                 <div class="qm-expl-box correct animate-fadeIn">
                   <strong style="color: #6ee7b7; display: block; margin-bottom: 4px;">💡 Giải thích chi tiết:</strong>
-                  <span style="color: #e2e8f0;">${q.explanation}</span>
+                  <span style="color: #e2e8f0;">${renderLatex(q.explanation)}</span>
                 </div>
               ` : `
                 <div class="qm-expl-box incorrect animate-fadeIn">
                   <div style="margin-bottom: 8px;">
                     <strong style="color: #fde68a; display: block; margin-bottom: 4px;">💡 Kiến thức cần ghi nhớ:</strong>
-                    <span style="color: #e2e8f0;">${q.explanation}</span>
+                    <span style="color: #e2e8f0;">${renderLatex(q.explanation)}</span>
                   </div>
                   <div style="padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
                     <span style="color: #fda4af;">Lựa chọn của bạn: ${optionLabels[questionModalState.selectedIndex]}</span>
-                    <span style="color: #34d399; font-weight: 700;">Đáp án đúng: ${optionLabels[q.correctIndex]} (${q.options[q.correctIndex]})</span>
+                    <span style="color: #34d399; font-weight: 700;">Đáp án đúng: ${optionLabels[q.correctIndex]} (${renderLatex(q.options[q.correctIndex])})</span>
                   </div>
                 </div>
               `
@@ -3036,39 +3094,12 @@
       `;
     }
 
-    async function handleSelectAnswer(idx) {
-      if (questionModalState.isAnswered || questionModalState.pending) return;
+    function handleSelectAnswer(idx) {
+      if (questionModalState.isAnswered) return;
       const cp = gameState.activeCheckpoint;
       if (!cp) return;
 
-      let correct;
-      if (SERVER_SESSION) {
-        questionModalState.pending = true;
-        try {
-          const res = await fetch('/api/game/solo/answer', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              sessionId: SERVER_SESSION,
-              questionId: cp.question.id,
-              answer: cp.question.optionIds[idx],
-            }),
-          });
-          const data = await res.json();
-          if (!res.ok || data.error) throw new Error(data.error || 'Không gửi được đáp án');
-          correct = !!data.isCorrect;
-          cp.question.explanation = escapeHtml(data.explanation || '');
-          cp.question.correctIndex = cp.question.optionIds.indexOf(data.correctAnswer);
-          if (correct) cp.question.points = data.score || cp.question.points;
-        } catch (e) {
-          questionModalState.pending = false;
-          alert((e && e.message) || 'Không gửi được đáp án, em thử lại nhé.');
-          return;
-        }
-        questionModalState.pending = false;
-      } else {
-        correct = idx === cp.question.correctIndex;
-      }
+      const correct = idx === cp.question.correctIndex;
       questionModalState.selectedIndex = idx;
       questionModalState.isAnswered = true;
       questionModalState.isCorrect = correct;
@@ -3106,7 +3137,6 @@
     }
 
     function retryQuestionModal() {
-      if (SERVER_SESSION) { closeQuestionModal(); return; }
       questionModalState.selectedIndex = null;
       questionModalState.isAnswered = false;
       questionModalState.isCorrect = false;
@@ -3264,19 +3294,7 @@
     }
 
     // Initialize App
-    if (SERVER_SESSION) {
-      loadServerQuestions().then(() => {
-        if (serverLoadError) {
-          document.getElementById('app-root').innerHTML =
-            '<div style="padding:32px;color:#fecaca;font-family:sans-serif;text-align:center">' +
-            escapeHtml(serverLoadError) + '</div>';
-        } else {
-          renderApp();
-        }
-      });
-    } else {
-      renderApp();
-    }
+    renderApp();
   </script>
 </body>
 </html>
