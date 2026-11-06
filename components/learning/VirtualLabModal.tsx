@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { DialogFrame } from '@/components/ui/DialogFrame';
 import { experimentThumb } from '@/lib/experiments/thumbs';
+import { Portal } from '@/components/ui/Portal';
 import { Atom, Play, Clock, ArrowLeft, Loader2, ExternalLink, CheckCircle2 } from 'lucide-react';
 
 type Experiment = {
@@ -123,6 +124,8 @@ interface VirtualLabModalProps {
 export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
   const [experiments, setExperiments] = useState<Experiment[]>(DEMO_EXPERIMENTS);
   const [activeExp, setActiveExp] = useState<Experiment | null>(null);
+  // Thí nghiệm đang mở ngay trong ứng dụng (khung toàn màn hình, có nút quay lại)
+  const [playingExp, setPlayingExp] = useState<Experiment | null>(null);
   const [filter, setFilter] = useState<number | 'all'>('all');
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState<TaskAssignment[]>([]);
@@ -226,14 +229,13 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
               </a>
             </div>
             {activeExp.embed_url ? (
-              <a
-                href={activeExp.embed_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm transition min-h-[44px]"
+              <button
+                type="button"
+                onClick={() => setPlayingExp(activeExp)}
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm transition min-h-[44px] cursor-pointer"
               >
-                <Play className="w-5 h-5" /> Bắt đầu thí nghiệm <ExternalLink className="w-4 h-4 opacity-60" />
-              </a>
+                <Play className="w-5 h-5" /> Bắt đầu thí nghiệm
+              </button>
             ) : (
               <div className="flex flex-col items-center justify-center h-48 text-center gap-4">
                 <div className="w-20 h-20 rounded-2xl bg-orange-900/50 border border-orange-700/50 flex items-center justify-center">
@@ -246,6 +248,58 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
             )}
           </div>
         </div>
+
+        {/* Khung chạy thí nghiệm: đặt ra document.body để không bị hộp thoại cắt; luôn có nút quay lại */}
+        <Portal>
+          {playingExp && playingExp.embed_url && (() => {
+            const task = tasks.find((t) => t.resource_id === playingExp.id);
+            return (
+              <div className="fixed inset-0 z-[60] flex flex-col bg-slate-950">
+                <div className="flex items-center gap-3 px-3 py-2 bg-slate-900 border-b border-slate-800 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setPlayingExp(null)}
+                    aria-label="Quay lại"
+                    className="min-h-11 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm font-semibold text-white flex items-center gap-2 cursor-pointer"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Quay lại
+                  </button>
+                  <h2 className="flex-1 min-w-0 truncate text-sm font-bold text-white">{playingExp.title}</h2>
+                  {task && (
+                    task.completed ? (
+                      <span className="text-[11px] px-2 py-1 rounded font-bold bg-green-900 text-green-300">✓ Đã hoàn thành nhiệm vụ</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => completeTask(task.id)}
+                        disabled={completingTask === task.id}
+                        className="min-h-11 px-3 rounded-xl bg-green-600 hover:bg-green-500 text-xs font-bold text-white disabled:opacity-60"
+                      >
+                        {completingTask === task.id ? 'Đang xác nhận...' : 'Hoàn thành nhiệm vụ (+30 XP)'}
+                      </button>
+                    )
+                  )}
+                  <a
+                    href={playingExp.embed_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Mở trong tab mới"
+                    title="Mở trong tab mới"
+                    className="min-h-11 min-w-11 flex items-center justify-center rounded-xl text-slate-300 hover:text-white hover:bg-slate-800"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+                <iframe
+                  src={playingExp.embed_url}
+                  className="flex-1 w-full border-0"
+                  allow="webgl; webgl2"
+                  title={playingExp.title}
+                />
+              </div>
+            );
+          })()}
+        </Portal>
       </DialogFrame>
     );
   }
