@@ -5,6 +5,7 @@ import { Box, Send } from 'lucide-react';
 import type { Model3DRow } from '@/services/models-3d';
 import { assignModelAction } from './actions';
 import { useLocale } from '@/components/i18n/LocaleProvider';
+import { modelThumb } from '@/lib/experiments/thumbs';
 
 type Room = { id: string; name: string };
 
@@ -96,8 +97,9 @@ export function ModelCatalog({ models }: { models: Model3DRow[] }) {
                 onClick={() => window.open(m.embed_url, '_blank')}
                 className="w-full text-left"
               >
-                {m.thumbnail_url ? (
-                  <img src={m.thumbnail_url} alt="" className="w-full h-36 object-cover" />
+                {modelThumb(m) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={modelThumb(m)!} alt="" loading="lazy" className="w-full h-36 object-cover" />
                 ) : (
                   <div className="w-full h-36 bg-gradient-to-br from-purple-900/30 to-indigo-900/30 flex items-center justify-center">
                     <Box className="w-12 h-12 text-purple-500/50" />

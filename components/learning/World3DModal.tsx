@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { modelThumb } from '@/lib/experiments/thumbs';
 import { DialogFrame } from '@/components/ui/DialogFrame';
 import { Globe, ArrowLeft, Loader2, RotateCcw, ZoomIn, Box, CheckCircle2 } from 'lucide-react';
 
@@ -257,8 +258,8 @@ export function World3DModal({ onClose }: World3DModalProps) {
                   }`}
                 >
                   <div className="w-full aspect-video rounded-lg bg-cyan-900/40 flex items-center justify-center mb-2 overflow-hidden">
-                    {model.thumbnail_url ? (
-                      <img src={model.thumbnail_url} alt="" className="w-full h-full object-cover rounded-lg" />
+                    {modelThumb(model) ? (
+                      <img src={modelThumb(model)!} alt="" className="w-full h-full object-cover rounded-lg" />
                     ) : (
                       <Globe className="w-8 h-8 text-cyan-500 group-hover:text-cyan-300 transition" />
                     )}
