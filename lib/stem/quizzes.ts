@@ -16,13 +16,13 @@ export type StemQuizQuestion = {
   explanation: string;
 };
 
-/** kind: 'lab' là thí nghiệm ảo, mặc định là bài STEM Maker. */
-export type StemQuiz = { title: string; kind?: 'stem' | 'lab'; questions: StemQuizQuestion[] };
+/** kind: 'lab' là thí nghiệm ảo, 'model3d' là mô phỏng 3D, mặc định là bài STEM Maker. */
+export type StemQuiz = { title: string; kind?: 'stem' | 'lab' | 'model3d'; questions: StemQuizQuestion[] };
 
 export const STEM_QUIZZES: Record<string, StemQuiz> = {
   'te-bao-nhan-thuc-3d': {
     title: 'Tế bào nhân thực 3D',
-    kind: 'lab',
+    kind: 'model3d',
     questions: [
       {
         id: "q1",

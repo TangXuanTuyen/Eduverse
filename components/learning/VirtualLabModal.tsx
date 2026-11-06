@@ -72,18 +72,6 @@ const DEMO_EXPERIMENTS: Experiment[] = [
     difficulty: 2,
   },
   {
-    id: 'te_bao_nhan_thuc_3d',
-    title: 'Tế bào nhân thực 3D',
-    description: 'Khối 6 · Tế bào nhân thực — Mô phỏng 3D tương tác: khám phá các bào quan, thực hành, luyện tập 10 câu hỏi và làm nhiệm vụ.',
-    subject: 'Sinh học',
-    grade_level: 6,
-    thumbnail_url: null,
-    embed_url: '/experiments/te-bao-nhan-thuc-3d/index.html',
-    component_key: 'te_bao_nhan_thuc_3d',
-    duration_minutes: 20,
-    difficulty: 2,
-  },
-  {
     id: 'demo_acid_base',
     title: 'Phản ứng axit – bazơ',
     description: 'Nhỏ dung dịch axit và bazơ lên quỳ tím, quan sát sự đổi màu và ghi nhận kết quả.',

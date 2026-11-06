@@ -339,7 +339,7 @@ export async function getReviewQueue(studentId: string, limit = 200): Promise<Re
       isDue: new Date(r.next_review_at).getTime() <= now,
       source: r.source_lesson_id ? 'lesson' : r.source_stem_project ? 'stem' : 'bank',
       lessonTitle: lesson?.title ?? (r.source_stem_project ? (STEM_QUIZZES[r.source_stem_project]?.title ?? null) : null),
-      chapter: lesson?.chapter ?? (r.source_stem_project ? (STEM_QUIZZES[r.source_stem_project]?.kind === 'lab' ? 'Thí nghiệm ảo' : 'STEM Maker') : null),
+      chapter: lesson?.chapter ?? (r.source_stem_project ? (STEM_QUIZZES[r.source_stem_project]?.kind === 'lab' ? 'Thí nghiệm ảo' : STEM_QUIZZES[r.source_stem_project]?.kind === 'model3d' ? 'Mô phỏng 3D' : 'STEM Maker') : null),
     };
   });
 }

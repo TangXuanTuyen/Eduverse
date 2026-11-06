@@ -256,7 +256,7 @@ export function World3DModal({ onClose }: World3DModalProps) {
                     task ? 'bg-blue-900/20 border-blue-500/30' : 'bg-cyan-900/30 border-cyan-800/30'
                   }`}
                 >
-                  <div className="w-full aspect-square rounded-lg bg-cyan-900/40 flex items-center justify-center mb-2">
+                  <div className="w-full aspect-video rounded-lg bg-cyan-900/40 flex items-center justify-center mb-2 overflow-hidden">
                     {model.thumbnail_url ? (
                       <img src={model.thumbnail_url} alt="" className="w-full h-full object-cover rounded-lg" />
                     ) : (

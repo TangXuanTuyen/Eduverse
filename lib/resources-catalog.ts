@@ -48,7 +48,6 @@ export const EXPERIMENT_CATALOG: ExperimentResource[] = [
   { id: 'vat_dan_dien_cach_dien', title: 'Vật dẫn điện, vật cách điện & Điện nghiệm', subject: 'Vật lý', grade: 8 },
   { id: 'simple_circuit', title: 'Bài 22: Mạch điện đơn giản', subject: 'Vật lý', grade: 8 },
   { id: 'lo_xo_dan_hoi', title: 'Bài 42: Biến dạng của lò xo', subject: 'Vật lý', grade: 6 },
-  { id: 'te_bao_nhan_thuc_3d', title: 'Tế bào nhân thực 3D', subject: 'Sinh học', grade: 6 },
   { id: 'demo_acid_base', title: 'Phản ứng axit – bazơ', subject: 'Hóa học', grade: 8 },
   { id: 'demo_cell', title: 'Quan sát tế bào thực vật', subject: 'Sinh học', grade: 6 },
   { id: 'demo_force', title: 'Lực và chuyển động', subject: 'Vật lý', grade: 8 },
