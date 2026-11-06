@@ -123,7 +123,7 @@ export function RoleShell({
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
-              <div className="font-bold text-sm text-white tracking-wide">EDUVERSE</div>
+              <div className="font-bold text-sm text-white tracking-wide">VINA-EDUVERSE</div>
               <div className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{ROLE_LABEL[role]}</div>
             </div>
           </Link>
@@ -159,7 +159,7 @@ export function RoleShell({
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
-              <span className="font-bold text-sm text-white">EDUVERSE</span>
+              <span className="font-bold text-sm text-white">VINA-EDUVERSE</span>
             </div>
             <div className="flex items-center gap-2">
               <LanguageSwitch />
