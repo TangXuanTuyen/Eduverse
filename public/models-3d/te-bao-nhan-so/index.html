@@ -1377,6 +1377,10 @@ THÔNG TIN TÀI NGUYÊN GIÁO DỤC SỐ - PHÒNG THÍ NGHIỆM ẢO (VINA-EDUVE
                 btn.innerHTML = `<span style="width:20px; font-weight:700; color:var(--cyan-accent);">${String.fromCharCode(65 + i)}.</span> ${opt}`;
                 btn.onclick = () => {
                     opts.querySelectorAll('button').forEach(b => b.disabled = true);
+                    // Báo máy chủ chấm và đưa câu sai vào Trạm Sửa Lỗi (máy chủ không tin kết quả từ trình duyệt)
+                    try {
+                        fetch('/api/stem/answer', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ projectId: 'te-bao-nhan-so-3d', questionId: 'q' + (index + 1), answer: [String.fromCharCode(65 + i)] }) }).catch(() => {});
+                    } catch (e) {}
                     if (i === item.correct) {
                         quizScore++;
                         btn.style.borderColor = '#10b981';

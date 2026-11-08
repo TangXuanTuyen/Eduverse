@@ -57,3 +57,12 @@ describe('gradeStemAnswer', () => {
     }
   });
 });
+
+describe('Tế bào nhân sơ 3D', () => {
+  it('có 5 câu, chấm đúng theo đáp án gốc', () => {
+    expect(STEM_QUIZZES['te-bao-nhan-so-3d'].questions).toHaveLength(5);
+    expect(gradeStemAnswer(getStemQuestion('te-bao-nhan-so-3d', 'q1')!, ['B'])).toBe(true);
+    expect(gradeStemAnswer(getStemQuestion('te-bao-nhan-so-3d', 'q1')!, ['A'])).toBe(false);
+    expect(gradeStemAnswer(getStemQuestion('te-bao-nhan-so-3d', 'q4')!, ['C'])).toBe(true);
+  });
+});

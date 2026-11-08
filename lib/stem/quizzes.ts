@@ -20,6 +20,47 @@ export type StemQuizQuestion = {
 export type StemQuiz = { title: string; kind?: 'stem' | 'lab' | 'model3d'; questions: StemQuizQuestion[] };
 
 export const STEM_QUIZZES: Record<string, StemQuiz> = {
+  'te-bao-nhan-so-3d': {
+    title: 'Tế bào nhân sơ 3D',
+    kind: 'model3d',
+    questions: [
+      {
+        id: "q1",
+        content: "Vì sao vi khuẩn được gọi là tế bào nhân sơ?",
+        options: [{ id: "A", text: "Vì vi khuẩn không có vật chất di truyền ADN." }, { id: "B", text: "Vì vùng nhân chứa ADN chưa có màng nhân bao bọc." }, { id: "C", text: "Vì vi khuẩn không có thành tế bào bảo vệ." }, { id: "D", text: "Vì vi khuẩn chỉ sống được ở nhiệt độ rất cao." }],
+        correct: ["B"],
+        explanation: "Tế bào nhân sơ có đặc điểm cốt lõi là vật chất di truyền (ADN) tập trung ở vùng nhân và chưa có màng nhân ngăn cách với tế bào chất.",
+      },
+      {
+        id: "q2",
+        content: "Thành phần nào quy định hình dạng tế bào và bảo vệ tế bào vi khuẩn khỏi bị vỡ?",
+        options: [{ id: "A", text: "Thành tế bào" }, { id: "B", text: "Màng tế bào" }, { id: "C", text: "Vùng nhân" }, { id: "D", text: "Roi" }],
+        correct: ["A"],
+        explanation: "Thành tế bào đóng vai trò như bộ khung vững chắc tạo nên hình dạng tế bào và chống lại áp suất thẩm thấu.",
+      },
+      {
+        id: "q3",
+        content: "Cấu trúc nào kiểm soát có chọn lọc các chất đi vào và đi ra khỏi tế bào vi khuẩn?",
+        options: [{ id: "A", text: "Thành tế bào" }, { id: "B", text: "Màng tế bào (màng sinh chất)" }, { id: "C", text: "Lông nhung" }, { id: "D", text: "Vùng nhân" }],
+        correct: ["B"],
+        explanation: "Màng tế bào có tính thấm chọn lọc giúp điều hòa trao đổi chất giữa tế bào và môi trường ngoài.",
+      },
+      {
+        id: "q4",
+        content: "Bộ phận nào giúp vi khuẩn bơi và di chuyển trong môi trường lỏng?",
+        options: [{ id: "A", text: "Lông bám" }, { id: "B", text: "Thành tế bào" }, { id: "C", text: "Roi (tiên mao)" }, { id: "D", text: "Màng tế bào" }],
+        correct: ["C"],
+        explanation: "Roi dài xoay tròn giúp đẩy vi khuẩn bơi nhanh về nguồn dinh dưỡng.",
+      },
+      {
+        id: "q5",
+        content: "Sự khác biệt chính giữa Lông và Roi của vi khuẩn là gì?",
+        options: [{ id: "A", text: "Lông giúp di chuyển, roi giúp bám dính." }, { id: "B", text: "Lông ngắn giúp bám dính, roi dài giúp di chuyển." }, { id: "C", text: "Lông ở trong tế bào, roi ở ngoài tế bào." }, { id: "D", text: "Lông chứa ADN, roi chứa lipid." }],
+        correct: ["B"],
+        explanation: "Lông (pili) số lượng nhiều và ngắn giúp bám dính giá thể, còn roi dài dùng để bơi di chuyển.",
+      },
+    ],
+  },
   'te-bao-nhan-thuc-3d': {
     title: 'Tế bào nhân thực 3D',
     kind: 'model3d',
