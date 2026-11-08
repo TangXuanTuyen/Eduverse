@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { FitFrame } from '@/components/ui/FitFrame';
 import { modelThumb } from '@/lib/experiments/thumbs';
 import { DialogFrame } from '@/components/ui/DialogFrame';
 import { Globe, ArrowLeft, Loader2, RotateCcw, ZoomIn, Box, CheckCircle2 } from 'lucide-react';
@@ -126,9 +127,11 @@ export function World3DModal({ onClose }: World3DModalProps) {
   const filtered = filter === 'all' ? models : models.filter((m) => String(m.grade) === filter);
 
   if (activeModel) {
+    // Mô hình có trang web: mở toàn màn hình, vừa đúng 1 trang, không phải cuộn
+    const full = !!activeModel.embed_url;
     return (
-      <DialogFrame onClose={onClose} label="Thế Giới 3D" className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md">
-        <div className="relative w-full max-w-2xl max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl border border-cyan-800/30 flex flex-col bg-gradient-to-b from-cyan-950/90 to-slate-950/95 text-white">
+      <DialogFrame onClose={onClose} label="Thế Giới 3D" className={full ? 'fixed inset-0 z-50 flex bg-slate-950' : 'fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md'}>
+        <div className={full ? 'relative w-full h-full flex flex-col bg-slate-950 text-white' : 'relative w-full max-w-2xl max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl border border-cyan-800/30 flex flex-col bg-gradient-to-b from-cyan-950/90 to-slate-950/95 text-white'}>
           <div className="flex items-center gap-3 px-4 py-3 border-b border-cyan-800/40">
             <button
               onClick={() => setActiveModel(null)}
@@ -142,11 +145,11 @@ export function World3DModal({ onClose }: World3DModalProps) {
               <p className="text-sm text-cyan-300">Khối {activeModel.grade}</p>
             </div>
           </div>
-          <div className="flex-1 overflow-auto p-4">
+          <div className={full ? 'flex-1 min-h-0 flex flex-col gap-2 p-2' : 'flex-1 overflow-auto p-4'}>
             {(() => {
               const task = tasks.find((t) => t.resource_id === activeModel.id);
               return task && (
-                <div className="mb-4 p-3 rounded-lg bg-blue-900/30 border border-blue-500/40">
+                <div className="p-2 rounded-lg bg-blue-900/30 border border-blue-500/40">
                   <p className="text-sm text-blue-300 font-medium">
                     📋 Nhiệm vụ từ GV: {task.title}
                   </p>
@@ -168,7 +171,7 @@ export function World3DModal({ onClose }: World3DModalProps) {
               );
             })()}
             {/* Cross-building suggestions */}
-            <div className="mb-4 flex flex-wrap gap-2">
+            <div className={full ? 'flex flex-wrap gap-2 shrink-0' : 'mb-4 flex flex-wrap gap-2'}>
               <a href="/student/library" className="text-xs px-3 py-1.5 rounded-lg bg-indigo-900/40 text-indigo-300 hover:bg-indigo-900/60 transition min-h-[36px] flex items-center gap-1">
                 📖 Đọc lý thuyết tại Thư viện
               </a>
@@ -177,12 +180,11 @@ export function World3DModal({ onClose }: World3DModalProps) {
               </a>
             </div>
             {activeModel.embed_url ? (
-              <iframe
+              <FitFrame
                 src={activeModel.embed_url}
-                className="w-full h-[60vh] rounded-xl border border-cyan-800/30"
+                className="w-full flex-1 min-h-0 rounded-lg"
                 title={activeModel.title}
                 allow="webgl; webgl2"
-                loading="eager"
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-64 text-center gap-4">

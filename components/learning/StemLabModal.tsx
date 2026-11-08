@@ -6,6 +6,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { FitFrame } from '@/components/ui/FitFrame';
 import { Portal } from '@/components/ui/Portal';
 import { sound } from '@/lib/audio';
 import { X, ArrowLeft, Clock } from 'lucide-react';
@@ -316,14 +317,11 @@ export const StemLabModal: React.FC<StemLabModalProps> = ({
                 </button>
                 </div>
               </div>
-              <div className="flex-1">
-                <iframe
-                  src={project.url}
-                  className="w-full h-full border-0"
-                  allow="webgl; webgl2; camera"
-                  title={project.title}
-                />
-              </div>
+              <FitFrame
+                src={project.url}
+                allow="webgl; webgl2; camera"
+                title={project.title}
+              />
             </div>
           );
         })()}</Portal>

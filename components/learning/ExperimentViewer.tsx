@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { FitFrame } from '@/components/ui/FitFrame';
 import { X, CheckCircle, Clock, ArrowLeft, BookOpen } from 'lucide-react';
 
 type ExperimentDetail = {
@@ -122,9 +123,9 @@ export function ExperimentViewer({ experimentId, onClose, onComplete }: Props) {
         {/* Iframe or built-in */}
         <div className="flex-1 relative">
           {experiment.embed_url ? (
-            <iframe
+            <FitFrame
               src={experiment.embed_url}
-              className="w-full h-full border-0"
+              className="absolute inset-0"
               sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
               title={experiment.title}
             />

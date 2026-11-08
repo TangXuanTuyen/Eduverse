@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { FitFrame } from '@/components/ui/FitFrame';
 import { DialogFrame } from '@/components/ui/DialogFrame';
 import { experimentThumb } from '@/lib/experiments/thumbs';
 import { Portal } from '@/components/ui/Portal';
@@ -290,9 +291,8 @@ export function VirtualLabModal({ onClose }: VirtualLabModalProps) {
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 </div>
-                <iframe
+                <FitFrame
                   src={playingExp.embed_url}
-                  className="flex-1 w-full border-0"
                   allow="webgl; webgl2"
                   title={playingExp.title}
                 />
