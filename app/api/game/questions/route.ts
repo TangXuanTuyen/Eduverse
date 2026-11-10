@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
 
   const { data: assignment } = await admin
     .from('assignments')
-    .select('id, room_id, assignment_type')
+    .select('id, room_id, assignment_type, game_kind, allow_friend_play')
     .eq('id', assignmentId)
     .single();
 
@@ -77,7 +77,10 @@ export async function GET(req: NextRequest) {
     (questions ?? []).map((q) => [q.id as string, q.correct_answer])
   );
   const formatted = (questions ?? []).map((q) => formatQuestion(q, answerMap));
-  return NextResponse.json({ questions: formatted });
+  return NextResponse.json({
+    questions: formatted,
+    allowFriendPlay: assignment.game_kind === 'dau_truong' && assignment.allow_friend_play === true,
+  });
 }
 
 function buildAnswerMap(answers: Record<string, unknown>[] | null): Map<string, unknown> {
