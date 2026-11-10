@@ -102,6 +102,15 @@ export function CityShell({ children }: { children: React.ReactNode }) {
     [game, broadcastPresence],
   );
 
+  // Vị trí nhẹ để bạn cùng lớp thấy mình di chuyển mượt (không lưu vào tiến độ)
+  const handlePresenceMove = useCallback(
+    (pos: { x: number; y: number }, facing: string) => {
+      latestPosRef.current = { pos, facing };
+      broadcastPresence(pos, facing);
+    },
+    [broadcastPresence],
+  );
+
   // Phát vị trí định kỳ kể cả khi đứng yên, để bạn cùng lớp không thấy nhân vật biến mất
   useEffect(() => {
     if (game.isGuest) return;
@@ -156,6 +165,7 @@ export function CityShell({ children }: { children: React.ReactNode }) {
                   peers={peers}
                   onEnterBuilding={game.enterBuilding}
                   onPositionChange={handlePositionChange}
+                  onPresenceMove={handlePresenceMove}
                   onRequestEditCharacter={() => game.setEditingCharacter(true)}
                   onNearbyBuildingChange={setNearbyBuilding}
                   paused={paused}

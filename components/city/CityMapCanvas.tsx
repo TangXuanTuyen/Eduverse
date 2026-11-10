@@ -44,6 +44,8 @@ interface CityMapCanvasProps {
   peers?: PeerForCanvas[];
   onEnterBuilding: (building: BuildingInfo) => void;
   onPositionChange?: (pos: { x: number; y: number }, facing: Direction) => void;
+  /** Báo vị trí nhẹ (không lưu) để bạn cùng lớp thấy mình di chuyển mượt; ~5 lần/giây khi đi */
+  onPresenceMove?: (pos: { x: number; y: number }, facing: Direction) => void;
   onRequestEditCharacter: () => void;
   onNearbyBuildingChange?: (building: BuildingInfo | null) => void;
   paused?: boolean;
@@ -85,6 +87,7 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
   peers = [],
   onEnterBuilding,
   onPositionChange,
+  onPresenceMove,
   onRequestEditCharacter: _onRequestEditCharacter,
   onNearbyBuildingChange,
   paused = false,
@@ -347,6 +350,8 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
     let running = true;
     let lastSaveTime = performance.now();
     let wasWalking = false;
+    let lastPresenceTime = 0;
+    let sentInitialPresence = false;
 
     const loop = (time: number) => {
       if (!running) return;
@@ -515,6 +520,15 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
         onPositionChange({ x: player.x, y: player.y }, player.facing);
         lastSaveTime = time;
       }
+      // Báo vị trí cho bạn cùng lớp: ngay khi vào, ~5 lần/giây khi đi và một lần lúc dừng
+      if (onPresenceMove) {
+        const due = !sentInitialPresence || (player.isWalking ? time - lastPresenceTime > 200 : wasWalking);
+        if (due) {
+          sentInitialPresence = true;
+          lastPresenceTime = time;
+          onPresenceMove({ x: player.x, y: player.y }, player.facing);
+        }
+      }
       wasWalking = player.isWalking;
 
       // Smooth Responsive Camera tracking centered on player
@@ -605,7 +619,7 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
       running = false;
       cancelAnimationFrame(stateRef.current.animFrameId);
     };
-  }, [onPositionChange]);
+  }, [onPositionChange, onPresenceMove]);
 
   useEffect(() => {
     onNearbyBuildingChange?.(nearbyBuilding);
