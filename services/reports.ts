@@ -1144,7 +1144,7 @@ export async function getStemAnalysis(
     .from('assignments')
     .select('id, title, assignment_type, room_id')
     .in('room_id', roomIds)
-    .in('assignment_type', ['lesson', 'experiment']);
+    .in('assignment_type', ['lesson', 'experiment', 'game']);
 
   if (!assignments || assignments.length === 0) return [];
 

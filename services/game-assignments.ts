@@ -2,6 +2,7 @@ import 'server-only';
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { addToReviewQueue } from '@/services/review-queue';
+import { awardXp } from '@/services/xp';
 
 export type GameAssignmentRow = {
   id: string;
@@ -258,8 +259,102 @@ export async function recordMazeAnswer(
       ? correct === selectedIndex
       : correct === chosen.id || correct === chosen.text;
 
+  // Nhật ký: câu trả lời đầu tiên của mỗi câu được tính (chơi lại không đổi kết quả)
+  await admin.from('game_answer_log').upsert(
+    {
+      assignment_id: assignmentId,
+      student_id: studentId,
+      question_id: questionId,
+      is_correct: isCorrect,
+    },
+    { onConflict: 'assignment_id,student_id,question_id', ignoreDuplicates: true },
+  );
+
   if (!isCorrect && aq.source_question_id) {
     await addToReviewQueue(studentId, aq.source_question_id as string);
   }
   return { isCorrect };
+}
+
+export type GameCompleteResult = {
+  completed: boolean;
+  already?: boolean;
+  correct: number;
+  answered: number;
+  total: number;
+  xp: number;
+  message?: string;
+};
+
+/**
+ * Học sinh báo đã chơi hết trận của bài giao trò chơi. Máy chủ không tin trình duyệt:
+ * chỉ tính hoàn thành khi nhật ký có đủ ít nhất một nửa số câu trắc nghiệm 4 đáp án của bài giao.
+ */
+export async function completeGameAssignment(
+  studentId: string,
+  assignmentId: string,
+): Promise<GameCompleteResult> {
+  const admin = createAdminClient();
+
+  const { data: assignment } = await admin
+    .from('assignments')
+    .select('id, room_id, assignment_type')
+    .eq('id', assignmentId)
+    .single();
+  if (!assignment || assignment.assignment_type !== 'game') throw new Error('Không tìm thấy bài giao trò chơi');
+
+  const { data: member } = await admin
+    .from('room_members')
+    .select('room_id')
+    .eq('room_id', assignment.room_id)
+    .eq('user_id', studentId)
+    .eq('is_active', true)
+    .maybeSingle();
+  if (!member) throw new Error('Bạn không thuộc lớp này');
+
+  const { data: qs } = await admin
+    .from('assignment_questions')
+    .select('id, options')
+    .eq('assignment_id', assignmentId);
+  const eligible = (qs ?? []).filter((q) => Array.isArray(q.options) && q.options.length === 4);
+  const total = eligible.length;
+
+  const { data: log } = await admin
+    .from('game_answer_log')
+    .select('question_id, is_correct')
+    .eq('assignment_id', assignmentId)
+    .eq('student_id', studentId);
+  const eligibleIds = new Set(eligible.map((q) => q.id as string));
+  const rows = (log ?? []).filter((r) => eligibleIds.has(r.question_id as string));
+  const answered = rows.length;
+  const correct = rows.filter((r) => r.is_correct).length;
+
+  const needed = Math.max(1, Math.ceil(total / 2));
+  if (total === 0 || answered < needed) {
+    return {
+      completed: false,
+      correct,
+      answered,
+      total,
+      xp: 0,
+      message: `Em mới trả lời ${answered}/${total} câu. Cần trả lời ít nhất ${needed} câu để tính hoàn thành, em chơi lại nhé.`,
+    };
+  }
+
+  const { error: insErr } = await admin
+    .from('task_completions')
+    .insert({ assignment_id: assignmentId, student_id: studentId });
+  if (insErr) {
+    if (insErr.code === '23505') return { completed: true, already: true, correct, answered, total, xp: 0 };
+    throw new Error(insErr.message);
+  }
+
+  let xp = 0;
+  try {
+    const r = await awardXp(studentId, 'game_complete', `game-assign:${assignmentId}:${studentId}`);
+    xp = r.awarded;
+  } catch {
+    /* XP lỗi không chặn hoàn thành */
+  }
+  return { completed: true, correct, answered, total, xp };
 }

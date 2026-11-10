@@ -21,6 +21,8 @@ export function CreateAssignmentButton({ teacherId }: { teacherId: string }) {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [sets, setSets] = useState<QuestionSet[]>([]);
   const [selectedSetId, setSelectedSetId] = useState('');
+  const [mode, setMode] = useState<'quiz' | 'game'>('quiz');
+  const [gameKind, setGameKind] = useState<'me_cung' | 'dau_truong'>('me_cung');
 
   useEffect(() => {
     if (!open) return;
@@ -120,11 +122,47 @@ export function CreateAssignmentButton({ teacherId }: { teacherId: string }) {
 
         <label className="block">
           <span className="text-xs text-slate-400">{t('as.mode')}</span>
-          <select name="assignment_type" className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white">
+          <select
+            name="assignment_type"
+            value={mode}
+            onChange={(e) => setMode(e.target.value as 'quiz' | 'game')}
+            className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white"
+          >
             <option value="quiz">{t('as.modeQuiz')}</option>
             <option value="game">{t('as.modeGame')}</option>
           </select>
         </label>
+
+        {mode === 'game' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="block">
+              <span className="text-xs text-slate-400">{t('as.gameKind')}</span>
+              <select
+                name="game_kind"
+                value={gameKind}
+                onChange={(e) => setGameKind(e.target.value as 'me_cung' | 'dau_truong')}
+                className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white"
+              >
+                <option value="me_cung">{t('as.gameMaze')}</option>
+                <option value="dau_truong">{t('as.gameArena')}</option>
+              </select>
+            </label>
+            {gameKind === 'dau_truong' && (
+              <label className="block">
+                <span className="text-xs text-slate-400">{t('as.friendPolicy')}</span>
+                <select
+                  name="friend_policy"
+                  defaultValue="ai"
+                  className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white"
+                >
+                  <option value="ai">{t('as.friendAiOnly')}</option>
+                  <option value="friend">{t('as.friendBoth')}</option>
+                </select>
+                <span className="block mt-1 text-[11px] text-slate-500">{t('as.friendHint')}</span>
+              </label>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <label className="block">

@@ -11,6 +11,7 @@ type Assignment = {
   description: string;
   due_at: string | null;
   assignment_type?: string;
+  game_kind?: string | null;
   rooms: { name: string };
 };
 
@@ -48,12 +49,12 @@ export function StudentAssignmentList({ assignments }: { assignments: Assignment
                 : a.assignment_type === 'stem' ? '/student/stem'
                 : '/student/virtual-lab';
               const typeIcon = a.assignment_type === 'lesson' ? '📖' : a.assignment_type === 'experiment' ? '🔬' : a.assignment_type === 'model3d' ? '🌐' : a.assignment_type === 'stem' ? '🧪' : isGame ? '🎮' : '📝';
-              const href = isTask ? taskRoute : isGame ? `/games/me-cung/index.html?assignmentId=${a.id}` : `/student/arcade?assignment=${a.id}`;
+              const href = isTask ? taskRoute : isGame ? a.game_kind === 'dau_truong' ? `/games/dau-truong-anh-sang/index.html?assignmentId=${a.id}` : `/games/me-cung/index.html?assignmentId=${a.id}` : `/student/arcade?assignment=${a.id}`;
               return (
                 <Link
                   key={a.id}
                   href={href}
-                  target={isGame ? '_blank' : undefined}
+                  target={isGame && a.game_kind !== 'dau_truong' ? '_blank' : undefined}
                   className="block bg-slate-800 hover:bg-slate-700 rounded-xl p-3 transition"
                 >
                   <div className="font-medium text-sm text-white">{typeIcon} {a.title}</div>

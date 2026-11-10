@@ -15,6 +15,8 @@ export type AssignmentRow = {
   assignment_type: 'quiz' | 'lesson' | 'experiment' | 'model3d' | 'stem' | 'game';
   resource_id: string | null;
   resource_title: string | null;
+  game_kind: 'me_cung' | 'dau_truong' | null;
+  allow_friend_play: boolean;
   created_by: string;
   created_at: string;
 };
@@ -39,6 +41,8 @@ export type CreateAssignmentData = {
   show_explanation_after_submit?: boolean;
   question_ids: string[];
   assignment_type?: 'quiz' | 'game';
+  game_kind?: 'me_cung' | 'dau_truong' | null;
+  allow_friend_play?: boolean;
 };
 
 export async function getTeacherAssignments(teacherId: string, roomId?: string) {
@@ -111,6 +115,8 @@ export async function createAssignment(teacherId: string, data: CreateAssignment
       max_retries: data.max_retries ?? 0,
       show_explanation_after_submit: data.show_explanation_after_submit ?? true,
       assignment_type: data.assignment_type ?? 'quiz',
+      game_kind: data.assignment_type === 'game' ? (data.game_kind ?? 'me_cung') : null,
+      allow_friend_play: data.assignment_type === 'game' && data.game_kind === 'dau_truong' ? (data.allow_friend_play ?? false) : false,
       created_by: teacherId,
     })
     .select('id')

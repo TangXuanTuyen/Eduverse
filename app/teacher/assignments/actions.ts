@@ -16,6 +16,8 @@ const assignmentSchema = z.object({
   max_retries: z.coerce.number().int().min(0).max(10).default(0),
   show_explanation_after_submit: z.coerce.boolean().default(true),
   assignment_type: z.enum(['quiz', 'game']).default('quiz'),
+  game_kind: z.enum(['me_cung', 'dau_truong']).default('me_cung'),
+  allow_friend_play: z.boolean().default(false),
 });
 
 export type AssignmentActionState = { error?: string; success?: string };
@@ -37,6 +39,8 @@ export async function createAssignmentAction(
     max_retries: formData.get('max_retries') || 0,
     show_explanation_after_submit: formData.get('show_explanation') !== 'false',
     assignment_type: formData.get('assignment_type') || 'quiz',
+    game_kind: formData.get('game_kind') || 'me_cung',
+    allow_friend_play: formData.get('friend_policy') === 'friend',
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Dữ liệu không hợp lệ' };
 

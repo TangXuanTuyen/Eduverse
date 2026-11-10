@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { GameList } from './GameList';
 import { CreateGameButton } from './CreateGameButton';
 import { MeCungCard } from './MeCungCard';
+import { DauTruongCard } from './DauTruongCard';
 import { getLocale } from '@/lib/i18n/server';
 import { translate } from '@/lib/i18n/dict';
 
@@ -27,7 +28,10 @@ export default async function TeacherGamesPage() {
 
       <div>
         <h2 className="text-sm font-medium text-slate-400 mb-3">{tr('gm.special')}</h2>
-        <MeCungCard />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <MeCungCard />
+          <DauTruongCard />
+        </div>
       </div>
 
       <div>
