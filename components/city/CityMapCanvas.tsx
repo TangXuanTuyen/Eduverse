@@ -151,6 +151,7 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
 
   const collisionRef = useRef(new CollisionSystem(MAP_TILES_X, MAP_TILES_Y));
   const pathfindingRef = useRef<PathfindingSystem | null>(null);
+  const zoomRef = useRef(1);
 
   // Initialize leaves & colliders
   useEffect(() => {
@@ -230,8 +231,9 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
       const clickY = e.clientY - rect.top;
 
       // Convert screen click to world tile coordinates
-      const worldX = (clickX + stateRef.current.camera.x) / TILE_SIZE;
-      const worldY = (clickY + stateRef.current.camera.y) / TILE_SIZE;
+      const zoom = zoomRef.current;
+      const worldX = (clickX / zoom + stateRef.current.camera.x) / TILE_SIZE;
+      const worldY = (clickY / zoom + stateRef.current.camera.y) / TILE_SIZE;
 
       // Check if click is on a building — pathfind to its entrance instead
       let targetX = worldX;
@@ -532,20 +534,23 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
       wasWalking = player.isWalking;
 
       // Smooth Responsive Camera tracking centered on player
-      let targetCamX = player.x * TILE_SIZE - canvas.width / 2;
-      let targetCamY = player.y * TILE_SIZE - canvas.height / 2;
+      const zoom = zoomRef.current;
+      const viewW = canvas.width / zoom;
+      const viewH = canvas.height / zoom;
+      let targetCamX = player.x * TILE_SIZE - viewW / 2;
+      let targetCamY = player.y * TILE_SIZE - viewH / 2;
 
       // Handle viewports wider or taller than the game world by centering the canvas
-      if (canvas.width >= worldW) {
-        targetCamX = -(canvas.width - worldW) / 2;
+      if (viewW >= worldW) {
+        targetCamX = -(viewW - worldW) / 2;
       } else {
-        targetCamX = Math.max(0, Math.min(worldW - canvas.width, targetCamX));
+        targetCamX = Math.max(0, Math.min(worldW - viewW, targetCamX));
       }
 
-      if (canvas.height >= worldH) {
-        targetCamY = -(canvas.height - worldH) / 2;
+      if (viewH >= worldH) {
+        targetCamY = -(viewH - worldH) / 2;
       } else {
-        targetCamY = Math.max(0, Math.min(worldH - canvas.height, targetCamY));
+        targetCamY = Math.max(0, Math.min(worldH - viewH, targetCamY));
       }
 
       // Smooth cinematic lerp (0.14); giảm chuyển động → camera bám tức thì
@@ -573,6 +578,7 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
       const camY = Math.round(stateRef.current.camera.y);
 
       ctx.save();
+      ctx.scale(zoomRef.current, zoomRef.current);
       ctx.translate(-camX, -camY);
 
       // 1. GROUND (Lush organic grass, cobblestone avenues, brick curbs, plaza)
@@ -634,6 +640,12 @@ export const CityMapCanvas: React.FC<CityMapCanvasProps> = ({
       if (parent) {
         canvas.width = parent.clientWidth;
         canvas.height = parent.clientHeight;
+        // Phóng to để bản đồ phủ kín màn hình (không còn viền đen); màn nhỏ giữ nguyên 1:1
+        zoomRef.current = Math.max(
+          1,
+          canvas.width / (MAP_TILES_X * TILE_SIZE),
+          canvas.height / (MAP_TILES_Y * TILE_SIZE),
+        );
       }
     };
     handleResize();
