@@ -55,7 +55,7 @@ const STEM_PROJECTS: StemProject[] = [
   {
     id: 'xe-dap-phat-dien',
     title: 'Xe đạp phát điện (Dynamo)',
-    description: 'Đạp xe để chuyển cơ năng thành điện năng và quang năng. Điều khiển bằng bàn phím, chuột hoặc camera nhận diện chuyển động chạy tại chỗ.',
+    description: 'Giải cứu điện cho trạm hải đảo: trả lời 3 câu hỏi tư duy, lắp dynamo, đạp xe thắp sáng đèn, thử thách 30 giây và xem lịch sử các lần đo. Điều khiển bằng bàn phím, chuột hoặc camera nhận diện chạy tại chỗ.',
     grade: 9,
     url: '/stem/xe-dap-phat-dien/index.html',
     icon: '🚲',
