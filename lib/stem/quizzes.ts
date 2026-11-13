@@ -275,13 +275,6 @@ export const STEM_QUIZZES: Record<string, StemQuiz> = {
         correct: ["unlit"],
         explanation: "ĐÂY LÀ ĐOẢN MẠCH NGUY HIỂM! Do không có điện trở tải (R = 0Ω), dòng điện tăng vọt cực đại làm pin cạn kiệt nhanh chóng và dây dẫn phát hỏa bốc cháy. Tuyệt đối không được đấu nối!",
       },
-      {
-        id: "p5",
-        content: "Sơ đồ 5: hai bóng đèn mắc nối tiếp nhưng hai đầu Đèn 1 có một đoạn dây dẫn nối tắt. Mạch có bóng đèn sáng hay không?",
-        options: [{ id: "lit", text: "Bóng đèn sẽ SÁNG" }, { id: "unlit", text: "Bóng đèn KHÔNG SÁNG" }],
-        correct: ["lit"],
-        explanation: "Đèn 1 bị nối tắt nên dòng điện chỉ chạy qua sợi dây bypass (điện trở gần như bằng 0) mà không qua đèn 1: Đèn 1 TẮT. Đèn 2 nhận toàn bộ hiệu điện thế nguồn nên SÁNG RỰC RỠ!",
-      },
     ],
   },
   'xe-dap-phat-dien': {

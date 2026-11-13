@@ -68,8 +68,8 @@ describe('Tế bào nhân sơ 3D', () => {
 });
 
 describe('Mạch điện đơn giản', () => {
-  it('có 12 câu và chấm đúng', () => {
-    expect(STEM_QUIZZES['mach-dien-don-gian'].questions).toHaveLength(12);
+  it('có 11 câu và chấm đúng', () => {
+    expect(STEM_QUIZZES['mach-dien-don-gian'].questions).toHaveLength(11);
     expect(gradeStemAnswer(getStemQuestion('mach-dien-don-gian', 'q5')!, 'C')).toBe(true);
     expect(gradeStemAnswer(getStemQuestion('mach-dien-don-gian', 'q5')!, 'B')).toBe(false);
     expect(gradeStemAnswer(getStemQuestion('mach-dien-don-gian', 'p1')!, 'unlit')).toBe(true);
